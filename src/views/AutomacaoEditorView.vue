@@ -53,7 +53,7 @@ const nodes = [
           <span class="font-medium text-brand-ink">Fluxo de exemplo</span>
         </p>
         <span class="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-brand-gray">Rascunho</span>
-        <div class="ml-auto flex flex-wrap gap-2">
+        <div class="flex w-full flex-col gap-2 sm:ml-auto sm:w-auto sm:flex-row sm:flex-wrap">
           <button type="button" disabled class="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm text-brand-gray">
             <Play class="h-4 w-4" />
             Testar

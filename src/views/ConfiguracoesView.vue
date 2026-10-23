@@ -14,7 +14,7 @@ const activeTab = ref<(typeof tabs)[number]>('Plano e cobrança')
 </script>
 
 <template>
-  <div class="min-h-full px-6 py-6 lg:px-8">
+  <div class="min-h-full px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
     <header class="flex flex-wrap items-start justify-between gap-4">
       <div>
         <h1 class="font-display text-2xl font-semibold text-brand-ink">Configurações</h1>
@@ -37,12 +37,12 @@ const activeTab = ref<(typeof tabs)[number]>('Plano e cobrança')
       </div>
     </header>
 
-    <nav class="mt-6 flex gap-6 border-b border-slate-200 text-sm font-medium">
+    <nav class="-mx-4 mt-6 flex gap-4 overflow-x-auto border-b border-slate-200 px-4 text-sm font-medium sm:mx-0 sm:gap-6 sm:px-0">
       <button
         v-for="tab in tabs"
         :key="tab"
         type="button"
-        class="-mb-px border-b-2 pb-3 transition"
+        class="-mb-px shrink-0 whitespace-nowrap border-b-2 pb-3 transition"
         :class="
           activeTab === tab
             ? 'border-brand-indigo text-brand-indigo'

@@ -14,19 +14,19 @@ const tableRows = Array.from({ length: 5 }, (_, i) => ({
 </script>
 
 <template>
-  <div class="min-h-full px-6 py-6 lg:px-8">
-    <header class="flex flex-wrap items-center justify-between gap-4">
+  <div class="min-h-full px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
+    <header class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
       <div>
         <h1 class="font-display text-2xl font-semibold text-brand-ink">Contatos</h1>
         <span class="mt-1 inline-block rounded-full bg-brand-mist px-2.5 py-0.5 text-xs font-medium text-brand-indigo">
           Listagem de exemplo
         </span>
       </div>
-      <div class="flex flex-wrap gap-2">
+      <div class="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap">
         <button
           type="button"
           disabled
-          class="inline-flex items-center gap-2 rounded-xl border border-brand-indigo/30 bg-white px-4 py-2 text-sm font-medium text-brand-indigo"
+          class="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-brand-indigo/30 bg-white px-4 py-2 text-sm font-medium text-brand-indigo sm:w-auto"
         >
           <Upload class="h-4 w-4" />
           Importar CSV
@@ -34,7 +34,7 @@ const tableRows = Array.from({ length: 5 }, (_, i) => ({
         <button
           type="button"
           disabled
-          class="inline-flex items-center gap-2 rounded-xl bg-brand-indigo px-4 py-2 text-sm font-semibold text-white opacity-60"
+          class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-brand-indigo px-4 py-2 text-sm font-semibold text-white opacity-60 sm:w-auto"
         >
           <Plus class="h-4 w-4" />
           Novo contato
@@ -42,7 +42,7 @@ const tableRows = Array.from({ length: 5 }, (_, i) => ({
       </div>
     </header>
 
-    <div class="mt-6 grid gap-6 lg:grid-cols-[240px_1fr]">
+    <div class="mt-6 grid min-w-0 gap-6 lg:grid-cols-[240px_1fr]">
       <aside class="space-y-4">
         <section class="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm">
           <h2 class="text-sm font-semibold text-brand-ink">Segmentos</h2>
@@ -91,8 +91,8 @@ const tableRows = Array.from({ length: 5 }, (_, i) => ({
           </button>
         </div>
 
-        <div class="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm">
-          <table class="w-full text-left text-sm">
+        <div class="overflow-x-auto rounded-2xl border border-slate-200/80 bg-white shadow-sm">
+          <table class="w-full min-w-[640px] text-left text-sm">
             <thead class="border-b border-slate-100 bg-slate-50/80 text-xs uppercase tracking-wide text-brand-gray">
               <tr>
                 <th class="px-4 py-3 font-medium">Nome</th>

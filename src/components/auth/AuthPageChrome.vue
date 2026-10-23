@@ -8,9 +8,9 @@ const privacyUrl = 'https://rappeli.com.br/privacidade'
 </script>
 
 <template>
-  <div class="flex items-center justify-between px-6 py-5 lg:px-10">
+  <div class="flex flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-6 sm:py-5 lg:px-10">
     <RappeliLogo variant="dark" class="lg:hidden" />
-    <div class="ml-auto flex items-center gap-4 text-sm text-slate-500">
+    <div class="flex flex-wrap items-center gap-3 text-xs text-slate-500 sm:gap-4 sm:text-sm">
       <a href="#" class="inline-flex items-center gap-1 hover:text-slate-800" @click.prevent>
         <CircleHelp class="h-4 w-4" />
         Ajuda
@@ -25,7 +25,7 @@ const privacyUrl = 'https://rappeli.com.br/privacidade'
   <slot />
 
   <footer
-    class="flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 px-6 py-4 text-[11px] text-slate-400 lg:px-10"
+    class="flex flex-col items-center justify-between gap-3 border-t border-slate-100 px-4 py-4 text-center text-[11px] text-slate-400 sm:flex-row sm:text-left lg:px-10"
   >
     <span>© {{ new Date().getFullYear() }} Rappeli. Todos os direitos reservados.</span>
     <div class="flex gap-4">

@@ -183,7 +183,7 @@ function onComposerKeydown(event: KeyboardEvent): void {
 <template>
   <div class="flex h-full min-h-0 flex-col bg-white">
     <header
-      class="flex shrink-0 flex-wrap items-center gap-3 border-b border-slate-100 px-5 py-3 shadow-xs"
+      class="flex shrink-0 flex-wrap items-center gap-2 border-b border-slate-100 px-4 py-3 shadow-xs sm:gap-3 sm:px-5"
     >
       <h1 class="font-display text-lg font-bold text-brand-ink">Conversas</h1>
       <span
