@@ -5,7 +5,10 @@ import vue from '@vitejs/plugin-vue'
 import { defineConfig, loadEnv } from 'vite'
 import vueDevTools from 'vite-plugin-vue-devtools'
 
-const apiProxy = (target: string) => ({
+const reverbTarget = (env: Record<string, string>) =>
+  env.VITE_REVERB_PROXY_TARGET || 'http://127.0.0.1:8080'
+
+const apiProxy = (target: string, env: Record<string, string>) => ({
   '/api': {
     target,
     changeOrigin: true,
@@ -13,6 +16,15 @@ const apiProxy = (target: string) => ({
   '/sanctum': {
     target,
     changeOrigin: true,
+  },
+  '/broadcasting': {
+    target,
+    changeOrigin: true,
+  },
+  '/app': {
+    target: reverbTarget(env),
+    changeOrigin: true,
+    ws: true,
   },
 })
 
@@ -30,11 +42,11 @@ export default defineConfig(({ mode }) => {
     },
     server: {
       port: 5173,
-      proxy: apiProxy(proxyTarget),
+      proxy: apiProxy(proxyTarget, env),
     },
     preview: {
       port: 4173,
-      proxy: apiProxy(proxyTarget),
+      proxy: apiProxy(proxyTarget, env),
     },
   }
 })
