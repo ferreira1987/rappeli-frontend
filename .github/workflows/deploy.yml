@@ -1,0 +1,42 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-rappeli-frontend-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy to production (self-hosted)
+    # Set repository variable DEPLOY_RUNNER_LABEL (e.g. "rappeli") to match your runner label.
+    runs-on: ${{ fromJSON(format('["self-hosted", "linux", "{0}"]', vars.DEPLOY_RUNNER_LABEL || 'rappeli')) }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Atomic deploy
+        env:
+          GITHUB_SHA: ${{ github.sha }}
+          DEPLOY_ROOT: /var/www/rappeli-frontend
+        run: bash scripts/deploy.sh

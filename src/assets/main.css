@@ -1,0 +1,38 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Sora', ui-sans-serif, system-ui, sans-serif;
+  --color-brand-indigo: #4338ca;
+  --color-brand-indigo-hover: #3730a3;
+  --color-brand-coral: #ff7a59;
+  --color-brand-ink: #1e1b4b;
+  --color-brand-mist: #eef0ff;
+  --color-brand-gray: #64748b;
+  --color-brand-surface: #f8fafc;
+}
+
+@layer base {
+  html,
+  body,
+  #app {
+    min-height: 100%;
+  }
+
+  body {
+    @apply bg-brand-mist font-sans text-brand-ink antialiased;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+  }
+}
+
+@layer utilities {
+  .font-display {
+    font-family: var(--font-display);
+  }
+}
