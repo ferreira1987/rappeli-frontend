@@ -6,8 +6,9 @@ import {
   fetchCurrentUser,
   loginRequest,
   logoutRequest,
+  registerRequest,
 } from '@/api/auth'
-import type { LoginCredentials, User } from '@/types/auth'
+import type { LoginCredentials, RegisterCredentials, User } from '@/types/auth'
 import { getErrorMessage } from '@/utils/errors'
 
 export const useAuthStore = defineStore('auth', () => {
@@ -49,6 +50,22 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  async function register(credentials: RegisterCredentials): Promise<void> {
+    loading.value = true
+    lastError.value = null
+
+    try {
+      user.value = await registerRequest(credentials)
+      bootstrapped.value = true
+    } catch (error) {
+      user.value = null
+      lastError.value = getErrorMessage(error)
+      throw error
+    } finally {
+      loading.value = false
+    }
+  }
+
   async function logout(): Promise<void> {
     loading.value = true
     lastError.value = null
@@ -72,6 +89,7 @@ export const useAuthStore = defineStore('auth', () => {
     isAuthenticated,
     bootstrap,
     login,
+    register,
     logout,
   }
 })

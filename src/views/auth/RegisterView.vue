@@ -1,14 +1,16 @@
 <script setup lang="ts">
 import { ArrowRight, Eye, EyeOff, Lock, Mail, User } from '@lucide/vue'
 import { ref } from 'vue'
-import { RouterLink, useRouter } from 'vue-router'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
 
-import { registerRequest } from '@/api/auth'
 import AuthMarketingPanel from '@/components/auth/AuthMarketingPanel.vue'
 import AuthPageChrome from '@/components/auth/AuthPageChrome.vue'
-import { getErrorMessage } from '@/utils/errors'
+import { useAuthStore } from '@/stores/auth'
+import { getErrorMessage, getValidationErrors } from '@/utils/errors'
 
+const auth = useAuthStore()
 const router = useRouter()
+const route = useRoute()
 
 const name = ref('')
 const email = ref('')
@@ -17,41 +19,57 @@ const passwordConfirmation = ref('')
 const acceptedTerms = ref(false)
 const showPassword = ref(false)
 const showPasswordConfirm = ref(false)
-const loading = ref(false)
 const formError = ref<string | null>(null)
+const fieldErrors = ref<Record<string, string>>({})
 
 const termsUrl = 'https://rappeli.com.br/termos'
 const privacyUrl = 'https://rappeli.com.br/privacidade'
 
+function inputBorderClass(field: string): string {
+  return fieldErrors.value[field]
+    ? 'border-red-300 focus:border-red-400 focus:ring-red-200'
+    : 'border-slate-200 focus:border-brand-indigo focus:ring-brand-indigo'
+}
+
 async function onSubmit(): Promise<void> {
   formError.value = null
+  fieldErrors.value = {}
 
   if (password.value !== passwordConfirmation.value) {
-    formError.value = 'As senhas não coincidem. Verifique e tente novamente.'
+    fieldErrors.value = {
+      password_confirmation: 'As senhas não coincidem.',
+    }
     return
   }
 
   if (!acceptedTerms.value) {
-    formError.value = 'Aceite os Termos de Uso e a Política de Privacidade para continuar.'
+    fieldErrors.value = {
+      terms_accepted: 'Você precisa aceitar os Termos de Uso e a Política de Privacidade.',
+    }
     return
   }
 
-  loading.value = true
-
   try {
-    await registerRequest({
+    await auth.register({
       name: name.value.trim(),
       email: email.value.trim(),
       password: password.value,
       password_confirmation: passwordConfirmation.value,
+      terms_accepted: true,
     })
-    await router.push({ name: 'login', query: { registered: '1' } })
+
+    const redirect =
+      typeof route.query.redirect === 'string'
+        ? route.query.redirect
+        : '/onboarding/whatsapp'
+    await router.replace(redirect)
   } catch (error) {
-    formError.value =
-      getErrorMessage(error) ||
-      'Não foi possível criar sua conta. O cadastro ainda pode não estar disponível no servidor — tente novamente mais tarde.'
-  } finally {
-    loading.value = false
+    const validation = getValidationErrors(error)
+    if (validation) {
+      fieldErrors.value = validation
+      return
+    }
+    formError.value = getErrorMessage(error)
   }
 }
 </script>
@@ -85,8 +103,8 @@ async function onSubmit(): Promise<void> {
             <span class="h-px flex-1 bg-slate-200" />
           </div>
 
-          <form class="space-y-4" @submit.prevent="onSubmit">
-            <div v-if="formError" class="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">
+          <form class="space-y-4" novalidate @submit.prevent="onSubmit">
+            <div v-if="formError" class="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
               {{ formError }}
             </div>
 
@@ -104,9 +122,16 @@ async function onSubmit(): Promise<void> {
                   autocomplete="name"
                   required
                   placeholder="Seu nome completo"
-                  class="w-full rounded-xl border border-slate-200 py-3 pl-10 pr-4 text-sm outline-none ring-brand-indigo focus:border-brand-indigo focus:ring-2"
+                  :aria-invalid="fieldErrors.name ? 'true' : undefined"
+                  :class="[
+                    'w-full rounded-xl border py-3 pl-10 pr-4 text-sm outline-none ring-2 ring-transparent',
+                    inputBorderClass('name'),
+                  ]"
                 />
               </div>
+              <p v-if="fieldErrors.name" class="mt-1.5 text-xs text-red-600" role="alert">
+                {{ fieldErrors.name }}
+              </p>
             </div>
 
             <div>
@@ -125,9 +150,16 @@ async function onSubmit(): Promise<void> {
                   autocomplete="email"
                   required
                   placeholder="contato@exemplo.com.br"
-                  class="w-full rounded-xl border border-slate-200 py-3 pl-10 pr-4 text-sm outline-none ring-brand-indigo focus:border-brand-indigo focus:ring-2"
+                  :aria-invalid="fieldErrors.email ? 'true' : undefined"
+                  :class="[
+                    'w-full rounded-xl border py-3 pl-10 pr-4 text-sm outline-none ring-2 ring-transparent',
+                    inputBorderClass('email'),
+                  ]"
                 />
               </div>
+              <p v-if="fieldErrors.email" class="mt-1.5 text-xs text-red-600" role="alert">
+                {{ fieldErrors.email }}
+              </p>
             </div>
 
             <div>
@@ -147,7 +179,11 @@ async function onSubmit(): Promise<void> {
                   required
                   minlength="8"
                   placeholder="Crie uma senha de acesso"
-                  class="w-full rounded-xl border border-slate-200 py-3 pl-10 pr-11 text-sm outline-none ring-brand-indigo focus:border-brand-indigo focus:ring-2"
+                  :aria-invalid="fieldErrors.password ? 'true' : undefined"
+                  :class="[
+                    'w-full rounded-xl border py-3 pl-10 pr-11 text-sm outline-none ring-2 ring-transparent',
+                    inputBorderClass('password'),
+                  ]"
                 />
                 <button
                   type="button"
@@ -159,6 +195,9 @@ async function onSubmit(): Promise<void> {
                   <Eye v-else class="h-4 w-4" />
                 </button>
               </div>
+              <p v-if="fieldErrors.password" class="mt-1.5 text-xs text-red-600" role="alert">
+                {{ fieldErrors.password }}
+              </p>
             </div>
 
             <div>
@@ -181,7 +220,11 @@ async function onSubmit(): Promise<void> {
                   required
                   minlength="8"
                   placeholder="Repita a senha"
-                  class="w-full rounded-xl border border-slate-200 py-3 pl-10 pr-11 text-sm outline-none ring-brand-indigo focus:border-brand-indigo focus:ring-2"
+                  :aria-invalid="fieldErrors.password_confirmation ? 'true' : undefined"
+                  :class="[
+                    'w-full rounded-xl border py-3 pl-10 pr-11 text-sm outline-none ring-2 ring-transparent',
+                    inputBorderClass('password_confirmation'),
+                  ]"
                 />
                 <button
                   type="button"
@@ -193,43 +236,56 @@ async function onSubmit(): Promise<void> {
                   <Eye v-else class="h-4 w-4" />
                 </button>
               </div>
+              <p
+                v-if="fieldErrors.password_confirmation"
+                class="mt-1.5 text-xs text-red-600"
+                role="alert"
+              >
+                {{ fieldErrors.password_confirmation }}
+              </p>
             </div>
 
-            <label class="flex cursor-pointer items-start gap-2 text-sm text-slate-600">
-              <input
-                v-model="acceptedTerms"
-                type="checkbox"
-                required
-                class="mt-0.5 h-4 w-4 rounded border-slate-300 text-brand-indigo focus:ring-brand-indigo"
-              />
-              <span>
-                Li e aceito os
-                <a
-                  :href="termsUrl"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="font-medium text-brand-indigo hover:underline"
-                >
-                  Termos de Uso
-                </a>
-                e a
-                <a
-                  :href="privacyUrl"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="font-medium text-brand-indigo hover:underline"
-                >
-                  Política de Privacidade
-                </a>.
-              </span>
-            </label>
+            <div>
+              <label class="flex cursor-pointer items-start gap-2 text-sm text-slate-600">
+                <input
+                  v-model="acceptedTerms"
+                  type="checkbox"
+                  required
+                  class="mt-0.5 h-4 w-4 rounded border-slate-300 text-brand-indigo focus:ring-brand-indigo"
+                  :aria-invalid="fieldErrors.terms_accepted ? 'true' : undefined"
+                />
+                <span>
+                  Li e aceito os
+                  <a
+                    :href="termsUrl"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="font-medium text-brand-indigo hover:underline"
+                  >
+                    Termos de Uso
+                  </a>
+                  e a
+                  <a
+                    :href="privacyUrl"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="font-medium text-brand-indigo hover:underline"
+                  >
+                    Política de Privacidade
+                  </a>.
+                </span>
+              </label>
+              <p v-if="fieldErrors.terms_accepted" class="mt-1.5 text-xs text-red-600" role="alert">
+                {{ fieldErrors.terms_accepted }}
+              </p>
+            </div>
 
             <button
               type="submit"
-              :disabled="loading"
+              :disabled="auth.loading"
               class="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-indigo px-4 py-3.5 text-sm font-semibold text-white transition hover:bg-brand-indigo-hover disabled:opacity-60"
             >
-              {{ loading ? 'Criando conta…' : 'Criar conta grátis' }}
+              {{ auth.loading ? 'Criando conta…' : 'Criar conta grátis' }}
               <ArrowRight class="h-4 w-4" aria-hidden="true" />
             </button>
           </form>

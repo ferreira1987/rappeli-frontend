@@ -16,4 +16,5 @@ export interface RegisterCredentials {
   email: string
   password: string
   password_confirmation: string
+  terms_accepted: boolean
 }
