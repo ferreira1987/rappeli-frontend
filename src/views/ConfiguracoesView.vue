@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { Bell, CircleHelp, CreditCard, Users } from '@lucide/vue'
 import { ref } from 'vue'
-import { RouterLink } from 'vue-router'
 
 import ExampleDataBanner from '@/components/app/ExampleDataBanner.vue'
+import WhatsAppSettingsPanel from '@/components/whatsapp/WhatsAppSettingsPanel.vue'
 import AppPageFooter from '@/components/layout/AppPageFooter.vue'
 import { useAuthStore } from '@/stores/auth'
 
@@ -129,18 +129,7 @@ const activeTab = ref<(typeof tabs)[number]>('Plano e cobrança')
       </template>
 
       <template v-else-if="activeTab === 'WhatsApp'">
-        <section class="rounded-2xl border border-slate-200/80 bg-white p-8 text-center shadow-sm">
-          <p class="font-display text-lg font-semibold text-brand-ink">Conexão WhatsApp</p>
-          <p class="mt-2 text-sm text-brand-gray">
-            Configure QR Code ou WhatsApp Business API no fluxo de onboarding.
-          </p>
-          <RouterLink
-            :to="{ name: 'onboarding-whatsapp' }"
-            class="mt-6 inline-flex rounded-xl bg-brand-indigo px-5 py-2.5 text-sm font-semibold text-white"
-          >
-            Ir para conexão
-          </RouterLink>
-        </section>
+        <WhatsAppSettingsPanel />
       </template>
 
       <template v-else>

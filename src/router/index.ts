@@ -69,6 +69,12 @@ const router = createRouter({
           component: () => import('@/views/ConfiguracoesView.vue'),
           meta: { title: 'Configurações' },
         },
+        {
+          path: 'configuracoes/whatsapp',
+          name: 'configuracoes-whatsapp',
+          component: () => import('@/views/WhatsappConfigView.vue'),
+          meta: { title: 'WhatsApp — Configurações' },
+        },
       ],
     },
     {
