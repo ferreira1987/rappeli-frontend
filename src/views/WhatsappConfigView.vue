@@ -7,7 +7,7 @@ import AppPageFooter from '@/components/layout/AppPageFooter.vue'
 </script>
 
 <template>
-  <div class="min-h-full px-6 py-6 lg:px-8">
+  <div class="min-h-full px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
     <header class="flex flex-wrap items-center gap-4">
       <RouterLink
         :to="{ name: 'configuracoes' }"

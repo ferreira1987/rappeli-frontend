@@ -34,15 +34,15 @@ const cards = [
 </script>
 
 <template>
-  <div class="min-h-full px-6 py-6 lg:px-8">
+  <div class="min-h-full px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
     <nav class="text-sm text-brand-gray">
       <span>Painel</span>
       <span class="mx-1">/</span>
       <span class="text-brand-ink">Automações</span>
     </nav>
 
-    <header class="mt-4 flex flex-wrap items-start justify-between gap-4">
-      <div>
+    <header class="mt-4 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+      <div class="min-w-0">
         <span class="inline-flex items-center gap-1 rounded-full bg-brand-mist px-2.5 py-1 text-xs font-medium text-brand-indigo">
           <Bot class="h-3.5 w-3.5" />
           Fluxos automáticos
@@ -54,7 +54,7 @@ const cards = [
       </div>
       <RouterLink
         :to="{ name: 'automacao-editor' }"
-        class="inline-flex items-center gap-2 rounded-xl bg-brand-indigo px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-brand-indigo-hover"
+        class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-brand-indigo px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-brand-indigo-hover sm:w-auto"
       >
         <Plus class="h-4 w-4" />
         Nova automação

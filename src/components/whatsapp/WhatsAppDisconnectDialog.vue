@@ -20,7 +20,7 @@ const emit = defineEmits<{
       aria-labelledby="whatsapp-disconnect-title"
       @click.self="emit('close')"
     >
-      <div class="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-xl">
+      <div class="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-5 shadow-xl sm:p-6">
         <h2 id="whatsapp-disconnect-title" class="font-display text-lg font-semibold text-brand-ink">
           Desconectar WhatsApp?
         </h2>

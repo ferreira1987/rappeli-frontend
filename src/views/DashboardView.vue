@@ -31,43 +31,56 @@ const automationsPlaceholder = [
 </script>
 
 <template>
-  <div class="min-h-full bg-brand-mist px-6 py-6 lg:px-8">
-    <header class="flex flex-wrap items-center gap-4">
-      <h1 class="font-display text-2xl font-semibold text-brand-ink">Painel</h1>
+  <div class="min-h-full bg-brand-mist px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
+    <header class="flex flex-col gap-3 lg:flex-row lg:flex-wrap lg:items-center lg:gap-4">
+      <h1 class="font-display text-xl font-semibold text-brand-ink sm:text-2xl lg:shrink-0">
+        Painel
+      </h1>
 
-      <div class="relative ml-auto min-w-[200px] flex-1 max-w-xl">
+      <div class="relative order-3 w-full min-w-0 lg:order-none lg:ml-auto lg:max-w-xl lg:flex-1">
         <Search class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-gray" />
         <input
           type="search"
           disabled
           placeholder="Buscar conversas, telefones ou contatos"
-          class="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm text-brand-gray shadow-sm"
+          class="w-full min-w-0 rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm text-brand-gray shadow-sm"
         />
       </div>
 
-      <div class="flex flex-wrap items-center gap-2">
-        <span class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs text-brand-gray">
-          WhatsApp — não conectado
+      <div
+        class="order-2 flex w-full min-w-0 flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center lg:order-none lg:w-auto"
+      >
+        <span
+          class="inline-flex min-w-0 items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-center text-xs text-brand-gray sm:justify-start"
+        >
+          <span class="truncate">WhatsApp — não conectado</span>
         </span>
-        <button type="button" class="relative rounded-lg bg-white p-2 text-brand-gray shadow-sm" disabled aria-label="Notificações">
-          <Bell class="h-5 w-5" />
-        </button>
-        <button
-          type="button"
-          class="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-sm text-brand-ink shadow-sm"
-          disabled
-        >
-          <span class="max-w-[140px] truncate">{{ auth.user?.name ?? 'Conta' }}</span>
-          <ChevronDown class="h-4 w-4 text-brand-gray" />
-        </button>
-        <button
-          type="button"
-          disabled
-          class="inline-flex items-center gap-2 rounded-xl bg-brand-indigo px-4 py-2 text-sm font-semibold text-white opacity-60"
-        >
-          <Send class="h-4 w-4" />
-          Envio manual
-        </button>
+        <div class="flex min-w-0 items-center gap-2">
+          <button
+            type="button"
+            class="relative shrink-0 rounded-lg bg-white p-2 text-brand-gray shadow-sm"
+            disabled
+            aria-label="Notificações"
+          >
+            <Bell class="h-5 w-5" />
+          </button>
+          <button
+            type="button"
+            class="flex min-w-0 flex-1 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-sm text-brand-ink shadow-sm sm:flex-initial"
+            disabled
+          >
+            <span class="min-w-0 truncate">{{ auth.user?.name ?? 'Conta' }}</span>
+            <ChevronDown class="h-4 w-4 shrink-0 text-brand-gray" />
+          </button>
+          <button
+            type="button"
+            disabled
+            class="inline-flex w-full shrink-0 items-center justify-center gap-2 rounded-xl bg-brand-indigo px-4 py-2 text-sm font-semibold text-white opacity-60 sm:w-auto"
+          >
+            <Send class="h-4 w-4 shrink-0" />
+            <span class="truncate">Envio manual</span>
+          </button>
+        </div>
       </div>
     </header>
 

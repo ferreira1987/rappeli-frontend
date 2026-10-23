@@ -43,7 +43,9 @@ function onSubmit(): void {
       aria-labelledby="whatsapp-pin-title"
       @click.self="emit('close')"
     >
-      <div class="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-xl">
+      <div
+        class="max-h-[min(100dvh,90vh)] w-full max-w-md overflow-y-auto rounded-2xl border border-slate-200 bg-white p-5 shadow-xl sm:p-6"
+      >
         <h2 id="whatsapp-pin-title" class="font-display text-lg font-semibold text-brand-ink">
           Confirmar PIN do WhatsApp
         </h2>
