@@ -16,13 +16,6 @@ import RappeliLogo from '@/components/brand/RappeliLogo.vue'
 import { useInitials } from '@/composables/useInitials'
 import { useAuthStore } from '@/stores/auth'
 
-const props = withDefaults(
-  defineProps<{
-    theme?: 'light' | 'ink'
-  }>(),
-  { theme: 'light' },
-)
-
 const route = useRoute()
 const router = useRouter()
 const auth = useAuthStore()
@@ -36,8 +29,6 @@ const navItems = [
   { name: 'configuracoes', label: 'Configurações', to: '/configuracoes', icon: Settings },
 ] as const
 
-const isInk = computed(() => props.theme === 'ink')
-
 async function onLogout(): Promise<void> {
   await auth.logout()
   await router.push({ name: 'login' })
@@ -46,36 +37,22 @@ async function onLogout(): Promise<void> {
 
 <template>
   <aside
-    class="flex h-screen w-[260px] shrink-0 flex-col border-r px-4 py-5"
-    :class="
-      isInk
-        ? 'border-white/10 bg-brand-ink text-white'
-        : 'border-slate-200/80 bg-white text-brand-ink'
-    "
+    class="flex h-screen w-[260px] shrink-0 flex-col border-r border-slate-200/80 bg-white px-4 py-5 text-brand-ink"
   >
     <div class="px-1">
-      <RappeliLogo :variant="isInk ? 'light' : 'dark'" />
-      <p
-        v-if="!isInk"
-        class="mt-2 text-xs font-medium text-brand-gray"
-      >
-        Mensagens &amp; automações
-      </p>
+      <RappeliLogo variant="dark" />
+      <p class="mt-2 text-xs font-medium text-brand-gray">Mensagens &amp; automações</p>
     </div>
 
     <RouterLink
       :to="{ name: 'automacoes' }"
-      class="mt-6 flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:opacity-95"
-      :class="isInk ? 'bg-brand-indigo' : 'bg-brand-indigo hover:bg-brand-indigo-hover'"
+      class="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-brand-indigo px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-indigo-hover"
     >
       <Plus class="h-4 w-4" aria-hidden="true" />
       Nova automação
     </RouterLink>
 
-    <p
-      class="mt-6 px-2 text-[10px] font-semibold uppercase tracking-wider"
-      :class="isInk ? 'text-white/40' : 'text-brand-gray'"
-    >
+    <p class="mt-6 px-2 text-[10px] font-semibold uppercase tracking-wider text-brand-gray">
       Menu principal
     </p>
 
@@ -87,16 +64,12 @@ async function onLogout(): Promise<void> {
         class="relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors"
         :class="
           route.name === item.name
-            ? isInk
-              ? 'bg-white/10 text-white'
-              : 'bg-brand-mist text-brand-indigo'
-            : isInk
-              ? 'text-white/70 hover:bg-white/5 hover:text-white'
-              : 'text-brand-gray hover:bg-slate-50 hover:text-brand-ink'
+            ? 'bg-brand-mist text-brand-indigo'
+            : 'text-brand-gray hover:bg-slate-50 hover:text-brand-ink'
         "
       >
         <span
-          v-if="route.name === item.name && !isInk"
+          v-if="route.name === item.name"
           class="absolute -left-4 top-2 bottom-2 w-1 rounded-full bg-brand-indigo"
           aria-hidden="true"
         />
@@ -105,39 +78,33 @@ async function onLogout(): Promise<void> {
       </RouterLink>
     </nav>
 
-    <div class="mt-auto space-y-2 border-t pt-4" :class="isInk ? 'border-white/10' : 'border-slate-100'">
+    <div class="mt-auto space-y-2 border-t border-slate-100 pt-4">
       <a
         href="#"
-        class="flex items-center gap-2 px-2 py-1.5 text-sm transition"
-        :class="isInk ? 'text-white/60 hover:text-white' : 'text-brand-gray hover:text-brand-ink'"
+        class="flex items-center gap-2 px-2 py-1.5 text-sm text-brand-gray transition hover:text-brand-ink"
         @click.prevent
       >
         <CircleHelp class="h-4 w-4" aria-hidden="true" />
         Ajuda e suporte
       </a>
 
-      <div
-        class="flex items-center gap-3 rounded-xl px-2 py-2"
-        :class="isInk ? 'bg-white/5' : 'bg-brand-mist/60'"
-      >
+      <div class="flex items-center gap-3 rounded-xl bg-brand-mist/60 px-2 py-2">
         <div
-          class="flex h-10 w-10 items-center justify-center rounded-full text-sm font-semibold"
-          :class="isInk ? 'bg-brand-indigo text-white' : 'bg-white text-brand-indigo shadow-sm'"
+          class="flex h-10 w-10 items-center justify-center rounded-full bg-white text-sm font-semibold text-brand-indigo shadow-sm"
         >
           {{ initials }}
         </div>
         <div class="min-w-0 flex-1">
-          <p class="truncate text-sm font-medium" :class="isInk ? 'text-white' : 'text-brand-ink'">
+          <p class="truncate text-sm font-medium text-brand-ink">
             {{ auth.user?.name ?? 'Sua conta' }}
           </p>
-          <p class="truncate text-xs" :class="isInk ? 'text-white/50' : 'text-brand-gray'">
+          <p class="truncate text-xs text-brand-gray">
             {{ auth.user?.email ?? '—' }}
           </p>
         </div>
         <button
           type="button"
-          class="rounded-lg p-1.5 transition"
-          :class="isInk ? 'text-white/50 hover:bg-white/10 hover:text-white' : 'text-brand-gray hover:bg-white hover:text-brand-ink'"
+          class="rounded-lg p-1.5 text-brand-gray transition hover:bg-white hover:text-brand-ink"
           aria-label="Sair"
           @click="onLogout"
         >

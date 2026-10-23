@@ -43,7 +43,7 @@ const router = createRouter({
           path: 'conversas',
           name: 'conversas',
           component: () => import('@/views/ConversasView.vue'),
-          meta: { title: 'Conversas', sidebarTheme: 'ink', fullBleed: true },
+          meta: { title: 'Conversas', fullBleed: true },
         },
         {
           path: 'automacoes',

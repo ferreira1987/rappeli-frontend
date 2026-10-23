@@ -7,7 +7,6 @@ declare module 'vue-router' {
     requiresAuth?: boolean
     guestOnly?: boolean
     title?: string
-    sidebarTheme?: 'light' | 'ink'
     fullBleed?: boolean
   }
 }
