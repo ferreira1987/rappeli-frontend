@@ -3,8 +3,11 @@ import { computed } from 'vue'
 import { RouterView, useRoute } from 'vue-router'
 
 import AppSidebar from '@/components/app/AppSidebar.vue'
+import { useInboxRealtimeSession } from '@/composables/useInboxRealtimeSession'
 
 const route = useRoute()
+
+useInboxRealtimeSession()
 
 const isFullBleed = computed(() => route.meta.fullBleed === true)
 </script>

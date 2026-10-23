@@ -16,7 +16,7 @@ concurrency:
 jobs:
   deploy:
     name: Deploy to production (self-hosted)
-    # Set repository variable DEPLOY_RUNNER_LABEL (e.g. "rappeli") to match your runner label.
+    # Set repository variable DEPLOY_RUNNER_LABEL (e.g. "oracle-rappeli-frontend") to match your runner label.
     runs-on: ${{ fromJSON(format('["self-hosted", "linux", "{0}"]', vars.DEPLOY_RUNNER_LABEL || 'rappeli')) }}
 
     steps:
@@ -33,7 +33,22 @@ jobs:
         run: npm ci
 
       - name: Build
-        run: npm run build
+        env:
+          VITE_REVERB_APP_KEY: ${{ vars.VITE_REVERB_APP_KEY }}
+          VITE_REVERB_HOST: ${{ vars.VITE_REVERB_HOST }}
+          VITE_REVERB_PORT: ${{ vars.VITE_REVERB_PORT }}
+          VITE_REVERB_SCHEME: ${{ vars.VITE_REVERB_SCHEME }}
+          VITE_API_URL: ${{ vars.VITE_API_URL }}
+        run: |
+          set -euo pipefail
+          export VITE_REVERB_HOST="${VITE_REVERB_HOST:-app.rappeli.com.br}"
+          export VITE_REVERB_PORT="${VITE_REVERB_PORT:-443}"
+          export VITE_REVERB_SCHEME="${VITE_REVERB_SCHEME:-https}"
+          if [ -n "${VITE_API_URL:-}" ]; then
+            export VITE_API_BASE_URL="${VITE_API_URL}"
+          fi
+          node scripts/verify-vite-env.mjs
+          npm run build
 
       - name: Atomic deploy
         env:
