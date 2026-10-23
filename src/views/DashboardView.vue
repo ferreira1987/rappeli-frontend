@@ -24,8 +24,8 @@ const kpis = [
 ]
 
 const automationsPlaceholder = [
-  { title: 'Lembrete de revisão', description: 'Fluxo ilustrativo — configure na API.' },
-  { title: 'Orçamento pronto', description: 'Fluxo ilustrativo — configure na API.' },
+  { title: 'Lembrete agendado', description: 'Fluxo ilustrativo — configure na API.' },
+  { title: 'Confirmação de atendimento', description: 'Fluxo ilustrativo — configure na API.' },
   { title: 'Boas-vindas', description: 'Fluxo ilustrativo — configure na API.' },
 ]
 </script>

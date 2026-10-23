@@ -13,6 +13,12 @@ const router = createRouter({
       meta: { guestOnly: true },
     },
     {
+      path: '/cadastro',
+      name: 'cadastro',
+      component: () => import('@/views/auth/RegisterView.vue'),
+      meta: { guestOnly: true },
+    },
+    {
       path: '/onboarding/whatsapp',
       name: 'onboarding-whatsapp',
       component: () => import('@/views/onboarding/OnboardingWhatsappView.vue'),

@@ -24,8 +24,8 @@ const cards = [
     status: 'Pausado',
   },
   {
-    title: 'Lembrete de revisão',
-    description: 'Gatilho por data de revisão — exemplo de layout.',
+    title: 'Lembrete agendado',
+    description: 'Gatilho por data ou prazo — exemplo de layout.',
     icon: Bell,
     accent: 'coral',
     status: 'Pausado',

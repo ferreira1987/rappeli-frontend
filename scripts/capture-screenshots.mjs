@@ -11,6 +11,7 @@ const mockUser = { id: 1, name: 'Conta demonstração', email: 'demo@exemplo.inv
 
 const pages = [
   { path: '/login', name: '01-login' },
+  { path: '/cadastro', name: '01b-cadastro' },
   { path: '/onboarding/whatsapp', name: '02-onboarding-whatsapp' },
   { path: '/painel', name: '03-dashboard' },
   { path: '/conversas', name: '04-conversas' },

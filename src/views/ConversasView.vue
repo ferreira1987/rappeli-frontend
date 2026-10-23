@@ -7,8 +7,8 @@ import ExampleDataBanner from '@/components/app/ExampleDataBanner.vue'
 const selectedId = ref<string | null>(null)
 
 const inboxPlaceholders = [
-  { id: '1', title: 'Cliente exemplo', meta: 'Veículo exemplo • placa oculta' },
-  { id: '2', title: 'Cliente exemplo 2', meta: 'Veículo exemplo • placa oculta' },
+  { id: '1', title: 'Contato exemplo', meta: 'Última mensagem · placeholder' },
+  { id: '2', title: 'Contato exemplo 2', meta: 'Última mensagem · placeholder' },
 ]
 </script>
 
@@ -39,7 +39,7 @@ const inboxPlaceholders = [
             <Search class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-gray" />
             <input
               disabled
-              placeholder="Buscar por cliente, carro ou placa…"
+              placeholder="Buscar por cliente, telefone ou assunto…"
               class="w-full rounded-xl border border-slate-200 py-2 pl-9 pr-3 text-sm"
             />
           </div>
@@ -69,7 +69,7 @@ const inboxPlaceholders = [
       <section class="flex min-h-0 flex-col border-r border-slate-200">
         <div class="border-b border-slate-100 px-4 py-3">
           <p class="font-semibold text-brand-ink">
-            {{ selectedId ? 'Cliente exemplo' : 'Selecione uma conversa' }}
+            {{ selectedId ? 'Contato exemplo' : 'Selecione uma conversa' }}
           </p>
           <p class="text-xs text-brand-gray">Canal WhatsApp — status via integração</p>
         </div>
@@ -105,13 +105,13 @@ const inboxPlaceholders = [
       <!-- Details -->
       <section class="hidden min-h-0 flex-col p-4 lg:flex">
         <div class="flex items-center justify-between">
-          <h2 class="text-sm font-semibold text-brand-ink">Detalhes do cliente</h2>
+          <h2 class="text-sm font-semibold text-brand-ink">Detalhes do contato</h2>
           <button type="button" class="text-xs text-brand-gray" disabled>
             <Filter class="inline h-3.5 w-3.5" />
           </button>
         </div>
         <div class="mt-6 flex flex-1 flex-col items-center justify-center rounded-xl border border-dashed border-slate-200 bg-slate-50 p-4 text-center text-xs text-brand-gray">
-          Dados do cliente e veículo vinculado serão exibidos quando houver integração com a API.
+          Dados do contato e o histórico serão exibidos quando houver integração com a API.
         </div>
       </section>
     </div>

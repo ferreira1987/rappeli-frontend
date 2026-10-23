@@ -4,7 +4,7 @@ import { Download, Plus, Search, Upload } from '@lucide/vue'
 import ExampleDataBanner from '@/components/app/ExampleDataBanner.vue'
 import AppPageFooter from '@/components/layout/AppPageFooter.vue'
 
-const segments = ['Todos', 'Clientes ativos', 'Revisão próxima', 'Orçamento pendente'] as const
+const segments = ['Todos', 'Clientes ativos', 'Aguardando resposta', 'Confirmação pendente'] as const
 
 const tableRows = Array.from({ length: 5 }, (_, i) => ({
   id: i + 1,
@@ -62,8 +62,8 @@ const tableRows = Array.from({ length: 5 }, (_, i) => ({
         </section>
         <section class="rounded-2xl bg-gradient-to-br from-brand-ink to-brand-indigo p-4 text-white">
           <p class="text-xs font-semibold uppercase tracking-wide text-brand-coral">Dica</p>
-          <p class="mt-2 font-display text-sm font-semibold">Automação de revisões</p>
-          <p class="mt-2 text-xs text-white/80">Configure lembretes quando a API de automações estiver ativa.</p>
+          <p class="mt-2 font-display text-sm font-semibold">Lembretes automáticos</p>
+          <p class="mt-2 text-xs text-white/80">Configure avisos e confirmações quando a API de automações estiver ativa.</p>
           <button type="button" class="mt-4 w-full rounded-xl bg-brand-coral py-2 text-xs font-semibold" disabled>
             Criar automação
           </button>

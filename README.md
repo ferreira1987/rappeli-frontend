@@ -1,6 +1,6 @@
 # Rappeli Frontend
 
-Vue 3 + Vite single-page application for [Rappeli](https://app.rappeli.com.br), a WhatsApp automation platform for automotive workshops.
+Vue 3 + Vite single-page application for [Rappeli](https://app.rappeli.com.br), a WhatsApp automation platform for customer service, reminders, confirmations and notifications for any business.
 
 The Laravel API lives in [ferreira1987/rappeli-backend](https://github.com/ferreira1987/rappeli-backend). In production, Nginx serves this app's static build and proxies `/api` and `/sanctum` to the backend on the same origin.
 
