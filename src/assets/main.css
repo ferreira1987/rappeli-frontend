@@ -1,0 +1,24 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --color-rappeli-primary: #6366f1;
+  --color-rappeli-primary-hover: #4f46e5;
+  --color-rappeli-navy: #0f172a;
+  --color-rappeli-panel: #1e1b4b;
+  --color-rappeli-surface: #f8fafc;
+  --color-rappeli-muted: #64748b;
+  --color-rappeli-success: #10b981;
+}
+
+@layer base {
+  html,
+  body,
+  #app {
+    min-height: 100%;
+  }
+
+  body {
+    @apply bg-rappeli-surface font-sans text-slate-900 antialiased;
+  }
+}
