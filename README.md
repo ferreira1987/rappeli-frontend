@@ -1,6 +1,3 @@
-<<<<<<< HEAD
-# rappeli-frontend
-=======
 # Rappeli Frontend
 
 Vue 3 + Vite single-page application for [Rappeli](https://app.rappeli.com.br), a WhatsApp automation platform for automotive workshops.
@@ -61,4 +58,3 @@ Trigger manually via **Actions → Deploy → Run workflow**, or push to `main`.
 - `src/stores/auth.ts` — session state and login
 
 Placeholder pages: Painel, Conversas, Automações, Contatos, Configurações.
->>>>>>> 812a497 (feat: Phase 0 SPA skeleton with Sanctum login and deploy)
