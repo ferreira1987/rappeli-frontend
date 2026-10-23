@@ -9,6 +9,7 @@ import {
   registerRequest,
 } from '@/api/auth'
 import type { LoginCredentials, RegisterCredentials, User } from '@/types/auth'
+import { disconnectEcho } from '@/realtime/echo'
 import { getErrorMessage } from '@/utils/errors'
 
 export const useAuthStore = defineStore('auth', () => {
@@ -77,6 +78,7 @@ export const useAuthStore = defineStore('auth', () => {
       // Session may already be gone; still clear local state.
     } finally {
       user.value = null
+      disconnectEcho()
       loading.value = false
     }
   }

@@ -41,14 +41,29 @@ Protected routes wait for the session bootstrap (`/api/me`) and redirect unauthe
 
 Workflow: [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml)
 
-1. Register a GitHub Actions self-hosted runner on the app server with labels `self-hosted`, `linux`, and a project-specific label (default **`rappeli`**).
-2. In the repository, set **Settings → Secrets and variables → Actions → Variables**:
-   - `DEPLOY_RUNNER_LABEL` — optional; must match the third runner label if not using `rappeli`.
-3. Ensure the runner user can write to `/var/www/rappeli-frontend` and that Nginx points `root` (or alias) at `/var/www/rappeli-frontend/current`.
+1. Register a GitHub Actions self-hosted runner on the app server with labels `self-hosted`, `linux`, and a project-specific label (for example **`oracle-rappeli-frontend`**).
+2. In the repository, open **Settings → Secrets and variables → Actions → Variables** and create:
 
-The workflow runs `npm ci`, `npm run build`, then [`scripts/deploy.sh`](scripts/deploy.sh), which copies `dist/` into a timestamped release under `releases/` and atomically updates the `current` symlink.
+   | Variable | Required | Description |
+   | -------- | -------- | ----------- |
+   | `VITE_REVERB_APP_KEY` | **Yes** | Public Reverb app key (same value as `REVERB_APP_KEY` on the API). Embedded in the JS bundle at build time. Deploy **fails** if empty. |
+   | `VITE_REVERB_HOST` | No | WebSocket host (default in CI: `app.rappeli.com.br`). |
+   | `VITE_REVERB_PORT` | No | WebSocket port (default in CI: `443`). |
+   | `VITE_REVERB_SCHEME` | No | `http` or `https` (default in CI: `https`). |
+   | `VITE_API_URL` | No | Optional API origin for `VITE_API_BASE_URL`. Leave unset when the SPA and API share `https://app.rappeli.com.br`. |
+   | `DEPLOY_RUNNER_LABEL` | No | Third runner label if not using the workflow default `rappeli`. |
+
+   Use **Variables** (not Secrets) for `VITE_*` values — they are not secret and must appear in the compiled frontend.
+
+3. Ensure the runner user can write to `/var/www/rappeli-frontend` and that Nginx points `root` (or alias) at `/var/www/rappeli-frontend/current`, with `/app` proxied to Reverb and `/broadcasting` to Laravel.
+
+The workflow runs `npm ci`, validates `VITE_REVERB_APP_KEY`, `npm run build` with the variables above, then [`scripts/deploy.sh`](scripts/deploy.sh), which copies `dist/` into a timestamped release under `releases/` and atomically updates the `current` symlink.
 
 Trigger manually via **Actions → Deploy → Run workflow**, or push to `main`.
+
+### Real-time (Reverb) in the browser
+
+After login, `/api/me` must include `company_id` so the app can subscribe to the private channel `company.{companyId}.inbox`. Echo authenticates via `POST /broadcasting/auth` using the Sanctum session cookie and `X-XSRF-TOKEN` (`withCredentials` on the shared Axios client). If Reverb env vars were missing at build time, the console shows a explicit warning and inbox still works via REST polling (refresh).
 
 ## Project layout (Phase 0)
 

@@ -3,6 +3,8 @@ import Pusher from 'pusher-js'
 
 import { http } from '@/api/http'
 
+import { warnIfReverbNotConfigured } from '@/realtime/config'
+
 type ReverbEcho = Echo<'reverb'>
 
 let echoInstance: ReverbEcho | null = null
@@ -34,8 +36,9 @@ function resolveScheme(): 'http' | 'https' {
 }
 
 export function getEcho(): ReverbEcho | null {
-  const key = import.meta.env.VITE_REVERB_APP_KEY
+  const key = import.meta.env.VITE_REVERB_APP_KEY?.trim()
   if (!key) {
+    warnIfReverbNotConfigured()
     return null
   }
 

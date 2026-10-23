@@ -1,14 +1,19 @@
-import { computed, onUnmounted, ref, watch } from 'vue'
+import { computed, nextTick, onUnmounted, ref, watch } from 'vue'
 
 import {
   fetchInboxConversations,
-  fetchInboxMessages,
+  fetchInboxMessagesPage,
   markInboxConversationRead,
   sendInboxMessage,
 } from '@/api/inbox'
 import { subscribeCompanyInbox } from '@/realtime/companyChannel'
 import { isRealtimeConfigured } from '@/realtime/config'
 import type { Conversation, ConversationMessage } from '@/types/conversations'
+import {
+  mergeMessagePages,
+  pageToChronological,
+  upsertMessage,
+} from '@/utils/conversationMessages'
 import { getErrorMessage } from '@/utils/errors'
 import { inboxContactDisplayName, isMessagingWindowOpen } from '@/utils/inbox'
 import { isMessagingWindowClosedError, MESSAGING_WINDOW_CLOSED_MESSAGE } from '@/utils/messaging'
@@ -58,11 +63,17 @@ export function useConversationsInbox(companyId: () => number | null | undefined
   const searchQuery = ref('')
   const listLoading = ref(false)
   const messagesLoading = ref(false)
+  const loadingOlderMessages = ref(false)
+  const messagesCurrentPage = ref(1)
+  const messagesLastPage = ref(1)
   const sending = ref(false)
   const listError = ref<string | null>(null)
   const threadError = ref<string | null>(null)
   const composerError = ref<string | null>(null)
   const windowClosed = ref(false)
+  const scrollToBottomAfterLoad = ref(false)
+
+  const hasOlderMessages = computed(() => messagesCurrentPage.value < messagesLastPage.value)
 
   const totalUnread = computed(() =>
     conversations.value.reduce((sum, item) => sum + (item.unread_count ?? 0), 0),
@@ -98,27 +109,78 @@ export function useConversationsInbox(companyId: () => number | null | undefined
     }
   }
 
+  function resetMessagesState(): void {
+    messages.value = []
+    messagesCurrentPage.value = 1
+    messagesLastPage.value = 1
+    loadingOlderMessages.value = false
+  }
+
   async function loadMessages(conversationId: number): Promise<void> {
     messagesLoading.value = true
     threadError.value = null
     composerError.value = null
     windowClosed.value = false
+    resetMessagesState()
     try {
-      messages.value = await fetchInboxMessages(conversationId)
+      const { messages: pageMessages, meta } = await fetchInboxMessagesPage(conversationId, {
+        page: 1,
+      })
+      messages.value = pageToChronological(pageMessages)
+      messagesCurrentPage.value = meta.current_page
+      messagesLastPage.value = meta.last_page
+      scrollToBottomAfterLoad.value = true
+
       const updated = await markInboxConversationRead(conversationId)
       conversations.value = mergeConversation(conversations.value, updated)
     } catch (error) {
       threadError.value = getErrorMessage(error)
-      messages.value = []
+      resetMessagesState()
     } finally {
       messagesLoading.value = false
     }
   }
 
+  async function loadOlderMessages(scrollEl: HTMLElement | null): Promise<void> {
+    const conversationId = selectedId.value
+    if (
+      conversationId == null ||
+      !hasOlderMessages.value ||
+      loadingOlderMessages.value ||
+      messagesLoading.value
+    ) {
+      return
+    }
+
+    const previousHeight = scrollEl?.scrollHeight ?? 0
+    const previousTop = scrollEl?.scrollTop ?? 0
+
+    loadingOlderMessages.value = true
+    try {
+      const nextPage = messagesCurrentPage.value + 1
+      const { messages: olderPage, meta } = await fetchInboxMessagesPage(conversationId, {
+        page: nextPage,
+      })
+      messages.value = mergeMessagePages(olderPage, messages.value)
+      messagesCurrentPage.value = meta.current_page
+      messagesLastPage.value = meta.last_page
+
+      await nextTick()
+      if (scrollEl) {
+        scrollEl.scrollTop = scrollEl.scrollHeight - previousHeight + previousTop
+      }
+    } catch (error) {
+      threadError.value = getErrorMessage(error)
+    } finally {
+      loadingOlderMessages.value = false
+    }
+  }
+
   function selectConversation(id: number | null): void {
     selectedId.value = id
+    scrollToBottomAfterLoad.value = id != null
     if (id == null) {
-      messages.value = []
+      resetMessagesState()
       threadError.value = null
       composerError.value = null
       windowClosed.value = false
@@ -139,7 +201,8 @@ export function useConversationsInbox(companyId: () => number | null | undefined
 
     try {
       const message = await sendInboxMessage(conversationId, body.trim())
-      messages.value = [...messages.value, message]
+      messages.value = upsertMessage(messages.value, message)
+      scrollToBottomAfterLoad.value = true
       const existing = selectedConversation.value
       if (existing) {
         conversations.value = mergeConversation(
@@ -171,9 +234,16 @@ export function useConversationsInbox(companyId: () => number | null | undefined
     }
 
     if (selectedId.value === conversationId) {
-      const exists = messages.value.some((m) => m.id === message.id)
-      if (!exists) {
-        messages.value = [...messages.value, message]
+      const hadMessage = messages.value.some(
+        (item) =>
+          item.id === message.id ||
+          (message.wa_message_id != null &&
+            item.wa_message_id != null &&
+            item.wa_message_id === message.wa_message_id),
+      )
+      messages.value = upsertMessage(messages.value, message)
+      if (!hadMessage) {
+        scrollToBottomAfterLoad.value = true
       }
       if (message.direction === 'inbound') {
         void markInboxConversationRead(conversationId)
@@ -186,10 +256,10 @@ export function useConversationsInbox(companyId: () => number | null | undefined
 
     const unreadBump =
       message.direction === 'inbound' && selectedId.value !== conversationId
-        ? (existing?.unread_count ?? 0) + 1
+        ? (existing.unread_count ?? 0) + 1
         : selectedId.value === conversationId
           ? 0
-          : existing?.unread_count ?? 0
+          : existing.unread_count ?? 0
 
     conversations.value = mergeConversation(
       conversations.value,
@@ -207,6 +277,18 @@ export function useConversationsInbox(companyId: () => number | null | undefined
         m.id === messageId ? { ...m, status } : m,
       )
     }
+  }
+
+  function consumeScrollToBottomRequest(): boolean {
+    if (!scrollToBottomAfterLoad.value) {
+      return false
+    }
+    scrollToBottomAfterLoad.value = false
+    return true
+  }
+
+  function requestScrollToBottom(): void {
+    scrollToBottomAfterLoad.value = true
   }
 
   let searchDebounce: ReturnType<typeof setTimeout> | null = null
@@ -253,6 +335,8 @@ export function useConversationsInbox(companyId: () => number | null | undefined
     searchQuery,
     listLoading,
     messagesLoading,
+    loadingOlderMessages,
+    hasOlderMessages,
     sending,
     listError,
     threadError,
@@ -264,6 +348,9 @@ export function useConversationsInbox(companyId: () => number | null | undefined
     loadConversations,
     selectConversation,
     sendMessage,
+    loadOlderMessages,
     messages,
+    consumeScrollToBottomRequest,
+    requestScrollToBottom,
   }
 }
