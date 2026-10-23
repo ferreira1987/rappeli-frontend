@@ -13,6 +13,18 @@ const router = createRouter({
       meta: { guestOnly: true },
     },
     {
+      path: '/onboarding/whatsapp',
+      name: 'onboarding-whatsapp',
+      component: () => import('@/views/onboarding/OnboardingWhatsappView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/automacoes/editor',
+      name: 'automacao-editor',
+      component: () => import('@/views/AutomacaoEditorView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
       path: '/',
       component: AppLayout,
       meta: { requiresAuth: true },
@@ -31,7 +43,7 @@ const router = createRouter({
           path: 'conversas',
           name: 'conversas',
           component: () => import('@/views/ConversasView.vue'),
-          meta: { title: 'Conversas' },
+          meta: { title: 'Conversas', sidebarTheme: 'ink', fullBleed: true },
         },
         {
           path: 'automacoes',

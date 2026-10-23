@@ -52,17 +52,20 @@ async function onSubmit(): Promise<void> {
 <template>
   <div class="flex min-h-screen flex-col lg:flex-row">
     <section
-      class="relative hidden flex-col justify-between overflow-hidden bg-gradient-to-br from-slate-950 via-rappeli-panel to-indigo-900 px-10 py-10 text-white lg:flex lg:w-[42%] xl:w-[40%]"
+      class="relative hidden flex-col justify-between overflow-hidden bg-gradient-to-br from-brand-ink via-[#14123a] to-brand-indigo px-10 py-10 text-white lg:flex lg:w-[42%] xl:w-[40%]"
     >
       <div>
-        <RappeliLogo />
+        <div class="flex items-center gap-3">
+          <RappeliLogo mode="symbol" />
+          <span class="font-display text-2xl font-semibold tracking-tight text-white">rappeli</span>
+        </div>
         <p
           class="mt-6 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] font-semibold tracking-wider text-indigo-100"
         >
-          <span class="h-2 w-2 rounded-full bg-orange-400" aria-hidden="true" />
+          <span class="h-2 w-2 rounded-full bg-brand-coral" aria-hidden="true" />
           WHATSAPP AUTOMATION PLATFORM
         </p>
-        <h2 class="mt-8 max-w-md text-3xl font-bold leading-tight">
+        <h2 class="mt-8 max-w-md font-display text-3xl font-bold leading-tight">
           Automatize os atendimentos e avisos da sua oficina mecânica
         </h2>
         <p class="mt-4 max-w-md text-sm leading-relaxed text-indigo-100/90">
@@ -131,7 +134,7 @@ async function onSubmit(): Promise<void> {
       </div>
 
       <div class="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-6 pb-10 lg:px-10">
-        <h1 class="text-2xl font-bold text-slate-900">Acesse sua conta</h1>
+        <h1 class="font-display text-2xl font-bold text-brand-ink">Acesse sua conta</h1>
         <p class="mt-2 text-sm text-slate-500">
           Gerencie suas confirmações, mensagens e automações ativas.
         </p>
@@ -194,7 +197,7 @@ async function onSubmit(): Promise<void> {
                   autocomplete="email"
                   required
                   placeholder="contato@exemplo.com.br"
-                  class="w-full rounded-xl border border-slate-200 py-3 pl-10 pr-4 text-sm outline-none ring-rappeli-primary focus:border-rappeli-primary focus:ring-2"
+                  class="w-full rounded-xl border border-slate-200 py-3 pl-10 pr-4 text-sm outline-none ring-brand-indigo focus:border-brand-indigo focus:ring-2"
                 />
               </div>
             </div>
@@ -204,7 +207,7 @@ async function onSubmit(): Promise<void> {
                 <label for="password" class="text-xs font-semibold tracking-wide text-slate-500">
                   SENHA
                 </label>
-                <a href="#" class="text-xs font-medium text-rappeli-primary hover:underline" @click.prevent>
+                <a href="#" class="text-xs font-medium text-brand-indigo hover:underline" @click.prevent>
                   Esqueci minha senha
                 </a>
               </div>
@@ -220,7 +223,7 @@ async function onSubmit(): Promise<void> {
                   autocomplete="current-password"
                   required
                   placeholder="Digite sua senha de acesso"
-                  class="w-full rounded-xl border border-slate-200 py-3 pl-10 pr-11 text-sm outline-none ring-rappeli-primary focus:border-rappeli-primary focus:ring-2"
+                  class="w-full rounded-xl border border-slate-200 py-3 pl-10 pr-11 text-sm outline-none ring-brand-indigo focus:border-brand-indigo focus:ring-2"
                 />
                 <button
                   type="button"
@@ -238,7 +241,7 @@ async function onSubmit(): Promise<void> {
               <input
                 v-model="remember"
                 type="checkbox"
-                class="h-4 w-4 rounded border-slate-300 text-rappeli-primary focus:ring-rappeli-primary"
+                class="h-4 w-4 rounded border-slate-300 text-brand-indigo focus:ring-brand-indigo"
               />
               Lembrar de mim por 30 dias
             </label>
@@ -246,7 +249,7 @@ async function onSubmit(): Promise<void> {
             <button
               type="submit"
               :disabled="auth.loading"
-              class="flex w-full items-center justify-center gap-2 rounded-xl bg-rappeli-primary px-4 py-3.5 text-sm font-semibold text-white transition hover:bg-rappeli-primary-hover disabled:opacity-60"
+              class="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-indigo px-4 py-3.5 text-sm font-semibold text-white transition hover:bg-brand-indigo-hover disabled:opacity-60"
             >
               {{ auth.loading ? 'Entrando…' : 'Entrar na plataforma' }}
               <ArrowRight class="h-4 w-4" aria-hidden="true" />
@@ -257,7 +260,7 @@ async function onSubmit(): Promise<void> {
             Ainda não tem conta?
             <button
               type="button"
-              class="font-medium text-rappeli-primary hover:underline"
+              class="font-medium text-brand-indigo hover:underline"
               @click="activeTab = 'register'"
             >
               Crie sua conta grátis
@@ -283,10 +286,6 @@ async function onSubmit(): Promise<void> {
           </button>
         </div>
 
-        <p class="mt-10 flex items-center justify-center gap-2 text-xs text-slate-500">
-          <span class="h-2 w-2 rounded-full bg-rappeli-success" aria-hidden="true" />
-          Sistemas operando normalmente
-        </p>
       </div>
 
       <footer
