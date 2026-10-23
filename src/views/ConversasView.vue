@@ -1,118 +1,382 @@
 <script setup lang="ts">
-import { Filter, MessageSquarePlus, Paperclip, Search, Send, Smile } from '@lucide/vue'
-import { ref } from 'vue'
+import { ArrowLeft, Loader2, MessageSquare, RefreshCw, Search, Send } from '@lucide/vue'
+import { computed, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 
-import ExampleDataBanner from '@/components/app/ExampleDataBanner.vue'
+import MessageStatusIcon from '@/components/conversations/MessageStatusIcon.vue'
+import { useConversationsInbox } from '@/composables/useConversationsInbox'
+import { initialsFromName, useInitials } from '@/composables/useInitials'
+import { useAuthStore } from '@/stores/auth'
+import { formatConversationTime, formatMessageTime } from '@/utils/datetime'
+import { isMessagingWindowOpen } from '@/utils/inbox'
+import { MESSAGING_WINDOW_CLOSED_MESSAGE } from '@/utils/messaging'
 
-const selectedId = ref<string | null>(null)
+const auth = useAuthStore()
+const route = useRoute()
+const router = useRouter()
 
-const inboxPlaceholders = [
-  { id: '1', title: 'Contato exemplo', meta: 'Última mensagem · placeholder' },
-  { id: '2', title: 'Contato exemplo 2', meta: 'Última mensagem · placeholder' },
-]
+const companyId = computed(() => auth.user?.company_id ?? null)
+
+const {
+  conversations,
+  messages,
+  selectedId,
+  selectedConversation,
+  searchQuery,
+  listLoading,
+  messagesLoading,
+  sending,
+  listError,
+  threadError,
+  composerError,
+  windowClosed,
+  totalUnread,
+  canSendMessage,
+  displayName,
+  loadConversations,
+  selectConversation,
+  sendMessage,
+} = useConversationsInbox(() => companyId.value)
+
+const draft = ref('')
+const mobileShowThread = ref(false)
+
+const selectedInitials = useInitials(
+  computed(() =>
+    selectedConversation.value ? displayName(selectedConversation.value.contact) : '',
+  ),
+)
+
+const showWindowClosedBanner = computed(() => {
+  if (windowClosed.value) {
+    return true
+  }
+  const conversation = selectedConversation.value
+  return conversation != null && !isMessagingWindowOpen(conversation)
+})
+
+watch(
+  () => route.query.conversa,
+  (raw) => {
+    const id = typeof raw === 'string' ? Number.parseInt(raw, 10) : NaN
+    if (!Number.isNaN(id) && id > 0) {
+      selectConversation(id)
+      mobileShowThread.value = true
+    }
+  },
+  { immediate: true },
+)
+
+function openConversation(id: number): void {
+  selectConversation(id)
+  mobileShowThread.value = true
+  void router.replace({ query: { ...route.query, conversa: String(id) } })
+}
+
+function backToList(): void {
+  mobileShowThread.value = false
+  selectConversation(null)
+  const query = { ...route.query }
+  delete query.conversa
+  void router.replace({ query })
+}
+
+async function onSend(): Promise<void> {
+  const text = draft.value
+  if (!text.trim()) {
+    return
+  }
+  const ok = await sendMessage(text)
+  if (ok) {
+    draft.value = ''
+  }
+}
+
+function onComposerKeydown(event: KeyboardEvent): void {
+  if (event.key === 'Enter' && !event.shiftKey) {
+    event.preventDefault()
+    void onSend()
+  }
+}
 </script>
 
 <template>
-  <div class="flex h-[calc(100vh)] min-h-0 flex-col bg-white">
-    <header class="flex flex-wrap items-center gap-3 border-b border-slate-200 px-5 py-3">
-      <h1 class="font-display text-lg font-semibold text-brand-ink">Conversas</h1>
-      <ExampleDataBanner class="!py-2 text-xs" message="Layout ilustrativo — mensagens reais virão da API." />
+  <div class="flex h-full min-h-0 flex-col bg-white">
+    <header
+      class="flex shrink-0 flex-wrap items-center gap-3 border-b border-slate-100 px-5 py-3 shadow-xs"
+    >
+      <h1 class="font-display text-lg font-bold text-brand-ink">Conversas</h1>
+      <span
+        class="rounded-lg bg-slate-100 px-3 py-1 text-xs font-semibold text-brand-indigo"
+      >
+        Caixa de entrada
+      </span>
       <button
         type="button"
-        disabled
-        class="ml-auto inline-flex items-center gap-2 rounded-xl bg-brand-indigo px-4 py-2 text-sm font-semibold text-white opacity-60"
+        class="ml-auto inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-brand-gray transition hover:bg-slate-50 hover:text-brand-ink"
+        :disabled="listLoading"
+        @click="loadConversations()"
       >
-        <MessageSquarePlus class="h-4 w-4" />
-        Nova conversa
+        <RefreshCw
+          class="h-3.5 w-3.5"
+          :class="listLoading ? 'animate-spin' : ''"
+          aria-hidden="true"
+        />
+        Atualizar
       </button>
     </header>
 
-    <div class="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[320px_1fr_300px]">
-      <!-- Inbox -->
-      <section class="flex min-h-0 flex-col border-r border-slate-200">
-        <div class="border-b border-slate-100 p-4">
-          <div class="flex items-center justify-between">
-            <h2 class="text-sm font-semibold text-brand-ink">Caixa de entrada</h2>
-            <span class="rounded-full bg-brand-mist px-2 py-0.5 text-[10px] font-semibold text-brand-indigo">—</span>
+    <div class="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[minmax(280px,360px)_1fr]">
+      <!-- Lista -->
+      <section
+        class="flex min-h-0 flex-col border-r border-slate-100"
+        :class="mobileShowThread ? 'hidden lg:flex' : 'flex'"
+      >
+        <div class="flex flex-col gap-3 border-b border-slate-100 p-4">
+          <div class="flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2">
+              <h2 class="font-display text-base font-bold text-brand-ink">Mensagens</h2>
+              <span
+                v-if="totalUnread > 0"
+                class="rounded-full bg-brand-mist px-2 py-0.5 text-xs font-semibold text-brand-indigo"
+              >
+                {{ totalUnread }} não lidas
+              </span>
+            </div>
           </div>
-          <div class="relative mt-3">
-            <Search class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-gray" />
+
+          <div class="relative">
+            <Search
+              class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-gray"
+              aria-hidden="true"
+            />
             <input
-              disabled
-              placeholder="Buscar por cliente, telefone ou assunto…"
-              class="w-full rounded-xl border border-slate-200 py-2 pl-9 pr-3 text-sm"
+              v-model="searchQuery"
+              type="search"
+              autocomplete="off"
+              placeholder="Buscar por nome ou telefone…"
+              class="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm transition focus:border-brand-indigo focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-indigo/20"
             />
           </div>
-          <div class="mt-3 flex flex-wrap gap-2">
-            <span class="rounded-full bg-brand-indigo px-3 py-1 text-xs font-medium text-white">Todas</span>
-            <span class="rounded-full bg-slate-100 px-3 py-1 text-xs text-brand-gray">Não lidas</span>
-            <span class="rounded-full bg-slate-100 px-3 py-1 text-xs text-brand-gray">Automáticas</span>
-          </div>
         </div>
-        <ul class="min-h-0 flex-1 overflow-y-auto p-2">
-          <li v-for="item in inboxPlaceholders" :key="item.id">
+
+        <div v-if="listLoading" class="flex flex-1 items-center justify-center p-6">
+          <Loader2 class="h-6 w-6 animate-spin text-brand-indigo" aria-label="Carregando conversas" />
+        </div>
+
+        <div
+          v-else-if="listError"
+          class="flex flex-1 flex-col items-center justify-center gap-3 p-6 text-center"
+        >
+          <p class="text-sm text-red-600">{{ listError }}</p>
+          <button
+            type="button"
+            class="rounded-xl bg-brand-indigo px-4 py-2 text-sm font-semibold text-white hover:bg-brand-indigo-hover"
+            @click="loadConversations()"
+          >
+            Tentar novamente
+          </button>
+        </div>
+
+        <ul
+          v-else-if="conversations.length > 0"
+          class="min-h-0 flex-1 divide-y divide-slate-100 overflow-y-auto"
+        >
+          <li v-for="item in conversations" :key="item.id">
             <button
               type="button"
-              class="mb-1 w-full rounded-xl p-3 text-left transition"
-              :class="selectedId === item.id ? 'bg-brand-mist' : 'hover:bg-slate-50'"
-              @click="selectedId = item.id"
+              class="relative w-full p-3.5 text-left transition"
+              :class="
+                selectedId === item.id
+                  ? 'border-l-4 border-brand-indigo bg-brand-mist/60'
+                  : 'border-l-4 border-transparent hover:bg-slate-50'
+              "
+              @click="openConversation(item.id)"
             >
-              <p class="text-sm font-semibold text-brand-ink">{{ item.title }}</p>
-              <p class="mt-1 text-xs text-brand-gray">{{ item.meta }}</p>
-              <p class="mt-2 line-clamp-2 text-xs text-brand-gray">Prévia da mensagem — aguardando API.</p>
+              <div class="flex items-start justify-between gap-2">
+                <div class="flex min-w-0 items-start gap-2.5">
+                  <div
+                    class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-mist text-sm font-bold text-brand-indigo"
+                  >
+                    {{ initialsFromName(displayName(item.contact)) }}
+                  </div>
+                  <div class="min-w-0">
+                    <p class="truncate text-sm font-semibold text-brand-ink">
+                      {{ displayName(item.contact) }}
+                    </p>
+                    <p
+                      v-if="item.contact.phone"
+                      class="truncate text-[11px] text-brand-gray"
+                    >
+                      {{ item.contact.phone }}
+                    </p>
+                  </div>
+                </div>
+                <div class="flex shrink-0 flex-col items-end gap-1">
+                  <span class="text-[11px] font-medium text-brand-gray">
+                    {{ formatConversationTime(item.last_message_at) }}
+                  </span>
+                  <span
+                    v-if="item.unread_count > 0"
+                    class="inline-flex min-w-[1.25rem] items-center justify-center rounded-full bg-brand-indigo px-1.5 py-0.5 text-[10px] font-bold leading-none text-white"
+                  >
+                    {{ item.unread_count > 99 ? '99+' : item.unread_count }}
+                  </span>
+                </div>
+              </div>
+              <p
+                v-if="item.last_message?.body"
+                class="mt-2 line-clamp-2 text-xs text-brand-gray"
+              >
+                {{ item.last_message.body }}
+              </p>
             </button>
           </li>
         </ul>
-      </section>
 
-      <!-- Chat -->
-      <section class="flex min-h-0 flex-col border-r border-slate-200">
-        <div class="border-b border-slate-100 px-4 py-3">
-          <p class="font-semibold text-brand-ink">
-            {{ selectedId ? 'Contato exemplo' : 'Selecione uma conversa' }}
+        <div
+          v-else
+          class="flex flex-1 flex-col items-center justify-center gap-2 p-8 text-center text-sm text-brand-gray"
+        >
+          <MessageSquare class="h-10 w-10 text-slate-300" aria-hidden="true" />
+          <p class="font-medium text-brand-ink">Nenhuma conversa ainda</p>
+          <p class="max-w-xs text-xs">
+            Quando clientes enviarem mensagens pelo WhatsApp, elas aparecerão aqui.
           </p>
-          <p class="text-xs text-brand-gray">Canal WhatsApp — status via integração</p>
-        </div>
-        <div class="flex flex-1 flex-col items-center justify-center gap-2 bg-slate-50/50 p-6 text-center text-sm text-brand-gray">
-          <template v-if="!selectedId">
-            <p>Nenhuma conversa selecionada.</p>
-          </template>
-          <template v-else>
-            <p>Histórico de mensagens vazio.</p>
-            <p class="text-xs">As mensagens aparecerão aqui após conectar o WhatsApp e a API de conversas.</p>
-          </template>
-        </div>
-        <div class="border-t border-slate-100 p-4">
-          <div class="flex gap-2">
-            <button type="button" class="rounded-lg p-2 text-brand-gray" disabled aria-label="Anexo">
-              <Paperclip class="h-5 w-5" />
-            </button>
-            <input
-              disabled
-              placeholder="Digite sua mensagem…"
-              class="min-w-0 flex-1 rounded-xl border border-slate-200 px-3 py-2 text-sm"
-            />
-            <button type="button" class="rounded-lg p-2 text-brand-gray" disabled aria-label="Emoji">
-              <Smile class="h-5 w-5" />
-            </button>
-            <button type="button" class="rounded-xl bg-brand-indigo p-2 text-white opacity-60" disabled aria-label="Enviar">
-              <Send class="h-5 w-5" />
-            </button>
-          </div>
         </div>
       </section>
 
-      <!-- Details -->
-      <section class="hidden min-h-0 flex-col p-4 lg:flex">
-        <div class="flex items-center justify-between">
-          <h2 class="text-sm font-semibold text-brand-ink">Detalhes do contato</h2>
-          <button type="button" class="text-xs text-brand-gray" disabled>
-            <Filter class="inline h-3.5 w-3.5" />
-          </button>
+      <!-- Thread -->
+      <section
+        class="flex min-h-0 flex-col bg-slate-50/40"
+        :class="!mobileShowThread ? 'hidden lg:flex' : 'flex'"
+      >
+        <div
+          v-if="!selectedConversation"
+          class="flex flex-1 flex-col items-center justify-center gap-2 p-8 text-center text-sm text-brand-gray"
+        >
+          <MessageSquare class="h-12 w-12 text-slate-300" aria-hidden="true" />
+          <p class="font-medium text-brand-ink">Selecione uma conversa</p>
+          <p class="max-w-sm text-xs">Escolha um contato na lista para ver o histórico e responder.</p>
         </div>
-        <div class="mt-6 flex flex-1 flex-col items-center justify-center rounded-xl border border-dashed border-slate-200 bg-slate-50 p-4 text-center text-xs text-brand-gray">
-          Dados do contato e o histórico serão exibidos quando houver integração com a API.
-        </div>
+
+        <template v-else>
+          <div
+            class="flex items-center gap-3 border-b border-slate-100 bg-white px-4 py-3 shadow-xs"
+          >
+            <button
+              type="button"
+              class="rounded-lg p-2 text-brand-gray hover:bg-slate-100 lg:hidden"
+              aria-label="Voltar para a lista"
+              @click="backToList"
+            >
+              <ArrowLeft class="h-5 w-5" />
+            </button>
+            <div
+              class="flex h-10 w-10 items-center justify-center rounded-full bg-brand-mist text-sm font-bold text-brand-indigo"
+            >
+              {{ selectedInitials }}
+            </div>
+            <div class="min-w-0 flex-1">
+              <p class="truncate font-semibold text-brand-ink">
+                {{ displayName(selectedConversation.contact) }}
+              </p>
+              <p class="truncate text-xs text-brand-gray">
+                {{ selectedConversation.contact.phone ?? 'WhatsApp' }}
+              </p>
+            </div>
+          </div>
+
+          <div
+            v-if="showWindowClosedBanner"
+            class="border-b border-amber-200 bg-amber-50 px-4 py-2.5 text-xs text-amber-900"
+            role="alert"
+          >
+            {{ MESSAGING_WINDOW_CLOSED_MESSAGE }}
+          </div>
+
+          <div v-if="messagesLoading" class="flex flex-1 items-center justify-center">
+            <Loader2 class="h-6 w-6 animate-spin text-brand-indigo" aria-label="Carregando mensagens" />
+          </div>
+
+          <div
+            v-else-if="threadError"
+            class="flex flex-1 flex-col items-center justify-center gap-2 p-6 text-center text-sm text-red-600"
+          >
+            <p>{{ threadError }}</p>
+          </div>
+
+          <div
+            v-else-if="messages.length === 0"
+            class="flex flex-1 flex-col items-center justify-center gap-2 p-6 text-center text-sm text-brand-gray"
+          >
+            <p class="font-medium text-brand-ink">Nenhuma mensagem nesta conversa</p>
+            <p class="max-w-sm text-xs">O histórico será exibido aqui quando houver troca de mensagens.</p>
+          </div>
+
+          <ul v-else class="min-h-0 flex-1 space-y-3 overflow-y-auto p-4">
+            <li
+              v-for="message in messages"
+              :key="message.id"
+              class="flex"
+              :class="message.direction === 'outbound' ? 'justify-end' : 'justify-start'"
+            >
+              <div
+                class="max-w-[min(100%,28rem)] rounded-2xl px-3.5 py-2.5 text-sm shadow-xs"
+                :class="
+                  message.direction === 'outbound'
+                    ? 'rounded-br-md bg-brand-indigo text-white'
+                    : 'rounded-bl-md border border-slate-200 bg-white text-brand-ink'
+                "
+              >
+                <p class="whitespace-pre-wrap break-words">{{ message.body }}</p>
+                <div
+                  class="mt-1 flex items-center justify-end gap-1.5"
+                  :class="message.direction === 'outbound' ? 'text-indigo-100' : 'text-brand-gray'"
+                >
+                  <span class="text-[10px]">{{
+                    message.created_at ? formatMessageTime(message.created_at) : ''
+                  }}</span>
+                  <MessageStatusIcon
+                    v-if="message.direction === 'outbound'"
+                    :status="message.status"
+                    class="text-indigo-100"
+                  />
+                </div>
+              </div>
+            </li>
+          </ul>
+
+          <div class="border-t border-slate-100 bg-white p-4">
+            <p
+              v-if="composerError"
+              class="mb-2 text-xs text-red-600"
+              role="alert"
+            >
+              {{ composerError }}
+            </p>
+            <div class="flex gap-2">
+              <textarea
+                v-model="draft"
+                rows="2"
+                :disabled="!canSendMessage || sending"
+                placeholder="Digite sua mensagem…"
+                class="min-h-[44px] min-w-0 flex-1 resize-none rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-brand-indigo focus:outline-none focus:ring-2 focus:ring-brand-indigo/20 disabled:bg-slate-50 disabled:text-brand-gray"
+                @keydown="onComposerKeydown"
+              />
+              <button
+                type="button"
+                class="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand-indigo text-white transition hover:bg-brand-indigo-hover disabled:cursor-not-allowed disabled:opacity-50"
+                :disabled="!canSendMessage || sending || !draft.trim()"
+                aria-label="Enviar mensagem"
+                @click="onSend()"
+              >
+                <Loader2 v-if="sending" class="h-5 w-5 animate-spin" />
+                <Send v-else class="h-5 w-5" />
+              </button>
+            </div>
+          </div>
+        </template>
       </section>
     </div>
   </div>

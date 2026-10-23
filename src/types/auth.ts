@@ -3,6 +3,8 @@ export interface User {
   name: string
   email: string
   email_verified_at?: string | null
+  /** Present when the backend exposes the tenant for broadcasting. */
+  company_id?: number | null
 }
 
 export interface LoginCredentials {
