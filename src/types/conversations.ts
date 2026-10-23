@@ -30,10 +30,22 @@ export interface Conversation {
   last_message?: ConversationMessage | null
 }
 
+export interface PaginationMeta {
+  current_page: number
+  last_page: number
+  per_page: number
+  total?: number
+}
+
 export interface PaginatedResponse<T> {
   data: T[]
   links?: Record<string, string | null>
-  meta?: Record<string, unknown>
+  meta?: PaginationMeta
+}
+
+export interface InboxMessagesPage {
+  messages: ConversationMessage[]
+  meta: PaginationMeta
 }
 
 export interface InboxMessageStatusEvent {

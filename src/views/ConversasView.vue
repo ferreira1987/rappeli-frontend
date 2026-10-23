@@ -1,13 +1,19 @@
 <script setup lang="ts">
 import { ArrowLeft, Loader2, MessageSquare, RefreshCw, Search, Send } from '@lucide/vue'
-import { computed, ref, watch } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import MessageStatusIcon from '@/components/conversations/MessageStatusIcon.vue'
 import { useConversationsInbox } from '@/composables/useConversationsInbox'
 import { initialsFromName, useInitials } from '@/composables/useInitials'
 import { useAuthStore } from '@/stores/auth'
-import { formatConversationTime, formatMessageTime } from '@/utils/datetime'
+import type { ConversationMessage } from '@/types/conversations'
+import {
+  formatConversationTime,
+  formatMessageDateSeparator,
+  formatMessageTime,
+  messageDayKey,
+} from '@/utils/datetime'
 import { isMessagingWindowOpen } from '@/utils/inbox'
 import { MESSAGING_WINDOW_CLOSED_MESSAGE } from '@/utils/messaging'
 
@@ -36,10 +42,82 @@ const {
   loadConversations,
   selectConversation,
   sendMessage,
+  loadOlderMessages,
+  loadingOlderMessages,
+  hasOlderMessages,
+  consumeScrollToBottomRequest,
+  requestScrollToBottom,
 } = useConversationsInbox(() => companyId.value)
+
+const SCROLL_NEAR_BOTTOM_PX = 80
 
 const draft = ref('')
 const mobileShowThread = ref(false)
+const threadScrollEl = ref<HTMLElement | null>(null)
+
+type ThreadItem =
+  | { kind: 'date'; key: string; label: string }
+  | { kind: 'message'; key: string; message: ConversationMessage }
+
+const threadItems = computed((): ThreadItem[] => {
+  const items: ThreadItem[] = []
+  let lastDay = ''
+
+  for (const message of messages.value) {
+    const timestamp = message.created_at ?? message.wa_timestamp
+    const day = messageDayKey(timestamp)
+    if (day && day !== lastDay) {
+      const label = formatMessageDateSeparator(timestamp)
+      if (label) {
+        items.push({ kind: 'date', key: `date-${day}`, label })
+      }
+      lastDay = day
+    }
+    items.push({ kind: 'message', key: `msg-${message.id}`, message })
+  }
+
+  return items
+})
+
+function isThreadNearBottom(): boolean {
+  const el = threadScrollEl.value
+  if (!el) {
+    return true
+  }
+  return el.scrollHeight - el.scrollTop - el.clientHeight <= SCROLL_NEAR_BOTTOM_PX
+}
+
+async function scrollThreadToBottom(force = false): Promise<void> {
+  await nextTick()
+  const el = threadScrollEl.value
+  if (!el) {
+    return
+  }
+  const shouldStick = force || consumeScrollToBottomRequest() || isThreadNearBottom()
+  if (shouldStick) {
+    el.scrollTop = el.scrollHeight
+  }
+}
+
+watch(
+  () => messages.value.at(-1)?.id,
+  () => {
+    void scrollThreadToBottom()
+  },
+)
+
+watch(messagesLoading, (loading, wasLoading) => {
+  if (wasLoading && !loading) {
+    void scrollThreadToBottom(true)
+  }
+})
+
+function onThreadScroll(event: Event): void {
+  const el = event.target as HTMLElement
+  if (el.scrollTop < 48 && hasOlderMessages.value && !loadingOlderMessages.value) {
+    void loadOlderMessages(el)
+  }
+}
 
 const selectedInitials = useInitials(
   computed(() =>
@@ -86,9 +164,11 @@ async function onSend(): Promise<void> {
   if (!text.trim()) {
     return
   }
+  requestScrollToBottom()
   const ok = await sendMessage(text)
   if (ok) {
     draft.value = ''
+    await scrollThreadToBottom(true)
   }
 }
 
@@ -314,38 +394,67 @@ function onComposerKeydown(event: KeyboardEvent): void {
             <p class="max-w-sm text-xs">O histórico será exibido aqui quando houver troca de mensagens.</p>
           </div>
 
-          <ul v-else class="min-h-0 flex-1 space-y-3 overflow-y-auto p-4">
-            <li
-              v-for="message in messages"
-              :key="message.id"
-              class="flex"
-              :class="message.direction === 'outbound' ? 'justify-end' : 'justify-start'"
+          <div
+            v-else
+            ref="threadScrollEl"
+            class="min-h-0 flex-1 overflow-y-auto p-4"
+            @scroll.passive="onThreadScroll"
+          >
+            <p
+              v-if="loadingOlderMessages"
+              class="mb-3 text-center text-xs text-brand-gray"
             >
-              <div
-                class="max-w-[min(100%,28rem)] rounded-2xl px-3.5 py-2.5 text-sm shadow-xs"
-                :class="
-                  message.direction === 'outbound'
-                    ? 'rounded-br-md bg-brand-indigo text-white'
-                    : 'rounded-bl-md border border-slate-200 bg-white text-brand-ink'
-                "
-              >
-                <p class="whitespace-pre-wrap break-words">{{ message.body }}</p>
-                <div
-                  class="mt-1 flex items-center justify-end gap-1.5"
-                  :class="message.direction === 'outbound' ? 'text-indigo-100' : 'text-brand-gray'"
-                >
-                  <span class="text-[10px]">{{
-                    message.created_at ? formatMessageTime(message.created_at) : ''
-                  }}</span>
-                  <MessageStatusIcon
-                    v-if="message.direction === 'outbound'"
-                    :status="message.status"
-                    class="text-indigo-100"
-                  />
+              Carregando mensagens anteriores…
+            </p>
+            <div class="space-y-3">
+              <template v-for="item in threadItems" :key="item.key">
+                <div v-if="item.kind === 'date'" class="flex justify-center py-1">
+                  <span
+                    class="rounded-full bg-slate-200/80 px-3 py-0.5 text-[11px] font-medium text-brand-gray"
+                  >
+                    {{ item.label }}
+                  </span>
                 </div>
-              </div>
-            </li>
-          </ul>
+                <div
+                  v-else
+                  class="flex"
+                  :class="
+                    item.message.direction === 'outbound' ? 'justify-end' : 'justify-start'
+                  "
+                >
+                  <div
+                    class="max-w-[min(100%,28rem)] rounded-2xl px-3.5 py-2.5 text-sm shadow-xs"
+                    :class="
+                      item.message.direction === 'outbound'
+                        ? 'rounded-br-md bg-brand-indigo text-white'
+                        : 'rounded-bl-md border border-slate-200 bg-white text-brand-ink'
+                    "
+                  >
+                    <p class="whitespace-pre-wrap break-words">{{ item.message.body }}</p>
+                    <div
+                      class="mt-1 flex items-center justify-end gap-1.5"
+                      :class="
+                        item.message.direction === 'outbound'
+                          ? 'text-indigo-100'
+                          : 'text-brand-gray'
+                      "
+                    >
+                      <span class="text-[10px]">{{
+                        item.message.created_at
+                          ? formatMessageTime(item.message.created_at)
+                          : ''
+                      }}</span>
+                      <MessageStatusIcon
+                        v-if="item.message.direction === 'outbound'"
+                        :status="item.message.status"
+                        class="text-indigo-100"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </template>
+            </div>
+          </div>
 
           <div class="border-t border-slate-100 bg-white p-4">
             <p

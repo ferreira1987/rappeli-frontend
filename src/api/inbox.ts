@@ -2,7 +2,9 @@ import { http } from '@/api/http'
 import type {
   Conversation,
   ConversationMessage,
+  InboxMessagesPage,
   PaginatedResponse,
+  PaginationMeta,
 } from '@/types/conversations'
 
 const DEFAULT_PER_PAGE = 50
@@ -13,7 +15,17 @@ export type FetchConversationsParams = {
 }
 
 export type FetchMessagesParams = {
+  page?: number
   per_page?: number
+}
+
+function parsePaginationMeta(meta: PaginatedResponse<unknown>['meta']): PaginationMeta {
+  return {
+    current_page: meta?.current_page ?? 1,
+    last_page: meta?.last_page ?? 1,
+    per_page: meta?.per_page ?? DEFAULT_PER_PAGE,
+    total: meta?.total,
+  }
 }
 
 export async function fetchInboxConversations(
@@ -28,19 +40,24 @@ export async function fetchInboxConversations(
   return data.data ?? []
 }
 
-export async function fetchInboxMessages(
+export async function fetchInboxMessagesPage(
   conversationId: number,
   params: FetchMessagesParams = {},
-): Promise<ConversationMessage[]> {
+): Promise<InboxMessagesPage> {
   const { data } = await http.get<PaginatedResponse<ConversationMessage>>(
     `/api/inbox/conversations/${conversationId}/messages`,
     {
       params: {
+        page: params.page ?? 1,
         per_page: params.per_page ?? DEFAULT_PER_PAGE,
       },
     },
   )
-  return data.data ?? []
+
+  return {
+    messages: data.data ?? [],
+    meta: parsePaginationMeta(data.meta),
+  }
 }
 
 export async function sendInboxMessage(
