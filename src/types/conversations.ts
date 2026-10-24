@@ -8,6 +8,7 @@ export interface InboxContact {
   id: number
   phone: string
   display_name: string | null
+  tags?: string[]
 }
 
 export interface ConversationMessage {
@@ -24,6 +25,13 @@ export interface ConversationMessage {
   automated_reply_kind?: AutomatedReplyKind | null
 }
 
+export interface InboxConversationCounts {
+  all: number
+  unread: number
+  automated: number
+  human: number
+}
+
 export interface Conversation {
   id: number
   unread_count: number
@@ -31,7 +39,7 @@ export interface Conversation {
   last_message_at: string | null
   last_customer_message_at: string | null
   contact: InboxContact
-  last_message?: ConversationMessage | null
+  last_message: ConversationMessage | null
 }
 
 export interface PaginationMeta {

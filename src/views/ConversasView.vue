@@ -3,13 +3,17 @@ import { ArrowLeft, Loader2, MessageSquare, RefreshCw, Search, Send, User } from
 import { computed, nextTick, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
+import ContactDetailPanel from '@/components/conversations/ContactDetailPanel.vue'
+import ConversationFilterTabs from '@/components/conversations/ConversationFilterTabs.vue'
+import ConversationListItem from '@/components/conversations/ConversationListItem.vue'
 import MessageStatusIcon from '@/components/conversations/MessageStatusIcon.vue'
 import { useConversationsInbox } from '@/composables/useConversationsInbox'
 import { initialsFromName } from '@/composables/useInitials'
 import { useAuthStore } from '@/stores/auth'
 import type { ConversationMessage, InboxContact } from '@/types/conversations'
+import { automatedMessageLabel } from '@/utils/automatedReply'
+import { filterCountsFromApi } from '@/utils/conversationFilters'
 import {
-  formatConversationTime,
   formatMessageDateSeparator,
   formatMessageTime,
   messageDayKey,
@@ -42,6 +46,9 @@ const {
   composerError,
   windowClosed,
   totalUnread,
+  listFilter,
+  listCounts,
+  setListFilter,
   canSendMessage,
   loadConversations,
   selectConversation,
@@ -58,6 +65,7 @@ const SCROLL_NEAR_BOTTOM_PX = 80
 const draft = ref('')
 const mobileShowThread = ref(false)
 const threadScrollEl = ref<HTMLElement | null>(null)
+const filterCounts = computed(() => filterCountsFromApi(listCounts.value))
 
 type ThreadItem =
   | { kind: 'date'; key: string; label: string }
@@ -211,7 +219,9 @@ function onComposerKeydown(event: KeyboardEvent): void {
       </button>
     </header>
 
-    <div class="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[minmax(280px,360px)_1fr]">
+    <div
+      class="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[minmax(280px,360px)_1fr] xl:grid-cols-[minmax(280px,360px)_1fr_auto]"
+    >
       <!-- Lista -->
       <section
         class="flex min-h-0 flex-col border-r border-slate-100"
@@ -245,6 +255,12 @@ function onComposerKeydown(event: KeyboardEvent): void {
           </div>
         </div>
 
+        <ConversationFilterTabs
+          :active="listFilter"
+          :counts="filterCounts"
+          @change="setListFilter"
+        />
+
         <div v-if="listLoading" class="flex flex-1 items-center justify-center p-6">
           <Loader2 class="h-6 w-6 animate-spin text-brand-indigo" aria-label="Carregando conversas" />
         </div>
@@ -268,59 +284,11 @@ function onComposerKeydown(event: KeyboardEvent): void {
           class="min-h-0 flex-1 divide-y divide-slate-100 overflow-y-auto"
         >
           <li v-for="item in conversations" :key="item.id">
-            <button
-              type="button"
-              class="relative w-full p-3.5 text-left transition"
-              :class="
-                selectedId === item.id
-                  ? 'border-l-4 border-brand-indigo bg-brand-mist/60'
-                  : 'border-l-4 border-transparent hover:bg-slate-50'
-              "
-              @click="openConversation(item.id)"
-            >
-              <div class="flex items-start justify-between gap-2">
-                <div class="flex min-w-0 items-start gap-2.5">
-                  <div
-                    class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-mist text-sm font-bold text-brand-indigo"
-                  >
-                    <User
-                      v-if="contactAvatarInitials(item.contact) == null"
-                      class="h-5 w-5"
-                      aria-hidden="true"
-                    />
-                    <span v-else>{{ contactAvatarInitials(item.contact) }}</span>
-                  </div>
-                  <div class="min-w-0">
-                    <p class="truncate text-sm font-semibold text-brand-ink">
-                      {{ inboxContactPrimaryLabel(item.contact) }}
-                    </p>
-                    <p
-                      v-if="inboxContactSecondaryPhone(item.contact)"
-                      class="truncate text-[11px] text-brand-gray"
-                    >
-                      {{ inboxContactSecondaryPhone(item.contact) }}
-                    </p>
-                  </div>
-                </div>
-                <div class="flex shrink-0 flex-col items-end gap-1">
-                  <span class="text-[11px] font-medium text-brand-gray">
-                    {{ formatConversationTime(item.last_message_at) }}
-                  </span>
-                  <span
-                    v-if="item.unread_count > 0"
-                    class="inline-flex min-w-[1.25rem] items-center justify-center rounded-full bg-brand-indigo px-1.5 py-0.5 text-[10px] font-bold leading-none text-white"
-                  >
-                    {{ item.unread_count > 99 ? '99+' : item.unread_count }}
-                  </span>
-                </div>
-              </div>
-              <p
-                v-if="item.last_message?.body"
-                class="mt-2 line-clamp-2 text-xs text-brand-gray"
-              >
-                {{ item.last_message.body }}
-              </p>
-            </button>
+            <ConversationListItem
+              :conversation="item"
+              :selected="selectedId === item.id"
+              @select="openConversation(item.id)"
+            />
           </li>
         </ul>
 
@@ -450,7 +418,7 @@ function onComposerKeydown(event: KeyboardEvent): void {
                   >
                     <p class="whitespace-pre-wrap break-words">{{ item.message.body }}</p>
                     <div
-                      v-if="item.message.is_automated"
+                      v-if="automatedMessageLabel(item.message)"
                       class="mt-1.5 flex justify-end"
                     >
                       <span
@@ -461,7 +429,7 @@ function onComposerKeydown(event: KeyboardEvent): void {
                             : 'bg-slate-100 text-brand-gray'
                         "
                       >
-                        Automática
+                        {{ automatedMessageLabel(item.message) }}
                       </span>
                     </div>
                     <div
@@ -520,6 +488,8 @@ function onComposerKeydown(event: KeyboardEvent): void {
           </div>
         </template>
       </section>
+
+      <ContactDetailPanel :conversation="selectedConversation" />
     </div>
   </div>
 </template>

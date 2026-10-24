@@ -1,3 +1,36 @@
+export function formatRelativeConversationTime(iso: string | null | undefined): string {
+  if (!iso) {
+    return ''
+  }
+  const date = new Date(iso)
+  if (Number.isNaN(date.getTime())) {
+    return ''
+  }
+
+  const diffMs = Date.now() - date.getTime()
+  const diffMin = Math.floor(diffMs / 60_000)
+  if (diffMin < 1) {
+    return 'Agora'
+  }
+  if (diffMin < 60) {
+    return `há ${diffMin} min`
+  }
+
+  const today = startOfLocalDay(new Date())
+  const messageDay = startOfLocalDay(date)
+  const diffDays = Math.round((today.getTime() - messageDay.getTime()) / (24 * 60 * 60 * 1000))
+
+  if (diffDays === 0) {
+    const diffHours = Math.floor(diffMin / 60)
+    return `há ${diffHours} h`
+  }
+  if (diffDays === 1) {
+    return 'Ontem'
+  }
+
+  return formatConversationTime(iso)
+}
+
 export function formatConversationTime(iso: string | null | undefined): string {
   if (!iso) {
     return ''
