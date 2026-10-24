@@ -14,6 +14,7 @@ import {
   updateWelcomeAutoReply,
 } from '@/api/autoReplies'
 import FormSwitch from '@/components/auto-replies/FormSwitch.vue'
+import MessageFieldMeta from '@/components/auto-replies/MessageFieldMeta.vue'
 import KeywordRuleDeleteDialog from '@/components/auto-replies/KeywordRuleDeleteDialog.vue'
 import KeywordRuleFormModal from '@/components/auto-replies/KeywordRuleFormModal.vue'
 import AppPageFooter from '@/components/layout/AppPageFooter.vue'
@@ -105,6 +106,16 @@ const weekdayLabels = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sext
 const sortedKeywordRules = computed(() =>
   [...keywordRules.value].sort((a, b) => a.priority - b.priority || a.id - b.id),
 )
+
+const keywordRulesCount = computed(() => keywordRules.value.length)
+
+function tabNavLabel(tab: (typeof tabs)[number]): string {
+  if (tab.id === 'keywords') {
+    const n = keywordRulesCount.value
+    return n === 1 ? 'Palavras-chave · 1 regra' : `Palavras-chave · ${n} regras`
+  }
+  return tab.label
+}
 
 const welcomeMessageDraft = computed({
   get: () => welcome.value.message ?? '',
@@ -368,8 +379,8 @@ onMounted(() => {
         </span>
         <h1 class="mt-2 font-display text-2xl font-semibold text-brand-ink">Respostas automáticas</h1>
         <p class="mt-1 max-w-2xl text-sm text-brand-gray">
-          Configure mensagens automáticas de boas-vindas, fora do horário e por palavras-chave para o
-          WhatsApp da sua empresa.
+          Defina textos enviados automaticamente pelo WhatsApp da empresa. As mensagens respeitam o limite
+          da API e podem usar formatação simples (*negrito*, _itálico_).
         </p>
       </div>
     </header>
@@ -391,7 +402,7 @@ onMounted(() => {
         @click="activeTab = tab.id"
       >
         <component :is="tab.icon" class="h-4 w-4" aria-hidden="true" />
-        {{ tab.label }}
+        {{ tabNavLabel(tab) }}
       </button>
     </nav>
 
@@ -425,19 +436,13 @@ onMounted(() => {
             description="Quando ligado, clientes elegíveis recebem a mensagem configurada."
           />
 
-          <div>
-            <label class="text-sm font-medium text-brand-ink" for="welcome-message">Mensagem</label>
-            <textarea
-              id="welcome-message"
-              v-model="welcomeMessageDraft"
-              rows="4"
-              class="mt-1.5 w-full resize-y rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-brand-ink focus:border-brand-indigo focus:outline-none focus:ring-2 focus:ring-brand-indigo/20"
-              placeholder="Olá! Obrigado por entrar em contato. Em breve nossa equipe responde."
-            />
-            <p v-if="welcomeFieldErrors.message" class="mt-1 text-xs text-red-600">
-              {{ welcomeFieldErrors.message }}
-            </p>
-          </div>
+          <MessageFieldMeta
+            id="welcome-message"
+            v-model="welcomeMessageDraft"
+            label="Mensagem"
+            :error="welcomeFieldErrors.message ?? null"
+            placeholder="Olá! Obrigado por entrar em contato. Em breve nossa equipe responde."
+          />
 
           <div class="max-w-md space-y-3">
             <label class="flex cursor-pointer items-start gap-2 text-sm text-brand-ink">
@@ -557,19 +562,13 @@ onMounted(() => {
             </div>
           </div>
 
-          <div>
-            <label class="text-sm font-medium text-brand-ink" for="ooh-message">Mensagem</label>
-            <textarea
-              id="ooh-message"
-              v-model="outOfHoursMessageDraft"
-              rows="4"
-              class="mt-1.5 w-full resize-y rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-brand-ink focus:border-brand-indigo focus:outline-none focus:ring-2 focus:ring-brand-indigo/20"
-              placeholder="Recebemos sua mensagem fora do nosso horário. Retornaremos em breve."
-            />
-            <p v-if="outOfHoursFieldErrors.message" class="mt-1 text-xs text-red-600">
-              {{ outOfHoursFieldErrors.message }}
-            </p>
-          </div>
+          <MessageFieldMeta
+            id="ooh-message"
+            v-model="outOfHoursMessageDraft"
+            label="Mensagem"
+            :error="outOfHoursFieldErrors.message ?? null"
+            placeholder="Recebemos sua mensagem fora do nosso horário. Retornaremos em breve."
+          />
 
           <div>
             <p class="text-sm font-medium text-brand-ink">Horário por dia da semana</p>

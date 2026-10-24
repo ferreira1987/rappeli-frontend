@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, reactive, watch } from 'vue'
 
+import MessageFieldMeta from '@/components/auto-replies/MessageFieldMeta.vue'
 import type { KeywordMatchType, KeywordRule, KeywordRuleWrite } from '@/types/autoReplies'
 const props = defineProps<{
   open: boolean
@@ -102,24 +103,18 @@ function onSubmit(): void {
               type="text"
               autocomplete="off"
               class="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-brand-ink focus:border-brand-indigo focus:outline-none focus:ring-2 focus:ring-brand-indigo/20"
-              placeholder="Ex.: horário, preço, endereço"
+              placeholder="Ex.: horário, endereço, cardápio"
             />
             <p v-if="fieldError('keyword')" class="mt-1 text-xs text-red-600">{{ fieldError('keyword') }}</p>
           </div>
 
-          <div>
-            <label class="text-sm font-medium text-brand-ink" for="keyword-rule-message">Mensagem de resposta</label>
-            <textarea
-              id="keyword-rule-message"
-              v-model="form.response_body"
-              rows="4"
-              class="mt-1.5 w-full resize-y rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-brand-ink focus:border-brand-indigo focus:outline-none focus:ring-2 focus:ring-brand-indigo/20"
-              placeholder="Texto enviado automaticamente ao cliente."
-            />
-            <p v-if="fieldError('response_body')" class="mt-1 text-xs text-red-600">
-              {{ fieldError('response_body') }}
-            </p>
-          </div>
+          <MessageFieldMeta
+            id="keyword-rule-message"
+            v-model="form.response_body"
+            label="Mensagem de resposta"
+            :error="fieldError('response_body')"
+            placeholder="Texto enviado automaticamente ao cliente."
+          />
 
           <div class="grid gap-4 sm:grid-cols-2">
             <div>

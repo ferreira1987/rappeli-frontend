@@ -8,6 +8,7 @@ export interface InboxContact {
   id: number
   phone: string
   display_name: string | null
+  tags?: string[]
 }
 
 export interface ConversationMessage {
