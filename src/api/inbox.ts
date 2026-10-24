@@ -1,4 +1,8 @@
 import { http } from '@/api/http'
+import {
+  type InboxConversationsPage,
+  parseInboxConversationsResponse,
+} from '@/api/inboxParsing'
 import type {
   Conversation,
   ConversationMessage,
@@ -6,12 +10,14 @@ import type {
   PaginatedResponse,
   PaginationMeta,
 } from '@/types/conversations'
+import type { InboxConversationFilter } from '@/utils/conversationFilters'
 
 const DEFAULT_PER_PAGE = 50
 
 export type FetchConversationsParams = {
   search?: string
   per_page?: number
+  filter?: InboxConversationFilter
 }
 
 export type FetchMessagesParams = {
@@ -30,14 +36,15 @@ function parsePaginationMeta(meta: PaginatedResponse<unknown>['meta']): Paginati
 
 export async function fetchInboxConversations(
   params: FetchConversationsParams = {},
-): Promise<Conversation[]> {
-  const { data } = await http.get<PaginatedResponse<Conversation>>('/api/inbox/conversations', {
+): Promise<InboxConversationsPage> {
+  const { data } = await http.get<unknown>('/api/inbox/conversations', {
     params: {
       per_page: params.per_page ?? DEFAULT_PER_PAGE,
+      filter: params.filter ?? 'all',
       ...(params.search ? { search: params.search } : {}),
     },
   })
-  return data.data ?? []
+  return parseInboxConversationsResponse(data)
 }
 
 export async function fetchInboxMessagesPage(

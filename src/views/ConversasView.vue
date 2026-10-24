@@ -12,11 +12,7 @@ import { initialsFromName } from '@/composables/useInitials'
 import { useAuthStore } from '@/stores/auth'
 import type { ConversationMessage, InboxContact } from '@/types/conversations'
 import { automatedMessageLabel } from '@/utils/automatedReply'
-import {
-  type ConversationFilterTab,
-  conversationMatchesFilter,
-  countConversationsByFilter,
-} from '@/utils/conversationFilters'
+import { filterCountsFromApi } from '@/utils/conversationFilters'
 import {
   formatMessageDateSeparator,
   formatMessageTime,
@@ -50,6 +46,9 @@ const {
   composerError,
   windowClosed,
   totalUnread,
+  listFilter,
+  listCounts,
+  setListFilter,
   canSendMessage,
   loadConversations,
   selectConversation,
@@ -66,18 +65,7 @@ const SCROLL_NEAR_BOTTOM_PX = 80
 const draft = ref('')
 const mobileShowThread = ref(false)
 const threadScrollEl = ref<HTMLElement | null>(null)
-const activeFilterTab = ref<ConversationFilterTab>('all')
-
-const filterCounts = computed(() => ({
-  all: countConversationsByFilter(conversations.value, 'all'),
-  unread: countConversationsByFilter(conversations.value, 'unread'),
-  automation: countConversationsByFilter(conversations.value, 'automation'),
-  human: countConversationsByFilter(conversations.value, 'human'),
-}))
-
-const filteredConversations = computed(() =>
-  conversations.value.filter((item) => conversationMatchesFilter(item, activeFilterTab.value)),
-)
+const filterCounts = computed(() => filterCountsFromApi(listCounts.value))
 
 type ThreadItem =
   | { kind: 'date'; key: string; label: string }
@@ -268,9 +256,9 @@ function onComposerKeydown(event: KeyboardEvent): void {
         </div>
 
         <ConversationFilterTabs
-          :active="activeFilterTab"
+          :active="listFilter"
           :counts="filterCounts"
-          @change="activeFilterTab = $event"
+          @change="setListFilter"
         />
 
         <div v-if="listLoading" class="flex flex-1 items-center justify-center p-6">
@@ -292,10 +280,10 @@ function onComposerKeydown(event: KeyboardEvent): void {
         </div>
 
         <ul
-          v-else-if="filteredConversations.length > 0"
+          v-else-if="conversations.length > 0"
           class="min-h-0 flex-1 divide-y divide-slate-100 overflow-y-auto"
         >
-          <li v-for="item in filteredConversations" :key="item.id">
+          <li v-for="item in conversations" :key="item.id">
             <ConversationListItem
               :conversation="item"
               :selected="selectedId === item.id"
@@ -303,14 +291,6 @@ function onComposerKeydown(event: KeyboardEvent): void {
             />
           </li>
         </ul>
-
-        <div
-          v-else-if="conversations.length > 0"
-          class="flex flex-1 flex-col items-center justify-center gap-2 p-8 text-center text-sm text-brand-gray"
-        >
-          <p class="font-medium text-brand-ink">Nenhuma conversa neste filtro</p>
-          <p class="max-w-xs text-xs">Tente outra aba ou limpe a busca.</p>
-        </div>
 
         <div
           v-else

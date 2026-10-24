@@ -72,7 +72,7 @@ function avatarInitials(contact: Conversation['contact']): string | null {
       </div>
     </div>
     <div
-      v-if="conversation.last_message?.body"
+      v-if="conversation.last_message && conversation.last_message.body"
       class="mt-2 flex items-center gap-1.5 text-xs text-brand-gray"
     >
       <span class="inline-flex shrink-0 items-center gap-0.5">

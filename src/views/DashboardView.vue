@@ -32,7 +32,8 @@ const whatsappBadgeLabel = computed(() => {
 async function loadDashboard(): Promise<void> {
   conversationsLoading.value = true
   try {
-    recentConversations.value = await fetchInboxConversations({ per_page: 5 })
+    const page = await fetchInboxConversations({ per_page: 5 })
+    recentConversations.value = page.conversations
   } catch {
     recentConversations.value = []
   } finally {

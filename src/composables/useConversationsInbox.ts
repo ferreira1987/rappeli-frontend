@@ -8,7 +8,15 @@ import {
 } from '@/api/inbox'
 import { subscribeCompanyInbox } from '@/realtime/companyChannel'
 import { isRealtimeConfigured } from '@/realtime/config'
-import type { Conversation, ConversationMessage } from '@/types/conversations'
+import type {
+  Conversation,
+  ConversationMessage,
+  InboxConversationCounts,
+} from '@/types/conversations'
+import {
+  type ConversationFilterTab,
+  inboxFilterFromTab,
+} from '@/utils/conversationFilters'
 import {
   mergeMessagePages,
   pageToChronological,
@@ -61,6 +69,13 @@ export function useConversationsInbox(companyId: () => number | null | undefined
   const messages = ref<ConversationMessage[]>([])
   const selectedId = ref<number | null>(null)
   const searchQuery = ref('')
+  const listFilter = ref<ConversationFilterTab>('all')
+  const listCounts = ref<InboxConversationCounts>({
+    all: 0,
+    unread: 0,
+    automated: 0,
+    human: 0,
+  })
   const listLoading = ref(false)
   const messagesLoading = ref(false)
   const loadingOlderMessages = ref(false)
@@ -75,9 +90,7 @@ export function useConversationsInbox(companyId: () => number | null | undefined
 
   const hasOlderMessages = computed(() => messagesCurrentPage.value < messagesLastPage.value)
 
-  const totalUnread = computed(() =>
-    conversations.value.reduce((sum, item) => sum + (item.unread_count ?? 0), 0),
-  )
+  const totalUnread = computed(() => listCounts.value.unread)
 
   const selectedConversation = computed(() =>
     conversations.value.find((c) => c.id === selectedId.value) ?? null,
@@ -93,20 +106,36 @@ export function useConversationsInbox(companyId: () => number | null | undefined
     return isMessagingWindowOpen(selectedConversation.value)
   })
 
-  async function loadConversations(): Promise<void> {
-    listLoading.value = true
+  async function loadConversations(options?: { silent?: boolean }): Promise<void> {
+    if (!options?.silent) {
+      listLoading.value = true
+    }
     listError.value = null
     try {
       const search = searchQuery.value.trim()
-      conversations.value = await fetchInboxConversations({
+      const page = await fetchInboxConversations({
         search: search || undefined,
+        filter: inboxFilterFromTab(listFilter.value),
       })
+      conversations.value = page.conversations
+      listCounts.value = page.counts
     } catch (error) {
       listError.value = getErrorMessage(error)
       conversations.value = []
+      listCounts.value = { all: 0, unread: 0, automated: 0, human: 0 }
     } finally {
-      listLoading.value = false
+      if (!options?.silent) {
+        listLoading.value = false
+      }
     }
+  }
+
+  function setListFilter(tab: ConversationFilterTab): void {
+    if (listFilter.value === tab) {
+      return
+    }
+    listFilter.value = tab
+    void loadConversations()
   }
 
   function resetMessagesState(): void {
@@ -133,6 +162,7 @@ export function useConversationsInbox(companyId: () => number | null | undefined
 
       const updated = await markInboxConversationRead(conversationId)
       conversations.value = mergeConversation(conversations.value, updated)
+      void loadConversations({ silent: true })
     } catch (error) {
       threadError.value = getErrorMessage(error)
       resetMessagesState()
@@ -333,6 +363,9 @@ export function useConversationsInbox(companyId: () => number | null | undefined
     selectedId,
     selectedConversation,
     searchQuery,
+    listFilter,
+    listCounts,
+    setListFilter,
     listLoading,
     messagesLoading,
     loadingOlderMessages,
