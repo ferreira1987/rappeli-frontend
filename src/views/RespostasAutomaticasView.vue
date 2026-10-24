@@ -232,7 +232,7 @@ async function onSaveWelcome(): Promise<void> {
   try {
     await fetchCsrfCookie()
     welcome.value = await updateWelcomeAutoReply(welcome.value)
-    welcomeSuccess.value = 'Boas-vindas salvas com sucesso.'
+    welcomeSuccess.value = 'Salvo'
   } catch (error) {
     welcomeFieldErrors.value = getValidationErrors(error) ?? {}
     welcomeFormError.value = getErrorMessage(error)
@@ -251,7 +251,7 @@ async function onSaveOutOfHours(): Promise<void> {
   try {
     await fetchCsrfCookie()
     outOfHours.value = await updateOutOfHoursAutoReply(outOfHours.value)
-    outOfHoursSuccess.value = 'Configuração fora do horário salva com sucesso.'
+    outOfHoursSuccess.value = 'Salvo'
   } catch (error) {
     outOfHoursFieldErrors.value = getValidationErrors(error) ?? {}
     outOfHoursFormError.value = getErrorMessage(error)
@@ -375,7 +375,7 @@ onMounted(() => {
     </header>
 
     <nav
-      class="-mx-4 mt-6 flex gap-2 overflow-x-auto border-b border-slate-200 px-4 text-sm font-medium sm:mx-0 sm:gap-4 sm:px-0"
+      class="scrollbar-none -mx-4 mt-6 flex gap-2 overflow-x-auto border-b border-slate-200 px-4 text-sm font-medium sm:mx-0 sm:gap-4 sm:px-0"
       aria-label="Seções de respostas automáticas"
     >
       <button

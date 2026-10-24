@@ -6,10 +6,10 @@ import {
   LogOut,
   MessageCircle,
   MessageSquareReply,
-  Plus,
   Settings,
   Users,
   X,
+  type LucideIcon,
 } from '@lucide/vue'
 import { computed } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
@@ -29,10 +29,18 @@ const initials = useInitials(computed(() => auth.user?.name))
 
 const isDrawerHidden = computed(() => !isLgViewport.value && !isOpen.value)
 
-const navItems = [
+type NavItem = {
+  name: string
+  label: string
+  to: string
+  icon: LucideIcon
+  soon?: boolean
+}
+
+const navItems: NavItem[] = [
   { name: 'painel', label: 'Painel', to: '/painel', icon: LayoutGrid },
   { name: 'conversas', label: 'Conversas', to: '/conversas', icon: MessageCircle },
-  { name: 'automacoes', label: 'Automações', to: '/automacoes', icon: Bot },
+  { name: 'automacoes', label: 'Automações', to: '/automacoes', icon: Bot, soon: true },
   {
     name: 'respostas-automaticas',
     label: 'Respostas automáticas',
@@ -41,7 +49,7 @@ const navItems = [
   },
   { name: 'contatos', label: 'Contatos', to: '/contatos', icon: Users },
   { name: 'configuracoes', label: 'Configurações', to: '/configuracoes', icon: Settings },
-] as const
+]
 
 async function onLogout(): Promise<void> {
   await auth.logout()
@@ -81,15 +89,6 @@ function closeAndFocusMenu(): void {
       </button>
     </div>
 
-    <RouterLink
-      :to="{ name: 'automacoes' }"
-      class="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-brand-indigo px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-indigo-hover"
-      @click="onNavigate"
-    >
-      <Plus class="h-4 w-4" aria-hidden="true" />
-      Nova automação
-    </RouterLink>
-
     <p class="mt-6 px-2 text-[10px] font-semibold uppercase tracking-wider text-brand-gray">
       Menu principal
     </p>
@@ -113,7 +112,13 @@ function closeAndFocusMenu(): void {
           aria-hidden="true"
         />
         <component :is="item.icon" class="h-[18px] w-[18px] shrink-0" aria-hidden="true" />
-        {{ item.label }}
+        <span class="min-w-0 truncate">{{ item.label }}</span>
+        <span
+          v-if="item.soon"
+          class="ml-auto shrink-0 rounded-full bg-slate-100 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-brand-gray"
+        >
+          Em breve
+        </span>
       </RouterLink>
     </nav>
 

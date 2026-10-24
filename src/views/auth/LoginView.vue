@@ -47,24 +47,7 @@ async function onSubmit(): Promise<void> {
             Gerencie suas confirmações, mensagens e automações ativas.
           </p>
 
-          <button
-            type="button"
-            disabled
-            class="mt-8 flex w-full items-center justify-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 opacity-60"
-          >
-            <span class="text-base font-bold text-slate-500">G</span>
-            Continuar com Google
-          </button>
-
-          <div
-            class="my-6 flex items-center gap-3 text-[11px] font-semibold tracking-wide text-slate-400"
-          >
-            <span class="h-px flex-1 bg-slate-200" />
-            OU CONTINUE COM E-MAIL
-            <span class="h-px flex-1 bg-slate-200" />
-          </div>
-
-          <form class="space-y-5" @submit.prevent="onSubmit">
+          <form class="mt-8 space-y-5" @submit.prevent="onSubmit">
             <div v-if="formError" class="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">
               {{ formError }}
             </div>

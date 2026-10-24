@@ -1,15 +1,31 @@
-import type { Conversation } from '@/types/conversations'
+import type { Conversation, InboxContact } from '@/types/conversations'
+import { formatBrazilPhone } from '@/utils/phone'
 
 const MESSAGING_WINDOW_MS = 24 * 60 * 60 * 1000
 
-export function inboxContactDisplayName(contact: Conversation['contact']): string {
+export function contactHasDisplayName(contact: InboxContact): boolean {
+  return Boolean(contact.display_name?.trim())
+}
+
+export function inboxContactPrimaryLabel(contact: InboxContact): string {
   if (contact.display_name?.trim()) {
     return contact.display_name.trim()
   }
-  if (contact.phone?.trim()) {
-    return contact.phone.trim()
+  const formatted = formatBrazilPhone(contact.phone)
+  return formatted || 'Contato'
+}
+
+export function inboxContactSecondaryPhone(contact: InboxContact): string | null {
+  if (!contactHasDisplayName(contact)) {
+    return null
   }
-  return 'Contato'
+  const formatted = formatBrazilPhone(contact.phone)
+  return formatted || null
+}
+
+/** @deprecated Prefer inboxContactPrimaryLabel */
+export function inboxContactDisplayName(contact: InboxContact): string {
+  return inboxContactPrimaryLabel(contact)
 }
 
 export function isMessagingWindowOpen(conversation: Conversation): boolean {

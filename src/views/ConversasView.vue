@@ -1,20 +1,25 @@
 <script setup lang="ts">
-import { ArrowLeft, Loader2, MessageSquare, RefreshCw, Search, Send } from '@lucide/vue'
+import { ArrowLeft, Loader2, MessageSquare, RefreshCw, Search, Send, User } from '@lucide/vue'
 import { computed, nextTick, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import MessageStatusIcon from '@/components/conversations/MessageStatusIcon.vue'
 import { useConversationsInbox } from '@/composables/useConversationsInbox'
-import { initialsFromName, useInitials } from '@/composables/useInitials'
+import { initialsFromName } from '@/composables/useInitials'
 import { useAuthStore } from '@/stores/auth'
-import type { ConversationMessage } from '@/types/conversations'
+import type { ConversationMessage, InboxContact } from '@/types/conversations'
 import {
   formatConversationTime,
   formatMessageDateSeparator,
   formatMessageTime,
   messageDayKey,
 } from '@/utils/datetime'
-import { isMessagingWindowOpen } from '@/utils/inbox'
+import {
+  contactHasDisplayName,
+  inboxContactPrimaryLabel,
+  inboxContactSecondaryPhone,
+  isMessagingWindowOpen,
+} from '@/utils/inbox'
 import { MESSAGING_WINDOW_CLOSED_MESSAGE } from '@/utils/messaging'
 
 const auth = useAuthStore()
@@ -38,7 +43,6 @@ const {
   windowClosed,
   totalUnread,
   canSendMessage,
-  displayName,
   loadConversations,
   selectConversation,
   sendMessage,
@@ -119,11 +123,12 @@ function onThreadScroll(event: Event): void {
   }
 }
 
-const selectedInitials = useInitials(
-  computed(() =>
-    selectedConversation.value ? displayName(selectedConversation.value.contact) : '',
-  ),
-)
+function contactAvatarInitials(contact: InboxContact): string | null {
+  if (!contactHasDisplayName(contact)) {
+    return null
+  }
+  return initialsFromName(contact.display_name)
+}
 
 const showWindowClosedBanner = computed(() => {
   if (windowClosed.value) {
@@ -278,17 +283,22 @@ function onComposerKeydown(event: KeyboardEvent): void {
                   <div
                     class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-mist text-sm font-bold text-brand-indigo"
                   >
-                    {{ initialsFromName(displayName(item.contact)) }}
+                    <User
+                      v-if="contactAvatarInitials(item.contact) == null"
+                      class="h-5 w-5"
+                      aria-hidden="true"
+                    />
+                    <span v-else>{{ contactAvatarInitials(item.contact) }}</span>
                   </div>
                   <div class="min-w-0">
                     <p class="truncate text-sm font-semibold text-brand-ink">
-                      {{ displayName(item.contact) }}
+                      {{ inboxContactPrimaryLabel(item.contact) }}
                     </p>
                     <p
-                      v-if="item.contact.phone"
+                      v-if="inboxContactSecondaryPhone(item.contact)"
                       class="truncate text-[11px] text-brand-gray"
                     >
-                      {{ item.contact.phone }}
+                      {{ inboxContactSecondaryPhone(item.contact) }}
                     </p>
                   </div>
                 </div>
@@ -355,14 +365,22 @@ function onComposerKeydown(event: KeyboardEvent): void {
             <div
               class="flex h-10 w-10 items-center justify-center rounded-full bg-brand-mist text-sm font-bold text-brand-indigo"
             >
-              {{ selectedInitials }}
+              <User
+                v-if="contactAvatarInitials(selectedConversation.contact) == null"
+                class="h-5 w-5"
+                aria-hidden="true"
+              />
+              <span v-else>{{ contactAvatarInitials(selectedConversation.contact) }}</span>
             </div>
             <div class="min-w-0 flex-1">
               <p class="truncate font-semibold text-brand-ink">
-                {{ displayName(selectedConversation.contact) }}
+                {{ inboxContactPrimaryLabel(selectedConversation.contact) }}
               </p>
-              <p class="truncate text-xs text-brand-gray">
-                {{ selectedConversation.contact.phone ?? 'WhatsApp' }}
+              <p
+                v-if="inboxContactSecondaryPhone(selectedConversation.contact)"
+                class="truncate text-xs text-brand-gray"
+              >
+                {{ inboxContactSecondaryPhone(selectedConversation.contact) }}
               </p>
             </div>
           </div>

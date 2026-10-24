@@ -25,12 +25,6 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
-      path: '/automacoes/editor',
-      name: 'automacao-editor',
-      component: () => import('@/views/AutomacaoEditorView.vue'),
-      meta: { requiresAuth: true },
-    },
-    {
       path: '/',
       component: AppLayout,
       meta: { requiresAuth: true },
@@ -56,6 +50,12 @@ const router = createRouter({
           name: 'automacoes',
           component: () => import('@/views/AutomacoesView.vue'),
           meta: { title: 'Automações' },
+        },
+        {
+          path: 'automacoes/editor',
+          name: 'automacao-editor',
+          component: () => import('@/views/AutomacaoEditorView.vue'),
+          meta: { title: 'Editor de automação' },
         },
         {
           path: 'respostas-automaticas',
