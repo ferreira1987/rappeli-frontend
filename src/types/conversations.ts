@@ -2,6 +2,8 @@ export type MessageDeliveryStatus = 'pending' | 'sent' | 'delivered' | 'read' | 
 
 export type MessageDirection = 'inbound' | 'outbound'
 
+export type AutomatedReplyKind = 'welcome' | 'out_of_hours' | 'keyword'
+
 export interface InboxContact {
   id: number
   phone: string
@@ -18,6 +20,8 @@ export interface ConversationMessage {
   status: MessageDeliveryStatus
   wa_timestamp: string | null
   created_at: string | null
+  is_automated?: boolean
+  automated_reply_kind?: AutomatedReplyKind | null
 }
 
 export interface Conversation {
