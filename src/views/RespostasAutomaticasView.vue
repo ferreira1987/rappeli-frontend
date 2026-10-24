@@ -18,8 +18,9 @@ import KeywordRuleDeleteDialog from '@/components/auto-replies/KeywordRuleDelete
 import KeywordRuleFormModal from '@/components/auto-replies/KeywordRuleFormModal.vue'
 import AppPageFooter from '@/components/layout/AppPageFooter.vue'
 import type {
+  BusinessHourSlot,
   KeywordRule,
-  KeywordRuleInput,
+  KeywordRuleWrite,
   OutOfHoursAutoReply,
   WelcomeAutoReply,
 } from '@/types/autoReplies'
@@ -35,15 +36,17 @@ const activeTab = ref<(typeof tabs)[number]['id']>('welcome')
 
 const welcome = ref<WelcomeAutoReply>({
   enabled: false,
-  message: '',
-  inactivity_hours: 24,
+  message: null,
+  inactivity_hours: null,
+  updated_at: null,
 })
 const outOfHours = ref<OutOfHoursAutoReply>({
   enabled: false,
   timezone: 'America/Sao_Paulo',
-  message: '',
+  message: null,
   cooldown_minutes: 60,
-  slots: [],
+  business_hours: [],
+  updated_at: null,
 })
 const keywordRules = ref<KeywordRule[]>([])
 
@@ -92,17 +95,50 @@ const timezoneOptions = [
 const weekdayLabels = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado']
 
 const sortedKeywordRules = computed(() =>
-  [...keywordRules.value].sort((a, b) => b.priority - a.priority || a.id - b.id),
+  [...keywordRules.value].sort((a, b) => a.priority - b.priority || a.id - b.id),
 )
+
+const welcomeMessageDraft = computed({
+  get: () => welcome.value.message ?? '',
+  set: (value: string) => {
+    welcome.value.message = value === '' ? null : value
+  },
+})
+
+const welcomeUsesInactivity = computed({
+  get: () => welcome.value.inactivity_hours !== null,
+  set: (enabled: boolean) => {
+    welcome.value.inactivity_hours = enabled ? (welcome.value.inactivity_hours ?? 24) : null
+  },
+})
+
+const outOfHoursMessageDraft = computed({
+  get: () => outOfHours.value.message ?? '',
+  set: (value: string) => {
+    outOfHours.value.message = value === '' ? null : value
+  },
+})
+
+function setBusinessDayOpen(slot: BusinessHourSlot, open: boolean): void {
+  slot.is_closed = !open
+  if (slot.is_closed) {
+    slot.opens_at = null
+    slot.closes_at = null
+    return
+  }
+  slot.opens_at = slot.opens_at ?? '09:00'
+  slot.closes_at = slot.closes_at ?? '18:00'
+}
 
 function validateWelcome(): boolean {
   const errors: Record<string, string> = {}
   if (welcome.value.enabled) {
-    if (!welcome.value.message.trim()) {
+    if (!welcomeMessageDraft.value.trim()) {
       errors.message = 'Informe a mensagem de boas-vindas.'
     }
-    if (welcome.value.inactivity_hours < 1) {
-      errors.inactivity_hours = 'Use pelo menos 1 hora de inatividade.'
+    const hours = welcome.value.inactivity_hours
+    if (hours !== null && (!Number.isFinite(hours) || hours < 1 || hours > 720)) {
+      errors.inactivity_hours = 'Use entre 1 e 720 horas, ou desative o reenvio por inatividade.'
     }
   }
   welcomeFieldErrors.value = errors
@@ -112,25 +148,28 @@ function validateWelcome(): boolean {
 function validateOutOfHours(): boolean {
   const errors: Record<string, string> = {}
   if (outOfHours.value.enabled) {
-    if (!outOfHours.value.message.trim()) {
+    if (!outOfHoursMessageDraft.value.trim()) {
       errors.message = 'Informe a mensagem fora do horário.'
     }
-    if (outOfHours.value.cooldown_minutes < 0) {
-      errors.cooldown_minutes = 'O intervalo mínimo não pode ser negativo.'
+    if (
+      outOfHours.value.cooldown_minutes < 5 ||
+      outOfHours.value.cooldown_minutes > 1440
+    ) {
+      errors.cooldown_minutes = 'O intervalo mínimo deve ser entre 5 e 1440 minutos.'
     }
     if (!outOfHours.value.timezone) {
       errors.timezone = 'Selecione o fuso horário.'
     }
-    for (const slot of outOfHours.value.slots) {
-      if (!slot.enabled) {
+    for (const slot of outOfHours.value.business_hours) {
+      if (slot.is_closed) {
         continue
       }
-      if (!slot.start_time || !slot.end_time) {
-        errors.slots = 'Preencha início e fim para os dias ativos.'
+      if (!slot.opens_at || !slot.closes_at) {
+        errors.business_hours = 'Informe abertura e fechamento nos dias em que não está fechado.'
         break
       }
-      if (slot.start_time >= slot.end_time) {
-        errors.slots = 'O horário de início deve ser anterior ao de término em cada dia.'
+      if (slot.opens_at >= slot.closes_at) {
+        errors.business_hours = 'O horário de abertura deve ser anterior ao de fechamento em cada dia.'
         break
       }
     }
@@ -230,15 +269,15 @@ function openDeleteRule(rule: KeywordRule): void {
   deleteDialogOpen.value = true
 }
 
-async function onRuleSubmit(payload: KeywordRuleInput): Promise<void> {
+async function onRuleSubmit(payload: KeywordRuleWrite): Promise<void> {
   keywordsActionError.value = null
   keywordsSuccess.value = null
   ruleModalErrors.value = null
   ruleModalSaving.value = true
   try {
     await fetchCsrfCookie()
-    if (payload.id != null) {
-      const updated = await updateKeywordRule(payload.id, payload)
+    if (editingRule.value != null) {
+      const updated = await updateKeywordRule(editingRule.value.id, payload)
       keywordRules.value = keywordRules.value.map((rule) => (rule.id === updated.id ? updated : rule))
       keywordsSuccess.value = 'Regra atualizada com sucesso.'
     } else {
@@ -280,10 +319,16 @@ async function onConfirmDeleteRule(): Promise<void> {
 async function toggleRuleActive(rule: KeywordRule): Promise<void> {
   keywordsActionError.value = null
   keywordsSuccess.value = null
-  const next = { ...rule, is_active: !rule.is_active }
+  const payload: KeywordRuleWrite = {
+    keyword: rule.keyword,
+    match_type: rule.match_type,
+    response_body: rule.response_body,
+    priority: rule.priority,
+    is_active: !rule.is_active,
+  }
   try {
     await fetchCsrfCookie()
-    const updated = await updateKeywordRule(rule.id, next)
+    const updated = await updateKeywordRule(rule.id, payload)
     keywordRules.value = keywordRules.value.map((item) => (item.id === updated.id ? updated : item))
   } catch (error) {
     keywordsActionError.value = getErrorMessage(error)
@@ -376,7 +421,7 @@ onMounted(() => {
             <label class="text-sm font-medium text-brand-ink" for="welcome-message">Mensagem</label>
             <textarea
               id="welcome-message"
-              v-model="welcome.message"
+              v-model="welcomeMessageDraft"
               rows="4"
               class="mt-1.5 w-full resize-y rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-brand-ink focus:border-brand-indigo focus:outline-none focus:ring-2 focus:ring-brand-indigo/20"
               placeholder="Olá! Obrigado por entrar em contato. Em breve nossa equipe responde."
@@ -386,24 +431,37 @@ onMounted(() => {
             </p>
           </div>
 
-          <div class="max-w-xs">
-            <label class="text-sm font-medium text-brand-ink" for="welcome-inactivity">
-              Horas de inatividade
+          <div class="max-w-md space-y-3">
+            <label class="flex cursor-pointer items-start gap-2 text-sm text-brand-ink">
+              <input
+                v-model="welcomeUsesInactivity"
+                type="checkbox"
+                class="mt-0.5 h-4 w-4 rounded border-slate-300 text-brand-indigo focus:ring-brand-indigo"
+              />
+              <span>
+                <span class="font-medium">Reenviar após inatividade</span>
+                <span class="mt-0.5 block text-xs text-brand-gray">
+                  Se desligado, a boas-vindas é enviada apenas na primeira mensagem da conversa.
+                </span>
+              </span>
             </label>
-            <input
-              id="welcome-inactivity"
-              v-model.number="welcome.inactivity_hours"
-              type="number"
-              min="1"
-              step="1"
-              class="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-brand-ink focus:border-brand-indigo focus:outline-none focus:ring-2 focus:ring-brand-indigo/20"
-            />
-            <p class="mt-1 text-xs text-brand-gray">
-              Tempo sem mensagens do cliente antes de considerar um novo contato.
-            </p>
-            <p v-if="welcomeFieldErrors.inactivity_hours" class="mt-1 text-xs text-red-600">
-              {{ welcomeFieldErrors.inactivity_hours }}
-            </p>
+            <div v-if="welcomeUsesInactivity">
+              <label class="text-sm font-medium text-brand-ink" for="welcome-inactivity">
+                Horas de inatividade
+              </label>
+              <input
+                id="welcome-inactivity"
+                v-model.number="welcome.inactivity_hours"
+                type="number"
+                min="1"
+                max="720"
+                step="1"
+                class="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-brand-ink focus:border-brand-indigo focus:outline-none focus:ring-2 focus:ring-brand-indigo/20"
+              />
+              <p v-if="welcomeFieldErrors.inactivity_hours" class="mt-1 text-xs text-red-600">
+                {{ welcomeFieldErrors.inactivity_hours }}
+              </p>
+            </div>
           </div>
 
           <p v-if="welcomeFormError" class="text-sm text-red-600" role="alert">{{ welcomeFormError }}</p>
@@ -477,12 +535,13 @@ onMounted(() => {
                 id="ooh-cooldown"
                 v-model.number="outOfHours.cooldown_minutes"
                 type="number"
-                min="0"
+                min="5"
+                max="1440"
                 step="1"
                 class="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-brand-ink focus:border-brand-indigo focus:outline-none focus:ring-2 focus:ring-brand-indigo/20"
               />
               <p class="mt-1 text-xs text-brand-gray">
-                Evita enviar a mesma resposta repetidas vezes ao mesmo contato.
+                Entre 5 e 1440 minutos entre respostas automáticas na mesma conversa.
               </p>
               <p v-if="outOfHoursFieldErrors.cooldown_minutes" class="mt-1 text-xs text-red-600">
                 {{ outOfHoursFieldErrors.cooldown_minutes }}
@@ -494,7 +553,7 @@ onMounted(() => {
             <label class="text-sm font-medium text-brand-ink" for="ooh-message">Mensagem</label>
             <textarea
               id="ooh-message"
-              v-model="outOfHours.message"
+              v-model="outOfHoursMessageDraft"
               rows="4"
               class="mt-1.5 w-full resize-y rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-brand-ink focus:border-brand-indigo focus:outline-none focus:ring-2 focus:ring-brand-indigo/20"
               placeholder="Recebemos sua mensagem fora do nosso horário. Retornaremos em breve."
@@ -510,36 +569,37 @@ onMounted(() => {
               Defina o expediente em que a equipe está disponível. Fora desses intervalos, a resposta automática
               pode ser enviada.
             </p>
-            <p v-if="outOfHoursFieldErrors.slots" class="mt-2 text-xs text-red-600">
-              {{ outOfHoursFieldErrors.slots }}
+            <p v-if="outOfHoursFieldErrors.business_hours" class="mt-2 text-xs text-red-600">
+              {{ outOfHoursFieldErrors.business_hours }}
             </p>
             <ul class="mt-4 space-y-3">
               <li
-                v-for="slot in outOfHours.slots"
+                v-for="slot in outOfHours.business_hours"
                 :key="slot.day_of_week"
                 class="flex flex-col gap-3 rounded-xl border border-slate-100 bg-slate-50/60 p-3 sm:flex-row sm:items-center"
               >
                 <label class="flex min-w-[7rem] items-center gap-2 text-sm font-medium text-brand-ink sm:w-36">
                   <input
-                    v-model="slot.enabled"
                     type="checkbox"
                     class="h-4 w-4 rounded border-slate-300 text-brand-indigo focus:ring-brand-indigo"
+                    :checked="!slot.is_closed"
+                    @change="setBusinessDayOpen(slot, ($event.target as HTMLInputElement).checked)"
                   />
                   {{ weekdayLabels[slot.day_of_week] }}
                 </label>
                 <div class="flex flex-1 flex-wrap items-center gap-2">
                   <input
-                    v-model="slot.start_time"
+                    v-model="slot.opens_at"
                     type="time"
                     class="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm text-brand-ink disabled:opacity-50"
-                    :disabled="!slot.enabled"
+                    :disabled="slot.is_closed"
                   />
                   <span class="text-xs text-brand-gray">até</span>
                   <input
-                    v-model="slot.end_time"
+                    v-model="slot.closes_at"
                     type="time"
                     class="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm text-brand-ink disabled:opacity-50"
-                    :disabled="!slot.enabled"
+                    :disabled="slot.is_closed"
                   />
                 </div>
               </li>
@@ -631,7 +691,7 @@ onMounted(() => {
                   </span>
                   <span class="text-[10px] font-medium text-brand-gray">Prioridade {{ rule.priority }}</span>
                 </div>
-                <p class="mt-2 line-clamp-3 text-sm text-brand-gray">{{ rule.message }}</p>
+                <p class="mt-2 line-clamp-3 text-sm text-brand-gray">{{ rule.response_body }}</p>
               </div>
               <div class="flex flex-wrap gap-2 sm:shrink-0">
                 <button

@@ -1,33 +1,42 @@
 export type KeywordMatchType = 'exact' | 'contains'
 
+export type AutomatedReplyKind = 'welcome' | 'out_of_hours' | 'keyword'
+
 export interface WelcomeAutoReply {
   enabled: boolean
-  message: string
-  inactivity_hours: number
+  message: string | null
+  inactivity_hours: number | null
+  updated_at: string | null
 }
 
-export interface OutOfHoursSlot {
+export interface BusinessHourSlot {
   day_of_week: number
-  enabled: boolean
-  start_time: string
-  end_time: string
+  is_closed: boolean
+  opens_at: string | null
+  closes_at: string | null
 }
 
 export interface OutOfHoursAutoReply {
   enabled: boolean
   timezone: string
-  message: string
+  message: string | null
   cooldown_minutes: number
-  slots: OutOfHoursSlot[]
+  business_hours: BusinessHourSlot[]
+  updated_at: string | null
 }
 
 export interface KeywordRule {
   id: number
   keyword: string
-  message: string
   match_type: KeywordMatchType
-  priority: number
+  response_body: string
   is_active: boolean
+  priority: number
+  created_at: string
+  updated_at: string
 }
 
-export type KeywordRuleInput = Omit<KeywordRule, 'id'> & { id?: number }
+export type KeywordRuleWrite = Pick<
+  KeywordRule,
+  'keyword' | 'match_type' | 'response_body' | 'is_active' | 'priority'
+>

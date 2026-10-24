@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, reactive, watch } from 'vue'
 
-import type { KeywordMatchType, KeywordRule, KeywordRuleInput } from '@/types/autoReplies'
+import type { KeywordMatchType, KeywordRule, KeywordRuleWrite } from '@/types/autoReplies'
 const props = defineProps<{
   open: boolean
   initial?: KeywordRule | null
@@ -11,14 +11,14 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   close: []
-  submit: [payload: KeywordRuleInput]
+  submit: [payload: KeywordRuleWrite]
 }>()
 
 const form = reactive({
   keyword: '',
-  message: '',
+  response_body: '',
   match_type: 'contains' as KeywordMatchType,
-  priority: 10,
+  priority: 100,
   is_active: true,
 })
 
@@ -31,9 +31,9 @@ watch(
       return
     }
     form.keyword = initial?.keyword ?? ''
-    form.message = initial?.message ?? ''
+    form.response_body = initial?.response_body ?? ''
     form.match_type = initial?.match_type ?? 'contains'
-    form.priority = initial?.priority ?? 10
+    form.priority = initial?.priority ?? 100
     form.is_active = initial?.is_active ?? true
   },
   { immediate: true },
@@ -48,8 +48,8 @@ const localErrors = computed(() => {
   if (!form.keyword.trim()) {
     errors.keyword = 'Informe a palavra ou frase-chave.'
   }
-  if (!form.message.trim()) {
-    errors.message = 'Informe a mensagem de resposta.'
+  if (!form.response_body.trim()) {
+    errors.response_body = 'Informe a mensagem de resposta.'
   }
   if (!Number.isFinite(form.priority)) {
     errors.priority = 'Prioridade inválida.'
@@ -62,9 +62,8 @@ function onSubmit(): void {
     return
   }
   emit('submit', {
-    id: props.initial?.id,
     keyword: form.keyword.trim(),
-    message: form.message.trim(),
+    response_body: form.response_body.trim(),
     match_type: form.match_type,
     priority: form.priority,
     is_active: form.is_active,
@@ -112,12 +111,14 @@ function onSubmit(): void {
             <label class="text-sm font-medium text-brand-ink" for="keyword-rule-message">Mensagem de resposta</label>
             <textarea
               id="keyword-rule-message"
-              v-model="form.message"
+              v-model="form.response_body"
               rows="4"
               class="mt-1.5 w-full resize-y rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-brand-ink focus:border-brand-indigo focus:outline-none focus:ring-2 focus:ring-brand-indigo/20"
               placeholder="Texto enviado automaticamente ao cliente."
             />
-            <p v-if="fieldError('message')" class="mt-1 text-xs text-red-600">{{ fieldError('message') }}</p>
+            <p v-if="fieldError('response_body')" class="mt-1 text-xs text-red-600">
+              {{ fieldError('response_body') }}
+            </p>
           </div>
 
           <div class="grid gap-4 sm:grid-cols-2">
@@ -142,7 +143,7 @@ function onSubmit(): void {
                 step="1"
                 class="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-brand-ink focus:border-brand-indigo focus:outline-none focus:ring-2 focus:ring-brand-indigo/20"
               />
-              <p class="mt-1 text-xs text-brand-gray">Regras com maior prioridade são avaliadas primeiro.</p>
+              <p class="mt-1 text-xs text-brand-gray">Menor número = maior prioridade na avaliação.</p>
               <p v-if="fieldError('priority')" class="mt-1 text-xs text-red-600">{{ fieldError('priority') }}</p>
             </div>
           </div>
