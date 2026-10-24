@@ -58,6 +58,12 @@ const router = createRouter({
           meta: { title: 'Automações' },
         },
         {
+          path: 'respostas-automaticas',
+          name: 'respostas-automaticas',
+          component: () => import('@/views/RespostasAutomaticasView.vue'),
+          meta: { title: 'Respostas automáticas' },
+        },
+        {
           path: 'contatos',
           name: 'contatos',
           component: () => import('@/views/ContatosView.vue'),

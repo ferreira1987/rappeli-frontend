@@ -18,6 +18,7 @@ export interface ConversationMessage {
   status: MessageDeliveryStatus
   wa_timestamp: string | null
   created_at: string | null
+  is_automated?: boolean
 }
 
 export interface Conversation {

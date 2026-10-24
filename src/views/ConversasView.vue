@@ -432,6 +432,21 @@ function onComposerKeydown(event: KeyboardEvent): void {
                   >
                     <p class="whitespace-pre-wrap break-words">{{ item.message.body }}</p>
                     <div
+                      v-if="item.message.is_automated"
+                      class="mt-1.5 flex justify-end"
+                    >
+                      <span
+                        class="rounded-full px-2 py-0.5 text-[10px] font-medium"
+                        :class="
+                          item.message.direction === 'outbound'
+                            ? 'bg-white/15 text-indigo-100'
+                            : 'bg-slate-100 text-brand-gray'
+                        "
+                      >
+                        Automática
+                      </span>
+                    </div>
+                    <div
                       class="mt-1 flex items-center justify-end gap-1.5"
                       :class="
                         item.message.direction === 'outbound'

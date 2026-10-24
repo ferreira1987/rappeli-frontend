@@ -5,6 +5,7 @@ import {
   LayoutGrid,
   LogOut,
   MessageCircle,
+  MessageSquareReply,
   Plus,
   Settings,
   Users,
@@ -32,6 +33,12 @@ const navItems = [
   { name: 'painel', label: 'Painel', to: '/painel', icon: LayoutGrid },
   { name: 'conversas', label: 'Conversas', to: '/conversas', icon: MessageCircle },
   { name: 'automacoes', label: 'Automações', to: '/automacoes', icon: Bot },
+  {
+    name: 'respostas-automaticas',
+    label: 'Respostas automáticas',
+    to: '/respostas-automaticas',
+    icon: MessageSquareReply,
+  },
   { name: 'contatos', label: 'Contatos', to: '/contatos', icon: Users },
   { name: 'configuracoes', label: 'Configurações', to: '/configuracoes', icon: Settings },
 ] as const
