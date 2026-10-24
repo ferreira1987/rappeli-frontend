@@ -24,7 +24,15 @@ import type {
   OutOfHoursAutoReply,
   WelcomeAutoReply,
 } from '@/types/autoReplies'
+import { AutoRepliesParseError } from '@/api/autoRepliesParsing'
 import { getErrorMessage, getValidationErrors } from '@/utils/errors'
+
+function formatLoadError(error: unknown): string {
+  if (error instanceof AutoRepliesParseError) {
+    return error.message
+  }
+  return getErrorMessage(error)
+}
 
 const tabs = [
   { id: 'welcome' as const, label: 'Boas-vindas', icon: Hand },
@@ -184,7 +192,7 @@ async function loadWelcome(): Promise<void> {
   try {
     welcome.value = await fetchWelcomeAutoReply()
   } catch (error) {
-    welcomeLoadError.value = getErrorMessage(error)
+    welcomeLoadError.value = formatLoadError(error)
   } finally {
     welcomeLoading.value = false
   }
@@ -196,7 +204,7 @@ async function loadOutOfHours(): Promise<void> {
   try {
     outOfHours.value = await fetchOutOfHoursAutoReply()
   } catch (error) {
-    outOfHoursLoadError.value = getErrorMessage(error)
+    outOfHoursLoadError.value = formatLoadError(error)
   } finally {
     outOfHoursLoading.value = false
   }
@@ -208,7 +216,7 @@ async function loadKeywordRules(): Promise<void> {
   try {
     keywordRules.value = await fetchKeywordRules()
   } catch (error) {
-    keywordsLoadError.value = getErrorMessage(error)
+    keywordsLoadError.value = formatLoadError(error)
   } finally {
     keywordsLoading.value = false
   }
