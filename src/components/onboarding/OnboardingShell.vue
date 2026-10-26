@@ -14,7 +14,9 @@ defineProps<{
     <OnboardingHeader />
     <div class="w-full border-b border-slate-200 bg-white">
       <div class="mx-auto max-w-6xl px-4 py-6 md:px-8">
-        <OnboardingStepper :current-step="step" />
+        <div class="mx-auto w-full max-w-[720px]">
+          <OnboardingStepper :current-step="step" />
+        </div>
       </div>
     </div>
     <main
