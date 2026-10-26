@@ -16,6 +16,7 @@ const props = defineProps<{
   creditCard: CheckoutCreditCardPayload
   fieldErrors: Record<string, string>
   disabled?: boolean
+  billingOnly?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -87,8 +88,8 @@ function onExpiryInput(event: Event): void {
 
 <template>
   <div class="space-y-8">
-    <section>
-      <h2 class="font-display text-lg font-semibold text-brand-ink">Titular da cobrança</h2>
+    <section v-if="!billingOnly">
+      <h2 class="text-lg font-semibold text-brand-ink">Titular da cobrança</h2>
       <div class="mt-4 grid gap-4 sm:grid-cols-2">
         <div class="sm:col-span-2">
           <label class="text-xs font-semibold uppercase tracking-wide text-brand-gray" for="holder-name">
@@ -208,11 +209,11 @@ function onExpiryInput(event: Event): void {
     </section>
 
     <section>
-      <div class="flex items-center justify-between gap-2">
-        <h2 class="font-display text-lg font-semibold text-brand-ink">Cartão de crédito</h2>
+      <div v-if="!billingOnly" class="flex items-center justify-between gap-2">
+        <h2 class="text-lg font-semibold text-brand-ink">Cartão de crédito</h2>
         <span class="text-xs font-medium text-brand-gray">{{ cardBrandLabel(cardBrand) }}</span>
       </div>
-      <div class="mt-4 grid gap-4 sm:grid-cols-2">
+      <div class="grid gap-4 sm:grid-cols-2" :class="billingOnly ? '' : 'mt-4'">
         <div class="sm:col-span-2">
           <label class="text-xs font-semibold uppercase tracking-wide text-brand-gray" for="card-number">
             Número do cartão
@@ -301,7 +302,7 @@ function onExpiryInput(event: Event): void {
           </p>
         </div>
       </div>
-      <p class="mt-3 text-xs text-brand-gray">
+      <p v-if="!billingOnly" class="mt-3 text-xs text-brand-gray">
         Os dados do cartão são enviados com segurança ao processador de pagamentos e não são armazenados
         neste navegador.
       </p>

@@ -4,7 +4,7 @@ import { http } from '@/api/http'
 import router from '@/router'
 import { useBillingNoticeStore } from '@/stores/billingNotice'
 
-const BILLING_SAFE_PREFIXES = ['/assinatura', '/login', '/cadastro']
+const BILLING_SAFE_PREFIXES = ['/contratacao', '/assinatura', '/login', '/cadastro']
 
 function isBillingSafePath(path: string): boolean {
   return BILLING_SAFE_PREFIXES.some((prefix) => path === prefix || path.startsWith(`${prefix}/`))

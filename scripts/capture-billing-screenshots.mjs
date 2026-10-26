@@ -50,88 +50,88 @@ const mockPlans = {
 }
 
 const pages = [
-  { path: '/assinatura/planos', name: 'planos' },
-  {
-    path: '/assinatura/checkout?modality=meta_direct&tier=essencial&cycle=MONTHLY',
-    name: 'checkout',
-  },
-  { path: '/assinatura', name: 'minha-assinatura' },
+  { path: '/cadastro', name: '1-cadastro', auth: false },
+  { path: '/contratacao/plano', name: '2-plano', auth: true },
+  { path: '/contratacao/pagamento', name: '3-pagamento', auth: true, seedPlan: true },
+  { path: '/contratacao/ativacao', name: '4-ativacao', auth: true },
 ]
 
 await mkdir(outDir, { recursive: true })
 
 const browser = await chromium.launch()
-const context = await browser.newContext({ viewport: { width: 1280, height: 900 } })
 
-await context.route('**/api/me', async (route) => {
-  await route.fulfill({
-    status: 200,
-    contentType: 'application/json',
-    body: JSON.stringify({ user: mockUser }),
-  })
-})
+for (const pageDef of pages) {
+  const context = await browser.newContext({ viewport: { width: 1280, height: 900 } })
 
-await context.route('**/api/billing/plans', async (route) => {
-  await route.fulfill({
-    status: 200,
-    contentType: 'application/json',
-    body: JSON.stringify(mockPlans),
-  })
-})
+  if (pageDef.auth) {
+    await context.route('**/api/me', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ user: mockUser }),
+      })
+    })
+  } else {
+    await context.route('**/api/me', async (route) => {
+      await route.fulfill({ status: 401, contentType: 'application/json', body: '{}' })
+    })
+  }
 
-await context.route('**/api/billing/subscription', async (route) => {
-  if (route.request().method() === 'GET') {
+  await context.route('**/api/billing/plans', async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify({
-        id: 1,
-        plan: 'essential_meta_monthly',
-        plan_name: 'Essencial',
-        modality: 'meta_direct',
-        modality_label: 'Pague a Meta direto',
-        tier: 'essencial',
-        cycle: 'MONTHLY',
-        status: 'ACTIVE',
-        value: 197,
-        next_due_date: '2026-11-26',
-        payment_method: { brand: 'VISA', last_digits: '1111' },
-        cancelled_at: null,
-      }),
+      body: JSON.stringify(mockPlans),
     })
-    return
-  }
-  await route.continue()
-})
-
-await context.route('**/api/billing/payments', async (route) => {
-  await route.fulfill({
-    status: 200,
-    contentType: 'application/json',
-    body: JSON.stringify({
-      data: [
-        {
-          id: 1,
-          asaas_payment_id: 'pay_1',
-          status: 'RECEIVED',
-          value: 197,
-          due_date: '2026-10-26',
-          paid_at: '2026-10-26T12:00:00Z',
-          billing_type: 'CREDIT_CARD',
-        },
-      ],
-    }),
   })
-})
 
-const page = await context.newPage()
+  await context.route('**/api/billing/subscription', async (route) => {
+    if (route.request().method() === 'GET') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ subscription: null }),
+      })
+      return
+    }
+    await route.continue()
+  })
 
-for (const { path, name } of pages) {
-  await page.goto(`${baseUrl}${path}`, { waitUntil: 'networkidle' })
-  await page.waitForTimeout(600)
-  const file = join(outDir, `billing-${name}-1280.png`)
+  await context.route('**/api/whatsapp/**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ meta_app_id: 'x', embedded_signup_config_id: 'y' }),
+    })
+  })
+
+  const page = await context.newPage()
+
+  if (pageDef.seedPlan) {
+    await page.addInitScript(() => {
+      sessionStorage.setItem(
+        'rappeli.checkout-flow.v1',
+        JSON.stringify({
+          modality: 'included',
+          tier: 'profissional',
+          cycle: 'YEARLY',
+          planId: 'professional_plus_yearly',
+          planName: 'Profissional+',
+          amount: 5470,
+          modalityLabel: 'Mensagens incluídas',
+          whatsapp: '',
+          companyName: '',
+        }),
+      )
+    })
+  }
+
+  await page.goto(`${baseUrl}${pageDef.path}`, { waitUntil: 'networkidle' })
+  await page.waitForTimeout(700)
+  const file = join(outDir, `onboarding-${pageDef.name}-1280.png`)
   await page.screenshot({ path: file, fullPage: true })
   console.log('saved', file)
+  await context.close()
 }
 
 await browser.close()

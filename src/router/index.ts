@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
 import AppLayout from '@/layouts/AppLayout.vue'
+import OnboardingLayout from '@/layouts/OnboardingLayout.vue'
 import { useAuthStore } from '@/stores/auth'
 
 const router = createRouter({
@@ -23,6 +24,39 @@ const router = createRouter({
       name: 'onboarding-whatsapp',
       component: () => import('@/views/onboarding/OnboardingWhatsappView.vue'),
       meta: { requiresAuth: true },
+    },
+    {
+      path: '/contratacao',
+      component: OnboardingLayout,
+      meta: { requiresAuth: true },
+      children: [
+        {
+          path: 'plano',
+          name: 'assinatura-planos',
+          component: () => import('@/views/billing/PlanosView.vue'),
+          meta: { title: 'Planos' },
+        },
+        {
+          path: 'pagamento',
+          name: 'assinatura-checkout',
+          component: () => import('@/views/billing/BillingCheckoutView.vue'),
+          meta: { title: 'Pagamento' },
+        },
+        {
+          path: 'ativacao',
+          name: 'assinatura-ativacao',
+          component: () => import('@/views/billing/AtivacaoView.vue'),
+          meta: { title: 'Ativação' },
+        },
+      ],
+    },
+    {
+      path: '/assinatura/planos',
+      redirect: { name: 'assinatura-planos' },
+    },
+    {
+      path: '/assinatura/checkout',
+      redirect: { name: 'assinatura-checkout' },
     },
     {
       path: '/',
@@ -86,18 +120,6 @@ const router = createRouter({
           name: 'minha-assinatura',
           component: () => import('@/views/billing/MinhaAssinaturaView.vue'),
           meta: { title: 'Minha assinatura' },
-        },
-        {
-          path: 'assinatura/planos',
-          name: 'assinatura-planos',
-          component: () => import('@/views/billing/PlanosView.vue'),
-          meta: { title: 'Planos' },
-        },
-        {
-          path: 'assinatura/checkout',
-          name: 'assinatura-checkout',
-          component: () => import('@/views/billing/BillingCheckoutView.vue'),
-          meta: { title: 'Checkout' },
         },
       ],
     },

@@ -7,6 +7,14 @@ export function formatBillingCurrency(amount: number): string {
   }).format(amount)
 }
 
+export function formatPlanAmountCompact(amount: number): string {
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+    maximumFractionDigits: 0,
+  }).format(amount)
+}
+
 export function billingCycleLabel(cycle: BillingCycle): string {
   return cycle === 'MONTHLY' ? 'Mensal' : 'Anual'
 }
