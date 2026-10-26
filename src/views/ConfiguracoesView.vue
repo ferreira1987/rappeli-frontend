@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Bell, CircleHelp, Users } from '@lucide/vue'
 import { ref, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
 
 import WhatsAppSettingsPanel from '@/components/whatsapp/WhatsAppSettingsPanel.vue'
 import AppPageFooter from '@/components/layout/AppPageFooter.vue'
@@ -84,22 +84,25 @@ function selectTab(tab: (typeof tabs)[number]): void {
         <div class="grid gap-6 lg:grid-cols-3">
           <section class="space-y-4 lg:col-span-2">
             <article class="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
-              <div class="flex items-center justify-between gap-2">
-                <p class="text-xs font-semibold uppercase tracking-wide text-brand-gray">Assinatura atual</p>
-                <span class="rounded-full bg-brand-mist px-2 py-0.5 text-xs font-medium text-brand-indigo">Período de teste</span>
-              </div>
-              <h2 class="mt-2 font-display text-xl font-semibold text-brand-ink">Avaliação gratuita</h2>
+              <p class="text-xs font-semibold uppercase tracking-wide text-brand-gray">Assinatura</p>
+              <h2 class="mt-2 font-display text-xl font-semibold text-brand-ink">Plano e pagamentos</h2>
               <p class="mt-2 text-sm text-brand-gray">
-                Você está usando o Rappeli em período de testes. Planos pagos serão anunciados quando estiverem disponíveis.
+                Consulte seu plano, atualize o cartão, cancele ou veja o histórico de cobranças.
               </p>
-              <button type="button" class="mt-6 rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-brand-gray" disabled>
-                Ver planos
-              </button>
-            </article>
-
-            <article class="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
-              <h2 class="font-display text-lg font-semibold text-brand-ink">Histórico de faturas</h2>
-              <p class="mt-8 text-center text-sm text-brand-gray">Nenhuma fatura disponível.</p>
+              <div class="mt-6 flex flex-wrap gap-3">
+                <RouterLink
+                  :to="{ name: 'minha-assinatura' }"
+                  class="rounded-xl bg-brand-indigo px-4 py-2 text-sm font-semibold text-white"
+                >
+                  Minha assinatura
+                </RouterLink>
+                <RouterLink
+                  :to="{ name: 'assinatura-planos' }"
+                  class="rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-brand-ink"
+                >
+                  Ver planos
+                </RouterLink>
+              </div>
             </article>
           </section>
 
