@@ -59,9 +59,7 @@ async function onSubmit(): Promise<void> {
     })
 
     const redirect =
-      typeof route.query.redirect === 'string'
-        ? route.query.redirect
-        : '/onboarding/whatsapp'
+      typeof route.query.redirect === 'string' ? route.query.redirect : '/assinatura/planos'
     await router.replace(redirect)
   } catch (error) {
     const validation = getValidationErrors(error)

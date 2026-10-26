@@ -81,6 +81,24 @@ const router = createRouter({
           component: () => import('@/views/WhatsappConfigView.vue'),
           meta: { title: 'WhatsApp — Configurações' },
         },
+        {
+          path: 'assinatura',
+          name: 'minha-assinatura',
+          component: () => import('@/views/billing/MinhaAssinaturaView.vue'),
+          meta: { title: 'Minha assinatura' },
+        },
+        {
+          path: 'assinatura/planos',
+          name: 'assinatura-planos',
+          component: () => import('@/views/billing/PlanosView.vue'),
+          meta: { title: 'Planos' },
+        },
+        {
+          path: 'assinatura/checkout',
+          name: 'assinatura-checkout',
+          component: () => import('@/views/billing/BillingCheckoutView.vue'),
+          meta: { title: 'Checkout' },
+        },
       ],
     },
     {
