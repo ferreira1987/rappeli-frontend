@@ -115,7 +115,7 @@ useEscapeKey(
         </div>
 
         <p class="mt-2 text-sm text-brand-gray">
-          O convite é registrado na API. O link com token será enviado por e-mail quando o envio estiver ativo.
+          O convidado receberá por e-mail um link para criar a senha (válido por 7 dias).
         </p>
 
         <div class="mt-4 space-y-3">

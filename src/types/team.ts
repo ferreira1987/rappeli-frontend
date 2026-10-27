@@ -9,6 +9,31 @@ export interface Sector {
   agents?: TeamAgent[]
 }
 
+export type TeamInvitationStatus = 'pending'
+
+/** `GET /api/team/invitations` — TeamPendingInvitationResource (PR #17). */
+export interface TeamPendingInvitation {
+  id: number
+  name: string | null
+  email: string
+  role: TeamAgentRole | null
+  sector_id: number | null
+  expires_at: string | null
+  status: TeamInvitationStatus
+}
+
+/** `POST /api/team/invitations` — TeamInvitationResource (create). */
+export interface TeamInvitationCreated {
+  id: number
+  name: string | null
+  email: string
+  role: TeamAgentRole | null
+  sector_id: number | null
+  expires_at: string | null
+  token?: string
+  email_queued?: boolean
+}
+
 export interface TeamInvitationPreview {
   valid: boolean
   message: string | null
