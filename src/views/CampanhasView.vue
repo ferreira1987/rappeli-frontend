@@ -4,6 +4,8 @@ import { computed, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 
 import AppPageHeader from '@/components/app/AppPageHeader.vue'
+import AppPageTabs from '@/components/app/AppPageTabs.vue'
+import { panelBreadcrumbs } from '@/constants/panelBreadcrumbs'
 import AppPageFooter from '@/components/layout/AppPageFooter.vue'
 import type { CampaignStatus } from '@/mocks/campaigns'
 import { exampleCampaigns, exampleSequences } from '@/services/example'
@@ -53,7 +55,7 @@ function countStatus(status: CampaignStatus): number {
   <div class="flex min-h-full flex-col bg-brand-mist">
     <AppPageHeader
       title="Campanhas"
-      :breadcrumbs="[{ label: 'Painel', to: '/painel' }, { label: 'Campanhas' }]"
+      :breadcrumbs="panelBreadcrumbs({ label: 'Campanhas' })"
       show-example-badge
     >
       <template #actions>
@@ -74,8 +76,7 @@ function countStatus(status: CampaignStatus): number {
       </template>
     </AppPageHeader>
 
-    <div class="border-b border-slate-200 bg-white px-4 sm:px-6 lg:px-8">
-      <div class="flex flex-wrap gap-6">
+    <AppPageTabs>
         <button
           type="button"
           class="flex items-center gap-2 border-b-2 py-3 text-sm font-semibold"
@@ -96,8 +97,7 @@ function countStatus(status: CampaignStatus): number {
         <button type="button" class="border-b-2 border-transparent py-3 text-sm font-medium text-brand-gray">
           Modelos de mensagem
         </button>
-      </div>
-    </div>
+    </AppPageTabs>
 
     <div class="flex-1 space-y-6 px-4 py-6 sm:px-6 lg:px-8">
       <div class="flex gap-3 rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">

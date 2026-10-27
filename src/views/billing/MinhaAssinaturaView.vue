@@ -9,9 +9,11 @@ import {
   fetchCurrentSubscription,
   updateSubscriptionPaymentMethod,
 } from '@/api/billing'
+import AppPageHeader from '@/components/app/AppPageHeader.vue'
 import BillingBlockedBanner from '@/components/billing/BillingBlockedBanner.vue'
 import BillingCheckoutForms from '@/components/billing/BillingCheckoutForms.vue'
 import AppPageFooter from '@/components/layout/AppPageFooter.vue'
+import { panelBreadcrumbs } from '@/constants/panelBreadcrumbs'
 import { useAuthStore } from '@/stores/auth'
 import type { BillingPayment, Subscription } from '@/types/billing'
 import {
@@ -135,26 +137,29 @@ function maskedCard(sub: Subscription): string {
 </script>
 
 <template>
-  <div class="min-h-full px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
+  <div class="flex min-h-full flex-col bg-brand-mist">
+    <AppPageHeader
+      title="Minha assinatura"
+      subtitle="Plano, pagamentos e forma de cobrança."
+      :breadcrumbs="panelBreadcrumbs({ label: 'Minha assinatura' })"
+    >
+      <template #actions>
+        <button
+          type="button"
+          class="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-brand-ink hover:bg-slate-50 disabled:opacity-60"
+          :disabled="loading"
+          @click="load"
+        >
+          <RefreshCw class="h-4 w-4 text-brand-gray" :class="loading ? 'animate-spin' : ''" aria-hidden="true" />
+          Atualizar
+        </button>
+      </template>
+    </AppPageHeader>
+
+    <div class="flex-1 px-4 py-6 sm:px-6 lg:px-8">
     <BillingBlockedBanner class="mb-6" />
 
-    <header class="flex flex-wrap items-start justify-between gap-4">
-      <div>
-        <h1 class="font-display text-2xl font-semibold text-brand-ink">Minha assinatura</h1>
-        <p class="mt-1 text-sm text-brand-gray">Plano, pagamentos e forma de cobrança.</p>
-      </div>
-      <button
-        type="button"
-        class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-brand-gray"
-        :disabled="loading"
-        @click="load"
-      >
-        <RefreshCw class="h-4 w-4" :class="loading ? 'animate-spin' : ''" aria-hidden="true" />
-        Atualizar
-      </button>
-    </header>
-
-    <p v-if="loading" class="mt-10 text-sm text-brand-gray">Carregando…</p>
+    <p v-if="loading" class="text-sm text-brand-gray">Carregando…</p>
     <p
       v-else-if="pageError"
       class="mt-10 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
@@ -354,5 +359,6 @@ function maskedCard(sub: Subscription): string {
     </template>
 
     <AppPageFooter class="mt-12" />
+    </div>
   </div>
 </template>

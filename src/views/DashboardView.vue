@@ -6,6 +6,7 @@ import { RouterLink, useRouter } from 'vue-router'
 import { fetchDashboardMetrics } from '@/api/dashboard'
 import { fetchInboxConversations } from '@/api/inbox'
 import { fetchWhatsAppAccount } from '@/api/whatsapp'
+import AppPageHeader from '@/components/app/AppPageHeader.vue'
 import MessageVolumeChart from '@/components/dashboard/MessageVolumeChart.vue'
 import ConversationListItem from '@/components/conversations/ConversationListItem.vue'
 import AppPageFooter from '@/components/layout/AppPageFooter.vue'
@@ -140,41 +141,35 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="min-h-full bg-brand-mist px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
-    <header class="flex flex-col gap-3 lg:flex-row lg:flex-wrap lg:items-center lg:gap-4">
-      <h1 class="font-display text-xl font-semibold text-brand-ink sm:text-2xl lg:shrink-0">
-        Painel
-      </h1>
-
-      <div
-        class="order-2 flex w-full min-w-0 flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center lg:order-none lg:ml-auto lg:w-auto"
-      >
+  <div class="flex min-h-full flex-col bg-brand-mist">
+    <AppPageHeader title="Painel">
+      <template #actions>
         <RouterLink
           v-if="!whatsappLoading && !whatsappConnected"
           :to="{ name: 'configuracoes-whatsapp' }"
-          class="inline-flex min-w-0 items-center justify-center rounded-full border border-brand-indigo/30 bg-white px-4 py-1.5 text-center text-xs font-semibold text-brand-indigo transition hover:bg-brand-mist sm:justify-start"
+          class="inline-flex min-w-0 items-center justify-center rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-brand-indigo hover:bg-slate-50"
         >
           Conectar WhatsApp
         </RouterLink>
         <span
           v-else-if="whatsappConnected"
-          class="inline-flex min-w-0 items-center justify-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-center text-xs font-medium text-emerald-800 sm:justify-start"
+          class="inline-flex min-w-0 items-center justify-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-800"
         >
           {{ whatsappBadgeLabel }}
         </span>
         <button
           type="button"
-          class="relative shrink-0 rounded-lg bg-white p-2 text-brand-gray shadow-sm"
+          class="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white p-2 text-brand-gray hover:bg-slate-50"
           disabled
           aria-label="Notificações"
         >
           <Bell class="h-5 w-5" />
         </button>
-        <span class="hidden text-sm text-brand-ink sm:inline">{{ auth.user?.name ?? 'Conta' }}</span>
-      </div>
-    </header>
+        <span class="hidden text-sm font-medium text-brand-ink sm:inline">{{ auth.user?.name ?? 'Conta' }}</span>
+      </template>
+    </AppPageHeader>
 
-    <div class="mt-6 space-y-6">
+    <div class="flex-1 space-y-6 px-4 py-6 sm:px-6 lg:px-8">
       <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <article
           v-for="kpi in kpiCards"
