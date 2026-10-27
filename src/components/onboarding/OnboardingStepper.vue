@@ -39,11 +39,7 @@ const completedTrackRatio = computed(() => {
           </div>
         </div>
 
-        <li
-          v-for="step in steps"
-          :key="step.n"
-          class="relative z-10 flex flex-col items-center"
-        >
+        <li v-for="step in steps" :key="step.n" class="relative z-10 flex flex-col items-center">
           <div
             class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs leading-none"
             :class="
@@ -54,7 +50,12 @@ const completedTrackRatio = computed(() => {
                   : 'border border-slate-300 bg-white text-sm font-semibold text-slate-500'
             "
           >
-            <Check v-if="step.n < currentStep" class="h-4 w-4 shrink-0" stroke-width="2.5" aria-hidden="true" />
+            <Check
+              v-if="step.n < currentStep"
+              class="h-4 w-4 shrink-0"
+              stroke-width="2.5"
+              aria-hidden="true"
+            />
             <span v-else class="select-none tabular-nums">{{ step.n }}</span>
           </div>
           <span
@@ -67,7 +68,7 @@ const completedTrackRatio = computed(() => {
                   : 'font-normal text-slate-500'
             "
           >
-            {{ step.n }} {{ step.label }}
+            {{ step.label }}
           </span>
         </li>
       </ol>

@@ -10,11 +10,13 @@ import OnboardingShell from '@/components/onboarding/OnboardingShell.vue'
 import { useAuthStore } from '@/stores/auth'
 import { useCheckoutFlowStore } from '@/stores/checkoutFlow'
 import { maskCpfCnpj } from '@/utils/brazilianDocument'
-import { billingCycleLabel, formatBillingCurrency, maskPhoneBr, maskPostalCode } from '@/utils/billingFormat'
 import {
-  emptyCheckoutForms,
-  validateCheckoutForms,
-} from '@/utils/billingCheckoutValidation'
+  billingCycleLabel,
+  formatBillingCurrency,
+  maskPhoneBr,
+  maskPostalCode,
+} from '@/utils/billingFormat'
+import { emptyCheckoutForms, validateCheckoutForms } from '@/utils/billingCheckoutValidation'
 import { getErrorMessage, getValidationErrors } from '@/utils/errors'
 
 const router = useRouter()
@@ -121,14 +123,19 @@ function onCepInput(event: Event): void {
       <div class="space-y-6 lg:col-span-2">
         <article class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
           <div class="mb-4 flex items-center gap-2">
-            <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-mist text-brand-indigo">
+            <div
+              class="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-mist text-brand-indigo"
+            >
               <Building2 class="h-4 w-4" aria-hidden="true" />
             </div>
             <h2 class="text-lg font-semibold text-brand-ink">Dados de faturamento</h2>
           </div>
           <div class="grid gap-4 sm:grid-cols-2">
             <div>
-              <label class="text-[11px] font-semibold uppercase tracking-wide text-brand-gray" for="bill-name">
+              <label
+                class="text-[11px] font-semibold uppercase tracking-wide text-brand-gray"
+                for="bill-name"
+              >
                 Nome completo
               </label>
               <input
@@ -140,7 +147,10 @@ function onCepInput(event: Event): void {
               />
             </div>
             <div>
-              <label class="text-[11px] font-semibold uppercase tracking-wide text-brand-gray" for="bill-email">
+              <label
+                class="text-[11px] font-semibold uppercase tracking-wide text-brand-gray"
+                for="bill-email"
+              >
                 E-mail
               </label>
               <input
@@ -152,7 +162,10 @@ function onCepInput(event: Event): void {
               />
             </div>
             <div>
-              <label class="text-[11px] font-semibold uppercase tracking-wide text-brand-gray" for="bill-phone">
+              <label
+                class="text-[11px] font-semibold uppercase tracking-wide text-brand-gray"
+                for="bill-phone"
+              >
                 WhatsApp
               </label>
               <input
@@ -165,7 +178,10 @@ function onCepInput(event: Event): void {
               />
             </div>
             <div>
-              <label class="text-[11px] font-semibold uppercase tracking-wide text-brand-gray" for="bill-doc">
+              <label
+                class="text-[11px] font-semibold uppercase tracking-wide text-brand-gray"
+                for="bill-doc"
+              >
                 CPF ou CNPJ
               </label>
               <input
@@ -178,7 +194,10 @@ function onCepInput(event: Event): void {
               />
             </div>
             <div class="sm:col-span-2">
-              <label class="text-[11px] font-semibold uppercase tracking-wide text-brand-gray" for="legal-name">
+              <label
+                class="text-[11px] font-semibold uppercase tracking-wide text-brand-gray"
+                for="legal-name"
+              >
                 Razão social
               </label>
               <input
@@ -190,7 +209,10 @@ function onCepInput(event: Event): void {
               />
             </div>
             <div>
-              <label class="text-[11px] font-semibold uppercase tracking-wide text-brand-gray" for="cep">
+              <label
+                class="text-[11px] font-semibold uppercase tracking-wide text-brand-gray"
+                for="cep"
+              >
                 CEP
               </label>
               <input
@@ -203,7 +225,10 @@ function onCepInput(event: Event): void {
               />
             </div>
             <div>
-              <label class="text-[11px] font-semibold uppercase tracking-wide text-brand-gray" for="street">
+              <label
+                class="text-[11px] font-semibold uppercase tracking-wide text-brand-gray"
+                for="street"
+              >
                 Endereço
               </label>
               <input
@@ -215,7 +240,10 @@ function onCepInput(event: Event): void {
               />
             </div>
             <div>
-              <label class="text-[11px] font-semibold uppercase tracking-wide text-brand-gray" for="number">
+              <label
+                class="text-[11px] font-semibold uppercase tracking-wide text-brand-gray"
+                for="number"
+              >
                 Número
               </label>
               <input
@@ -232,7 +260,9 @@ function onCepInput(event: Event): void {
         <article class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
           <div class="mb-4 flex items-center justify-between gap-2">
             <div class="flex items-center gap-2">
-              <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-mist text-brand-indigo">
+              <div
+                class="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-mist text-brand-indigo"
+              >
                 <CreditCard class="h-4 w-4" aria-hidden="true" />
               </div>
               <h2 class="text-lg font-semibold text-brand-ink">Cartão de crédito</h2>
@@ -300,8 +330,8 @@ function onCepInput(event: Event): void {
               </span>
             </div>
             <p class="mt-3 text-xs leading-relaxed text-brand-gray">
-              Cobrança à vista no cartão. Sem taxa de implantação, sem fidelidade, cancele quando quiser em 1
-              clique.
+              Cobrança à vista no cartão. Sem taxa de implantação, sem fidelidade, cancele quando
+              quiser em 1 clique.
             </p>
             <div class="mt-3 text-right">
               <RouterLink

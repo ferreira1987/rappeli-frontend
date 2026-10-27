@@ -21,10 +21,7 @@ import {
   paymentStatusLabel,
   subscriptionStatusLabel,
 } from '@/utils/billingFormat'
-import {
-  emptyCheckoutForms,
-  validateCheckoutForms,
-} from '@/utils/billingCheckoutValidation'
+import { emptyCheckoutForms, validateCheckoutForms } from '@/utils/billingCheckoutValidation'
 import { getErrorMessage, getValidationErrors } from '@/utils/errors'
 
 const auth = useAuthStore()
@@ -179,9 +176,14 @@ function maskedCard(sub: Subscription): string {
         {{ actionError }}
       </p>
 
-      <div v-if="!subscription" class="mt-8 rounded-2xl border border-slate-200/80 bg-white p-8 text-center shadow-sm">
+      <div
+        v-if="!subscription"
+        class="mt-8 rounded-2xl border border-slate-200/80 bg-white p-8 text-center shadow-sm"
+      >
         <h2 class="font-display text-lg font-semibold text-brand-ink">Nenhuma assinatura ativa</h2>
-        <p class="mt-2 text-sm text-brand-gray">Escolha um plano para começar a usar o painel sem interrupções.</p>
+        <p class="mt-2 text-sm text-brand-gray">
+          Escolha um plano para começar a usar o painel sem interrupções.
+        </p>
         <RouterLink
           :to="{ name: 'assinatura-planos' }"
           class="mt-6 inline-flex rounded-xl bg-brand-indigo px-5 py-2.5 text-sm font-semibold text-white"
@@ -195,7 +197,9 @@ function maskedCard(sub: Subscription): string {
           <article class="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
             <div class="flex flex-wrap items-start justify-between gap-3">
               <div>
-                <p class="text-xs font-semibold uppercase tracking-wide text-brand-gray">Plano atual</p>
+                <p class="text-xs font-semibold uppercase tracking-wide text-brand-gray">
+                  Plano atual
+                </p>
                 <h2 class="mt-1 font-display text-xl font-semibold text-brand-ink">
                   {{ subscription.plan_name }}
                 </h2>
@@ -238,7 +242,11 @@ function maskedCard(sub: Subscription): string {
                 :disabled="cancelLoading"
                 @click="onCancel"
               >
-                <Loader2 v-if="cancelLoading" class="inline h-4 w-4 animate-spin" aria-hidden="true" />
+                <Loader2
+                  v-if="cancelLoading"
+                  class="inline h-4 w-4 animate-spin"
+                  aria-hidden="true"
+                />
                 Cancelar assinatura
               </button>
             </div>
@@ -248,14 +256,18 @@ function maskedCard(sub: Subscription): string {
           </article>
 
           <article class="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
-            <h2 class="font-display text-lg font-semibold text-brand-ink">Histórico de pagamentos</h2>
+            <h2 class="font-display text-lg font-semibold text-brand-ink">
+              Histórico de pagamentos
+            </h2>
             <div v-if="payments.length === 0" class="mt-8 text-center text-sm text-brand-gray">
               Nenhum pagamento registrado ainda.
             </div>
             <div v-else class="mt-4 overflow-x-auto">
               <table class="min-w-full text-left text-sm">
                 <thead>
-                  <tr class="border-b border-slate-100 text-xs uppercase tracking-wide text-brand-gray">
+                  <tr
+                    class="border-b border-slate-100 text-xs uppercase tracking-wide text-brand-gray"
+                  >
                     <th class="pb-2 pr-4 font-semibold">Vencimento</th>
                     <th class="pb-2 pr-4 font-semibold">Valor</th>
                     <th class="pb-2 font-semibold">Status</th>
@@ -267,8 +279,12 @@ function maskedCard(sub: Subscription): string {
                     :key="payment.id"
                     class="border-b border-slate-50 last:border-0"
                   >
-                    <td class="py-3 pr-4 text-brand-ink">{{ formatBillingDate(payment.due_date) }}</td>
-                    <td class="py-3 pr-4 text-brand-ink">{{ formatBillingCurrency(payment.value) }}</td>
+                    <td class="py-3 pr-4 text-brand-ink">
+                      {{ formatBillingDate(payment.due_date) }}
+                    </td>
+                    <td class="py-3 pr-4 text-brand-ink">
+                      {{ formatBillingCurrency(payment.value) }}
+                    </td>
                     <td class="py-3 text-brand-gray">{{ paymentStatusLabel(payment.status) }}</td>
                   </tr>
                 </tbody>
@@ -303,7 +319,9 @@ function maskedCard(sub: Subscription): string {
         aria-modal="true"
         aria-labelledby="card-modal-title"
       >
-        <div class="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
+        <div
+          class="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-6 shadow-xl"
+        >
           <h2 id="card-modal-title" class="font-display text-lg font-semibold text-brand-ink">
             Atualizar cartão
           </h2>
