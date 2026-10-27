@@ -1,5 +1,7 @@
 import { computed, nextTick, onUnmounted, ref, watch } from 'vue'
 
+import { useInboxNavStore } from '@/stores/inboxNav'
+
 import {
   fetchInboxConversations,
   fetchInboxMessagesPage,
@@ -65,7 +67,8 @@ function conversationFromMessage(
 }
 
 export function useConversationsInbox(companyId: () => number | null | undefined) {
-  const conversations = ref<Conversation[]>([])
+  const inboxNav = useInboxNavStore()
+  const listConversations = ref<Conversation[]>([])
   const messages = ref<ConversationMessage[]>([])
   const selectedId = ref<number | null>(null)
   const searchQuery = ref('')
@@ -92,8 +95,20 @@ export function useConversationsInbox(companyId: () => number | null | undefined
 
   const totalUnread = computed(() => listCounts.value.unread)
 
+  const conversations = computed(() => {
+    const q = searchQuery.value.trim().toLowerCase()
+    if (!q) {
+      return listConversations.value
+    }
+    return listConversations.value.filter((conversation) => {
+      const name = inboxContactDisplayName(conversation.contact).toLowerCase()
+      const phone = conversation.contact.phone ?? ''
+      return name.includes(q) || phone.includes(q)
+    })
+  })
+
   const selectedConversation = computed(() =>
-    conversations.value.find((c) => c.id === selectedId.value) ?? null,
+    listConversations.value.find((c) => c.id === selectedId.value) ?? null,
   )
 
   const canSendMessage = computed(() => {
@@ -112,16 +127,15 @@ export function useConversationsInbox(companyId: () => number | null | undefined
     }
     listError.value = null
     try {
-      const search = searchQuery.value.trim()
       const page = await fetchInboxConversations({
-        search: search || undefined,
         filter: inboxFilterFromTab(listFilter.value),
       })
-      conversations.value = page.conversations
+      listConversations.value = page.conversations
       listCounts.value = page.counts
+      void inboxNav.refresh()
     } catch (error) {
       listError.value = getErrorMessage(error)
-      conversations.value = []
+      listConversations.value = []
       listCounts.value = { all: 0, unread: 0, automated: 0, human: 0 }
     } finally {
       if (!options?.silent) {
@@ -161,7 +175,7 @@ export function useConversationsInbox(companyId: () => number | null | undefined
       scrollToBottomAfterLoad.value = true
 
       const updated = await markInboxConversationRead(conversationId)
-      conversations.value = mergeConversation(conversations.value, updated)
+      listConversations.value = mergeConversation(listConversations.value, updated)
       void loadConversations({ silent: true })
     } catch (error) {
       threadError.value = getErrorMessage(error)
@@ -235,8 +249,8 @@ export function useConversationsInbox(companyId: () => number | null | undefined
       scrollToBottomAfterLoad.value = true
       const existing = selectedConversation.value
       if (existing) {
-        conversations.value = mergeConversation(
-          conversations.value,
+        listConversations.value = mergeConversation(
+          listConversations.value,
           conversationFromMessage(existing, message, 0),
         )
       }
@@ -256,7 +270,7 @@ export function useConversationsInbox(companyId: () => number | null | undefined
 
   function applyRealtimeMessage(message: ConversationMessage): void {
     const conversationId = message.conversation_id
-    const existing = conversations.value.find((c) => c.id === conversationId)
+    const existing = listConversations.value.find((c) => c.id === conversationId)
 
     if (!existing) {
       void loadConversations()
@@ -278,7 +292,7 @@ export function useConversationsInbox(companyId: () => number | null | undefined
       if (message.direction === 'inbound') {
         void markInboxConversationRead(conversationId)
           .then((updated) => {
-            conversations.value = mergeConversation(conversations.value, updated)
+            listConversations.value = mergeConversation(listConversations.value, updated)
           })
           .catch(() => undefined)
       }
@@ -291,8 +305,8 @@ export function useConversationsInbox(companyId: () => number | null | undefined
           ? 0
           : existing.unread_count ?? 0
 
-    conversations.value = mergeConversation(
-      conversations.value,
+    listConversations.value = mergeConversation(
+      listConversations.value,
       conversationFromMessage(existing, message, unreadBump),
     )
   }
@@ -321,16 +335,6 @@ export function useConversationsInbox(companyId: () => number | null | undefined
     scrollToBottomAfterLoad.value = true
   }
 
-  let searchDebounce: ReturnType<typeof setTimeout> | null = null
-  watch(searchQuery, () => {
-    if (searchDebounce) {
-      clearTimeout(searchDebounce)
-    }
-    searchDebounce = setTimeout(() => {
-      void loadConversations()
-    }, 300)
-  })
-
   let unsubscribeRealtime: (() => void) | null = null
 
   watch(
@@ -351,9 +355,6 @@ export function useConversationsInbox(companyId: () => number | null | undefined
 
   onUnmounted(() => {
     unsubscribeRealtime?.()
-    if (searchDebounce) {
-      clearTimeout(searchDebounce)
-    }
   })
 
   void loadConversations()

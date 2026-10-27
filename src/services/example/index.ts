@@ -8,9 +8,14 @@ export { exampleFunnelCards, funnelStages } from '@/mocks/funnel'
 export { exampleScheduledMessages, scheduleMessageTemplateVariables } from '@/mocks/scheduledMessages'
 export {
   exampleCampaigns,
+  exampleCampaignSegmentContactCount,
   exampleMetaTemplates,
   exampleSequences,
 } from '@/mocks/campaigns'
+export {
+  EXAMPLE_AVERAGE_RESPONSE_TIME_SECONDS,
+  EXAMPLE_CONVERSATIONS_TODAY,
+} from '@/mocks/sharedExampleMetrics'
 export {
   exampleAgentPerformance,
   exampleCampaignPerformance,

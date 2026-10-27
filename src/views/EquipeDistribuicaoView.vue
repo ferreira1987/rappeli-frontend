@@ -4,7 +4,10 @@ import { computed, ref } from 'vue'
 
 import AppPageHeader from '@/components/app/AppPageHeader.vue'
 import AppPageFooter from '@/components/layout/AppPageFooter.vue'
+import { useExampleToast } from '@/composables/useExampleToast'
 import { initialsFromName } from '@/composables/useInitials'
+import { downloadCsv } from '@/utils/exportCsv'
+import { pluralizePt } from '@/utils/pluralize'
 import type { ExampleAgent } from '@/mocks/team'
 import {
   exampleAgents,
@@ -19,6 +22,22 @@ const routingMethod = ref<'round_robin' | 'sector' | 'manual'>('round_robin')
 const respectLimit = ref(true)
 const overflowQueue = ref(true)
 const chatLimit = ref(8)
+const { message: toast, show: showToast } = useExampleToast()
+
+function exportTeamCsv(): void {
+  downloadCsv(
+    'equipe-atendentes-exemplo.csv',
+    ['Nome', 'E-mail', 'Setor', 'Papel', 'Conversas ativas'],
+    filteredAgents.value.map((agent) => [
+      agent.name,
+      agent.email,
+      sectorNameById(agent.sectorId),
+      roleLabels[agent.role],
+      String(agent.activeChats),
+    ]),
+  )
+  showToast('Lista exportada em CSV (exemplo).')
+}
 
 const filteredAgents = computed(() => {
   const q = search.value.trim().toLowerCase()
@@ -83,6 +102,7 @@ function roleBadgeClass(role: ExampleAgent['role']): string {
         <button
           type="button"
           class="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold hover:bg-slate-50"
+          @click="exportTeamCsv"
         >
           <Download class="h-4 w-4" />
           Exportar lista
@@ -90,6 +110,7 @@ function roleBadgeClass(role: ExampleAgent['role']): string {
         <button
           type="button"
           class="inline-flex items-center gap-2 rounded-lg bg-brand-indigo px-4 py-2 text-sm font-semibold text-white hover:bg-brand-indigo-hover"
+          @click="showToast('Convite enviado (exemplo). Integração com API em breve.')"
         >
           <UserPlus class="h-4 w-4" />
           Convidar atendente
@@ -122,6 +143,7 @@ function roleBadgeClass(role: ExampleAgent['role']): string {
     </div>
 
     <div class="flex-1 space-y-6 px-4 py-6 sm:px-6 lg:px-8">
+      <p v-if="toast" class="text-sm text-brand-indigo" role="status">{{ toast }}</p>
       <section v-if="tab === 'atendentes'" class="rounded-xl border border-slate-200 bg-white p-4 shadow-xs">
         <h2 class="font-display text-base font-bold text-brand-ink">Atendentes da clínica</h2>
         <div class="mt-4 flex flex-wrap gap-3">
@@ -186,15 +208,31 @@ function roleBadgeClass(role: ExampleAgent['role']): string {
                   <input type="checkbox" :checked="agent.receivesChats" class="h-4 w-4 rounded text-brand-indigo" />
                 </td>
                 <td class="py-3 pl-4 text-right">
-                  <button type="button" class="p-1 text-brand-gray hover:text-brand-indigo"><Pencil class="h-4 w-4" /></button>
-                  <button type="button" class="p-1 text-brand-gray hover:text-red-600"><Trash2 class="h-4 w-4" /></button>
+                  <button
+                    type="button"
+                    class="p-1 text-brand-gray hover:text-brand-indigo"
+                    aria-label="Editar atendente"
+                    title="Editar atendente"
+                    @click="showToast('Edição de atendente (exemplo).')"
+                  >
+                    <Pencil class="h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
+                    class="p-1 text-brand-gray hover:text-red-600"
+                    aria-label="Remover atendente"
+                    title="Remover atendente"
+                    @click="showToast('Remoção simulada (exemplo).')"
+                  >
+                    <Trash2 class="h-4 w-4" />
+                  </button>
                 </td>
               </tr>
             </tbody>
           </table>
         </div>
         <p class="mt-3 text-xs text-brand-gray">
-          Exibindo {{ filteredAgents.length }} atendentes · 3 online, 1 ausente, 1 offline (exemplo)
+          Exibindo {{ pluralizePt(filteredAgents.length, 'atendente') }} · 3 online, 1 ausente, 1 offline (exemplo)
         </p>
       </section>
 
@@ -217,7 +255,9 @@ function roleBadgeClass(role: ExampleAgent['role']): string {
                   <span v-if="sector.isDefault" class="text-xs font-normal text-brand-gray">(Padrão)</span>
                 </p>
                 <p class="mt-1 text-xs text-brand-gray">{{ sector.description }}</p>
-                <p class="mt-1 text-[11px] text-brand-gray">{{ sector.memberCount }} membros</p>
+                <p class="mt-1 text-[11px] text-brand-gray">
+                  {{ pluralizePt(sector.memberCount, 'membro') }}
+                </p>
               </div>
               <button type="button" class="text-brand-gray hover:text-brand-indigo"><Pencil class="h-4 w-4" /></button>
             </li>

@@ -2,6 +2,7 @@
 import { computed, reactive, watch } from 'vue'
 
 import MessageFieldMeta from '@/components/auto-replies/MessageFieldMeta.vue'
+import { useEscapeKey } from '@/composables/useEscapeKey'
 import type { KeywordMatchType, KeywordRule, KeywordRuleWrite } from '@/types/autoReplies'
 const props = defineProps<{
   open: boolean
@@ -57,6 +58,11 @@ const localErrors = computed(() => {
   }
   return errors
 })
+
+useEscapeKey(
+  () => props.open,
+  () => emit('close'),
+)
 
 function onSubmit(): void {
   if (Object.keys(localErrors.value).length > 0) {

@@ -6,13 +6,16 @@ import AppPageHeader from '@/components/app/AppPageHeader.vue'
 import AppPageTabs from '@/components/app/AppPageTabs.vue'
 import { panelBreadcrumbs } from '@/constants/panelBreadcrumbs'
 import AppPageFooter from '@/components/layout/AppPageFooter.vue'
+import ExampleFiltersModal from '@/components/app/ExampleFiltersModal.vue'
 import ScheduleMessageModal from '@/components/scheduled-messages/ScheduleMessageModal.vue'
+import { useExampleToast } from '@/composables/useExampleToast'
 import type { ScheduledMessageStatus } from '@/mocks/scheduledMessages'
 import { exampleScheduledMessages } from '@/services/example'
 
 const tab = ref<ScheduledMessageStatus>('scheduled')
 const modalOpen = ref(false)
-const toast = ref<string | null>(null)
+const filtersOpen = ref(false)
+const { message: toast, show: showToast } = useExampleToast()
 
 const rows = computed(() => exampleScheduledMessages.filter((r) => r.status === tab.value))
 
@@ -27,10 +30,7 @@ function countFor(status: ScheduledMessageStatus): number {
 }
 
 function onScheduled(): void {
-  toast.value = 'Mensagem agendada (exemplo). Integração com API em breve.'
-  window.setTimeout(() => {
-    toast.value = null
-  }, 4000)
+  showToast('Mensagem agendada (exemplo). Integração com API em breve.')
 }
 </script>
 
@@ -45,6 +45,7 @@ function onScheduled(): void {
         <button
           type="button"
           class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium hover:bg-slate-50"
+          @click="filtersOpen = true"
         >
           <Filter class="h-4 w-4 text-brand-gray" />
           Filtros
@@ -118,5 +119,16 @@ function onScheduled(): void {
     </div>
 
     <ScheduleMessageModal :open="modalOpen" @close="modalOpen = false" @scheduled="onScheduled" />
+    <ExampleFiltersModal
+      :open="filtersOpen"
+      title="Filtros de mensagens agendadas"
+      @close="filtersOpen = false"
+      @apply="
+        () => {
+          filtersOpen = false
+          showToast('Filtros aplicados (exemplo).')
+        }
+      "
+    />
   </div>
 </template>

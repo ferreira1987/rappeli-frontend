@@ -2,6 +2,7 @@
 import { ArrowRightLeft, PauseCircle, X } from '@lucide/vue'
 import { computed, ref, watch } from 'vue'
 
+import { useEscapeKey } from '@/composables/useEscapeKey'
 import { exampleAgents, exampleSectors } from '@/services/example'
 
 const props = defineProps<{
@@ -44,6 +45,11 @@ watch(
 function onClose(): void {
   emit('close')
 }
+
+useEscapeKey(
+  () => props.open,
+  () => onClose(),
+)
 
 function onSubmit(): void {
   emit('transferred')

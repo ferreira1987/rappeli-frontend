@@ -5,18 +5,21 @@ import { RouterLink, useRouter } from 'vue-router'
 
 import { fetchDashboardMetrics } from '@/api/dashboard'
 import { fetchInboxConversations } from '@/api/inbox'
-import { fetchWhatsAppAccount } from '@/api/whatsapp'
 import AppPageHeader from '@/components/app/AppPageHeader.vue'
+import { panelBreadcrumbs } from '@/constants/panelBreadcrumbs'
+import { exampleDashboardMetrics } from '@/mocks/dashboardExample'
 import MessageVolumeChart from '@/components/dashboard/MessageVolumeChart.vue'
 import ConversationListItem from '@/components/conversations/ConversationListItem.vue'
 import AppPageFooter from '@/components/layout/AppPageFooter.vue'
 import { useAuthStore } from '@/stores/auth'
+import { useWhatsAppStore } from '@/stores/whatsapp'
 import type { DashboardMetrics } from '@/types/dashboard'
 import type { Conversation } from '@/types/conversations'
 import { formatAverageResponseTime, formatDashboardCount } from '@/utils/formatDashboard'
 import { formatBrazilPhone } from '@/utils/phone'
 
 const auth = useAuthStore()
+const whatsappStore = useWhatsAppStore()
 const router = useRouter()
 
 const metrics = ref<DashboardMetrics | null>(null)
@@ -25,16 +28,12 @@ const metricsUnavailable = ref(false)
 
 const recentConversations = ref<Conversation[]>([])
 const conversationsLoading = ref(true)
-const whatsappConnected = ref(false)
-const whatsappDisplayPhone = ref<string | null>(null)
-const whatsappLoading = ref(true)
-
 const whatsappBadgeLabel = computed(() => {
-  if (!whatsappConnected.value) {
+  if (!whatsappStore.connected) {
     return ''
   }
-  const formatted = formatBrazilPhone(whatsappDisplayPhone.value)
-  const display = formatted || whatsappDisplayPhone.value
+  const formatted = formatBrazilPhone(whatsappStore.displayPhoneNumber)
+  const display = formatted || whatsappStore.displayPhoneNumber
   return display ? `WhatsApp conectado (${display})` : 'WhatsApp conectado'
 })
 
@@ -97,9 +96,12 @@ async function loadDashboard(): Promise<void> {
   metricsLoading.value = true
   metricsUnavailable.value = false
   try {
-    metrics.value = await fetchDashboardMetrics()
-    if (metrics.value == null) {
+    const fromApi = await fetchDashboardMetrics()
+    if (fromApi == null) {
+      metrics.value = exampleDashboardMetrics()
       metricsUnavailable.value = true
+    } else {
+      metrics.value = fromApi
     }
   } catch {
     metrics.value = null
@@ -118,16 +120,8 @@ async function loadDashboard(): Promise<void> {
     conversationsLoading.value = false
   }
 
-  whatsappLoading.value = true
-  try {
-    const account = await fetchWhatsAppAccount()
-    whatsappConnected.value = account?.connected === true
-    whatsappDisplayPhone.value = account?.display_phone_number ?? null
-  } catch {
-    whatsappConnected.value = false
-    whatsappDisplayPhone.value = null
-  } finally {
-    whatsappLoading.value = false
+  if (!whatsappStore.hydrated) {
+    await whatsappStore.refresh()
   }
 }
 
@@ -142,17 +136,17 @@ onMounted(() => {
 
 <template>
   <div class="flex min-h-full flex-col bg-brand-mist">
-    <AppPageHeader title="Painel">
+    <AppPageHeader title="Painel" :breadcrumbs="panelBreadcrumbs({ label: 'Painel' })">
       <template #actions>
         <RouterLink
-          v-if="!whatsappLoading && !whatsappConnected"
+          v-if="whatsappStore.hydrated && !whatsappStore.connected"
           :to="{ name: 'configuracoes-whatsapp' }"
           class="inline-flex min-w-0 items-center justify-center rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-brand-indigo hover:bg-slate-50"
         >
           Conectar WhatsApp
         </RouterLink>
         <span
-          v-else-if="whatsappConnected"
+          v-else-if="whatsappStore.connected"
           class="inline-flex min-w-0 items-center justify-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-800"
         >
           {{ whatsappBadgeLabel }}

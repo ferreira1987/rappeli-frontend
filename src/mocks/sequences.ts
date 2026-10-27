@@ -1,5 +1,7 @@
 /** Dados de exemplo — substituir por API quando disponível. */
 
+import { EXAMPLE_SEQUENCE_ELIGIBLE_CONTACTS } from '@/mocks/sharedExampleMetrics'
+
 export type SequenceFlowStep =
   | {
       kind: 'message'
@@ -23,14 +25,14 @@ export type SequenceFlowStep =
 export const exampleFollowUpSequence = {
   name: 'Pós-consulta e retorno',
   trigger: "Quando a tag 'Consulta realizada' for aplicada",
-  eligibleCount: 128,
+  eligibleCount: EXAMPLE_SEQUENCE_ELIGIBLE_CONTACTS,
   filters: ['Tag: Consulta realizada', 'Opt-in WhatsApp: Ativo'],
   stopOnReply: true,
   optInOnly: true,
   windowStart: '08:00',
   windowEnd: '18:00',
   sectorOnReply: 'Recepção & Agendamento',
-  totalCycleDays: 158,
+  totalCycleDays: 8,
   steps: [
     {
       kind: 'message' as const,
@@ -39,7 +41,7 @@ export const exampleFollowUpSequence = {
       title: 'Enviar template: agradecimento_pos_consulta',
       templateName: 'agradecimento_pos_consulta',
       preview:
-        'Olá, {nome}! Agradecemos sua confiança na consulta de hoje com a {profissional}…',
+        'Olá, {{nome}}! Agradecemos sua confiança na consulta de hoje com a {{profissional}}…',
       waitLabel: 'Aguardar 1 dia | envio às 10:00',
     },
     {

@@ -8,7 +8,8 @@ import AppPageTabs from '@/components/app/AppPageTabs.vue'
 import { panelBreadcrumbs } from '@/constants/panelBreadcrumbs'
 import AppPageFooter from '@/components/layout/AppPageFooter.vue'
 import type { CampaignStatus } from '@/mocks/campaigns'
-import { exampleCampaigns, exampleSequences } from '@/services/example'
+import { exampleCampaigns, exampleMetaTemplates, exampleSequences } from '@/services/example'
+import { pluralizePt } from '@/utils/pluralize'
 
 const mainTab = ref<'campanhas' | 'sequencias' | 'modelos'>('campanhas')
 const statusChip = ref<CampaignStatus | 'all'>('all')
@@ -62,6 +63,7 @@ function countStatus(status: CampaignStatus): number {
         <RouterLink
           :to="{ name: 'campanhas-sequencias' }"
           class="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-brand-ink hover:bg-slate-50"
+          @click="mainTab = 'sequencias'"
         >
           <GitBranch class="h-4 w-4 text-brand-gray" />
           Sequências
@@ -88,13 +90,27 @@ function countStatus(status: CampaignStatus): number {
         </button>
         <button
           type="button"
-          class="flex items-center gap-2 border-b-2 py-3 text-sm font-medium text-brand-gray"
+          class="flex items-center gap-2 border-b-2 py-3 text-sm font-medium"
+          :class="
+            mainTab === 'sequencias'
+              ? 'border-brand-indigo text-brand-indigo'
+              : 'border-transparent text-brand-gray'
+          "
           @click="mainTab = 'sequencias'"
         >
           Sequências
           <span class="rounded-full bg-slate-100 px-2 py-0.5 text-[11px]">{{ exampleSequences.length }}</span>
         </button>
-        <button type="button" class="border-b-2 border-transparent py-3 text-sm font-medium text-brand-gray">
+        <button
+          type="button"
+          class="border-b-2 py-3 text-sm font-medium"
+          :class="
+            mainTab === 'modelos'
+              ? 'border-brand-indigo text-brand-indigo'
+              : 'border-transparent text-brand-gray'
+          "
+          @click="mainTab = 'modelos'"
+        >
           Modelos de mensagem
         </button>
     </AppPageTabs>
@@ -147,7 +163,9 @@ function countStatus(status: CampaignStatus): number {
                 Concluídas ({{ countStatus('concluida') }})
               </button>
             </div>
-            <span class="text-xs text-brand-gray">Exibindo <strong>{{ filteredCampaigns.length }}</strong> campanhas</span>
+            <span class="text-xs text-brand-gray">
+              Exibindo <strong>{{ pluralizePt(filteredCampaigns.length, 'campanha') }}</strong>
+            </span>
           </div>
         </div>
 
@@ -202,14 +220,17 @@ function countStatus(status: CampaignStatus): number {
         </div>
       </template>
 
-      <section v-if="mainTab === 'sequencias' || mainTab === 'campanhas'" class="rounded-xl border border-slate-200 bg-white p-4 shadow-xs">
+      <section
+        v-if="mainTab === 'sequencias'"
+        class="rounded-xl border border-slate-200 bg-white p-4 shadow-xs"
+      >
         <div class="flex flex-wrap items-start justify-between gap-3">
           <div>
             <h2 class="font-display text-base font-bold text-brand-ink">Sequências ativas</h2>
             <p class="text-xs text-brand-gray">Disparos automáticos multi-etapas baseados em gatilhos e tempo</p>
           </div>
           <RouterLink
-            :to="{ name: 'campanhas-sequencias' }"
+            :to="{ name: 'campanhas-sequencias-nova' }"
             class="inline-flex items-center gap-1 rounded-lg bg-brand-indigo px-3 py-2 text-sm font-semibold text-white"
           >
             <Plus class="h-4 w-4" /> Nova sequência
@@ -227,11 +248,23 @@ function countStatus(status: CampaignStatus): number {
             </div>
             <p class="mt-2 text-xs text-brand-gray">{{ seq.description }}</p>
             <p class="mt-3 text-xs text-brand-gray">
-              {{ seq.steps }} etapas · {{ seq.contactsInProgress }} contatos em andamento
+              {{ pluralizePt(seq.steps, 'etapa') }} ·
+              {{ pluralizePt(seq.contactsInProgress, 'contato') }} em andamento
             </p>
             <p class="mt-1 text-xs font-medium text-brand-indigo">✓ Somente contatos com opt-in</p>
           </article>
         </div>
+      </section>
+
+      <section v-if="mainTab === 'modelos'" class="rounded-xl border border-slate-200 bg-white p-4 shadow-xs">
+        <h2 class="font-display text-base font-bold text-brand-ink">Modelos aprovados pela Meta</h2>
+        <p class="mt-1 text-xs text-brand-gray">Sincronizados com a WhatsApp Cloud API (exemplo).</p>
+        <ul class="mt-4 divide-y divide-slate-100">
+          <li v-for="template in exampleMetaTemplates" :key="template.id" class="py-3">
+            <p class="font-semibold text-sm text-brand-ink">{{ template.name }}</p>
+            <p class="mt-1 text-xs text-brand-gray">{{ template.body }}</p>
+          </li>
+        </ul>
       </section>
 
       <AppPageFooter />

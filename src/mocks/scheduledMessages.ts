@@ -17,7 +17,7 @@ export const exampleScheduledMessages: ScheduledMessageRow[] = [
     id: 's1',
     contactName: 'Mariana Costa',
     phone: '+55 62 99876-1234',
-    messagePreview: 'Olá, Mariana! Lembrando da sua consulta de avaliação amanhã às 14:30…',
+    messagePreview: 'Olá, Mariana! Lembrando da sua consulta de avaliação hoje às 14:30…',
     scheduledAt: '27/10/2026 às 14:30',
     status: 'scheduled',
     assignee: 'Adão F.',

@@ -3,12 +3,16 @@ import { Calendar, Filter, MessageSquare, Plus, Search } from '@lucide/vue'
 import { computed, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 
+import ExampleFiltersModal from '@/components/app/ExampleFiltersModal.vue'
 import AppPageHeader from '@/components/app/AppPageHeader.vue'
 import AppPageFooter from '@/components/layout/AppPageFooter.vue'
+import { useExampleToast } from '@/composables/useExampleToast'
 import type { FunnelCard, FunnelStageId } from '@/mocks/funnel'
 import { exampleFunnelCards, funnelStages } from '@/services/example'
 
 const search = ref('')
+const filtersOpen = ref(false)
+const { message: toast, show: showToast } = useExampleToast()
 
 const cardsByStage = computed(() => {
   const q = search.value.trim().toLowerCase()
@@ -47,20 +51,22 @@ function tagClasses(tone: FunnelCard['tags'][number]['tone']): string {
         <button
           type="button"
           class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-brand-ink hover:bg-slate-50"
+          @click="filtersOpen = true"
         >
           <Filter class="h-4 w-4 text-brand-gray" />
           Filtros
         </button>
-        <button
-          type="button"
+        <RouterLink
+          :to="{ name: 'mensagens-agendadas' }"
           class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-brand-ink hover:bg-slate-50"
         >
           <Calendar class="h-4 w-4 text-brand-gray" />
           Agendar mensagem
-        </button>
+        </RouterLink>
         <button
           type="button"
           class="inline-flex items-center gap-1.5 rounded-lg bg-brand-indigo px-4 py-2 text-sm font-semibold text-white hover:bg-brand-indigo-hover"
+          @click="showToast('Card de exemplo criado no funil.')"
         >
           <Plus class="h-4 w-4" />
           Novo card
@@ -90,12 +96,28 @@ function tagClasses(tone: FunnelCard['tags'][number]['tone']): string {
         </select>
         <button
           type="button"
-          class="ml-auto text-sm font-semibold text-brand-indigo hover:underline"
+          class="ml-auto text-sm font-semibold text-brand-gray"
+          disabled
+          title="Em breve"
         >
           + Adicionar etapa
         </button>
       </div>
     </div>
+
+    <p v-if="toast" class="px-4 pt-4 text-sm text-brand-indigo sm:px-6 lg:px-8" role="status">{{ toast }}</p>
+
+    <ExampleFiltersModal
+      :open="filtersOpen"
+      title="Filtros do funil"
+      @close="filtersOpen = false"
+      @apply="
+        () => {
+          filtersOpen = false
+          showToast('Filtros aplicados (exemplo).')
+        }
+      "
+    />
 
     <div class="flex-1 overflow-x-auto p-4 sm:p-6 lg:p-8">
       <div class="flex min-h-[420px] gap-4">

@@ -4,25 +4,27 @@ import { RouterLink } from 'vue-router'
 
 import AppPageHeader from '@/components/app/AppPageHeader.vue'
 import AppPageFooter from '@/components/layout/AppPageFooter.vue'
+import { panelBreadcrumbs } from '@/constants/panelBreadcrumbs'
 import { exampleFollowUpSequence } from '@/services/example'
 
 const seq = exampleFollowUpSequence
+const breadcrumbs = panelBreadcrumbs(
+  { label: 'Campanhas', to: { name: 'campanhas' } },
+  { label: 'Sequências', to: { name: 'campanhas-sequencias' } },
+  { label: 'Nova sequência' },
+)
 </script>
 
 <template>
   <div class="flex min-h-full flex-col bg-brand-mist">
     <AppPageHeader
-      title="Sequência de follow-up"
-      :breadcrumbs="[
-        { label: 'Painel', to: '/painel' },
-        { label: 'Campanhas', to: '/campanhas' },
-        { label: 'Sequências' },
-      ]"
+      title="Nova sequência"
+      :breadcrumbs="breadcrumbs"
       show-example-badge
     >
       <template #actions>
         <RouterLink
-          :to="{ name: 'campanhas' }"
+          :to="{ name: 'campanhas-sequencias' }"
           class="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold"
         >
           Cancelar
@@ -50,7 +52,10 @@ const seq = exampleFollowUpSequence
           <label class="mt-4 block text-xs font-semibold text-brand-ink">Nome da sequência *</label>
           <input :value="seq.name" type="text" class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm" readonly />
           <label class="mt-3 block text-xs font-semibold text-brand-ink">Gatilho de entrada *</label>
-          <select class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm">
+          <select
+            class="mt-1 w-full min-w-0 truncate rounded-lg border border-slate-200 px-3 py-2 text-sm"
+            :title="seq.trigger"
+          >
             <option>{{ seq.trigger }}</option>
           </select>
           <div class="mt-4 rounded-lg border border-brand-indigo/20 bg-brand-mist/50 p-3">

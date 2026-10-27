@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 
+import { useEscapeKey } from '@/composables/useEscapeKey'
+
 const props = defineProps<{
   open: boolean
   loading?: boolean
@@ -31,6 +33,11 @@ function onSubmit(): void {
   }
   emit('submit', pin.value)
 }
+
+useEscapeKey(
+  () => props.open,
+  () => emit('close'),
+)
 </script>
 
 <template>

@@ -1,16 +1,25 @@
 <script setup lang="ts">
-import { computed, watch } from 'vue'
+import { computed, onMounted, watch } from 'vue'
 import { RouterView, useRoute } from 'vue-router'
 
 import AppSidebar from '@/components/app/AppSidebar.vue'
 import AppMobileTopbar from '@/components/layout/AppMobileTopbar.vue'
 import { provideAppSidebar } from '@/composables/useAppSidebar'
 import { useInboxRealtimeSession } from '@/composables/useInboxRealtimeSession'
+import { useInboxNavStore } from '@/stores/inboxNav'
+import { useWhatsAppStore } from '@/stores/whatsapp'
 
 const route = useRoute()
 const { isOpen, close } = provideAppSidebar()
+const whatsappStore = useWhatsAppStore()
+const inboxNav = useInboxNavStore()
 
 useInboxRealtimeSession()
+
+onMounted(() => {
+  void whatsappStore.refresh()
+  void inboxNav.refresh()
+})
 
 const isFullBleed = computed(() => route.meta.fullBleed === true)
 

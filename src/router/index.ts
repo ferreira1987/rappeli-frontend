@@ -118,8 +118,14 @@ const router = createRouter({
         {
           path: 'campanhas/sequencias',
           name: 'campanhas-sequencias',
+          component: () => import('@/views/SequenciasListView.vue'),
+          meta: { title: 'Sequências', activeNav: 'campanhas' },
+        },
+        {
+          path: 'campanhas/sequencias/nova',
+          name: 'campanhas-sequencias-nova',
           component: () => import('@/views/SequenciaFollowUpView.vue'),
-          meta: { title: 'Sequência de follow-up', activeNav: 'campanhas' },
+          meta: { title: 'Nova sequência', activeNav: 'campanhas' },
         },
         {
           path: 'automacoes',
@@ -167,7 +173,9 @@ const router = createRouter({
     },
     {
       path: '/:pathMatch(.*)*',
-      redirect: { name: 'painel' },
+      name: 'not-found',
+      component: () => import('@/views/NotFoundView.vue'),
+      meta: { title: 'Página não encontrada' },
     },
   ],
 })
