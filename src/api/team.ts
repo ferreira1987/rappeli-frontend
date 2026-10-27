@@ -1,3 +1,5 @@
+import axios from 'axios'
+
 import { fetchCsrfCookie } from '@/api/auth'
 import { http } from '@/api/http'
 import { parseResourceCollection, unwrapData } from '@/api/resource'
@@ -7,6 +9,7 @@ import type {
   Sector,
   TeamAgent,
   TeamDistributionSettings,
+  TeamInvitation,
   TeamInvitationPayload,
   TeamInvitationPreview,
 } from '@/types/team'
@@ -65,8 +68,21 @@ export async function updateTeamAgent(
   return unwrapData<TeamAgent>(data)
 }
 
-export async function inviteTeamMember(payload: TeamInvitationPayload): Promise<void> {
-  await http.post('/api/team/invitations', payload)
+export async function fetchPendingTeamInvitations(): Promise<TeamInvitation[]> {
+  try {
+    const { data } = await http.get<unknown>('/api/team/invitations')
+    return parseResourceCollection<TeamInvitation>(data)
+  } catch (error) {
+    if (axios.isAxiosError(error) && (error.response?.status === 404 || error.response?.status === 405)) {
+      return []
+    }
+    throw error
+  }
+}
+
+export async function inviteTeamMember(payload: TeamInvitationPayload): Promise<TeamInvitation> {
+  const { data } = await http.post<unknown>('/api/team/invitations', payload)
+  return unwrapData<TeamInvitation>(data)
 }
 
 export async function acceptTeamInvitation(

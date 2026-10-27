@@ -7,6 +7,7 @@ import {
   fetchDistributionSettings,
   createSector,
   deleteSector,
+  fetchPendingTeamInvitations,
   fetchSectors,
   fetchTeamAgents,
   inviteTeamMember,
@@ -19,7 +20,8 @@ import SectorFormModal from '@/components/team/SectorFormModal.vue'
 import AppPageHeader from '@/components/app/AppPageHeader.vue'
 import AppPageFooter from '@/components/layout/AppPageFooter.vue'
 import { initialsFromName } from '@/composables/useInitials'
-import type { Sector, TeamAgent, TeamDistributionSettings } from '@/types/team'
+import type { Sector, TeamAgent, TeamDistributionSettings, TeamInvitation } from '@/types/team'
+import { formatDateTimeBrazil } from '@/utils/datetime'
 import { getErrorMessage, getValidationErrors } from '@/utils/errors'
 import { pluralizePt } from '@/utils/pluralize'
 import { formatAgentDisplayName, roleLabels } from '@/utils/teamLabels'
@@ -31,6 +33,7 @@ const error = ref<string | null>(null)
 const statusMessage = ref<string | null>(null)
 
 const agents = ref<TeamAgent[]>([])
+const pendingInvitations = ref<TeamInvitation[]>([])
 const sectors = ref<Sector[]>([])
 const settings = ref<TeamDistributionSettings | null>(null)
 const settingsSaving = ref(false)
@@ -143,6 +146,26 @@ async function confirmDeleteSector(): Promise<void> {
   }
 }
 
+function isInvitationPending(invitation: TeamInvitation): boolean {
+  if (!invitation.expires_at) {
+    return true
+  }
+  return new Date(invitation.expires_at).getTime() > Date.now()
+}
+
+function upsertPendingInvitation(invitation: TeamInvitation): void {
+  const list = pendingInvitations.value.filter((item) => item.id !== invitation.id)
+  if (isInvitationPending(invitation)) {
+    pendingInvitations.value = [invitation, ...list]
+  } else {
+    pendingInvitations.value = list
+  }
+}
+
+const activePendingInvitations = computed(() =>
+  pendingInvitations.value.filter((invitation) => isInvitationPending(invitation)),
+)
+
 const filteredAgents = computed(() => {
   const q = search.value.trim().toLowerCase()
   if (!q) return agents.value
@@ -150,6 +173,21 @@ const filteredAgents = computed(() => {
     (a) => a.name.toLowerCase().includes(q) || a.email.toLowerCase().includes(q),
   )
 })
+
+const filteredPendingInvitations = computed(() => {
+  const q = search.value.trim().toLowerCase()
+  const list = activePendingInvitations.value
+  if (!q) return list
+  return list.filter((invitation) => {
+    const name = (invitation.name ?? '').toLowerCase()
+    const email = invitation.email.toLowerCase()
+    return name.includes(q) || email.includes(q)
+  })
+})
+
+function invitationDisplayName(invitation: TeamInvitation): string {
+  return invitation.name?.trim() || invitation.email
+}
 
 function roleBadgeClass(role: TeamAgent['role']): string {
   const map = {
@@ -176,12 +214,14 @@ async function loadAll(): Promise<void> {
   loading.value = true
   error.value = null
   try {
-    const [agentList, sectorList, dist] = await Promise.all([
+    const [agentList, sectorList, dist, invitations] = await Promise.all([
       fetchTeamAgents(),
       fetchSectors(),
       fetchDistributionSettings(),
+      fetchPendingTeamInvitations(),
     ])
     agents.value = agentList
+    pendingInvitations.value = invitations.filter((invitation) => isInvitationPending(invitation))
     sectors.value = sectorList
     settings.value = dist
     routingMethod.value = dist.routing_method
@@ -222,13 +262,14 @@ async function onInvited(payload: {
   sectorId: number | null
 }): Promise<void> {
   try {
-    await inviteTeamMember({
+    const invitation = await inviteTeamMember({
       name: payload.name || null,
       email: payload.email,
       role: payload.role,
       sector_id: payload.sectorId,
     })
-    statusMessage.value = `Convite registrado para ${payload.email}. O convidado receberá o link por e-mail.`
+    upsertPendingInvitation(invitation)
+    statusMessage.value = `Convite enviado para ${payload.email}. O link foi disparado por e-mail.`
     await loadAll()
   } catch (err) {
     const validation = getValidationErrors(err)
@@ -286,7 +327,10 @@ async function saveDistribution(): Promise<void> {
       <div class="flex flex-wrap gap-6">
         <button
           v-for="item in [
-            { key: 'atendentes', label: `Atendentes (${agents.length})` },
+            {
+              key: 'atendentes',
+              label: `Atendentes (${agents.length}${activePendingInvitations.length ? ` · ${activePendingInvitations.length} convite(s) pendente(s)` : ''})`,
+            },
             { key: 'setores', label: `Setores (${sectors.length})` },
             { key: 'papeis', label: 'Papéis e permissões' },
             { key: 'regras', label: 'Regras de distribuição' },
@@ -331,6 +375,50 @@ async function saveDistribution(): Promise<void> {
               class="min-w-[220px] flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm"
             />
           </div>
+          <div
+            v-if="filteredPendingInvitations.length"
+            class="mt-4 rounded-xl border border-amber-200/90 bg-amber-50/60 p-4"
+          >
+            <h3 class="text-sm font-semibold text-brand-ink">Convites pendentes</h3>
+            <p class="mt-1 text-xs text-brand-gray">
+              Aguardando o convidado criar a senha pelo link enviado por e-mail.
+            </p>
+            <ul class="mt-3 space-y-2">
+              <li
+                v-for="invitation in filteredPendingInvitations"
+                :key="invitation.id"
+                class="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-amber-200/80 bg-white px-3 py-2.5"
+              >
+                <div class="min-w-0">
+                  <div class="flex flex-wrap items-center gap-2">
+                    <span class="font-medium text-brand-ink">{{ invitationDisplayName(invitation) }}</span>
+                    <span
+                      class="rounded-full border border-amber-300 bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-900"
+                    >
+                      Convite pendente
+                    </span>
+                  </div>
+                  <p class="text-xs text-brand-gray">{{ invitation.email }}</p>
+                </div>
+                <div class="text-right text-xs text-brand-gray">
+                  <p>
+                    Papel:
+                    <span class="font-medium text-brand-ink">{{ roleLabels[invitation.role] }}</span>
+                  </p>
+                  <p>
+                    Setor:
+                    <span class="font-medium text-brand-ink">{{ sectorNameById(invitation.sector_id) }}</span>
+                  </p>
+                  <p>
+                    Válido até
+                    <span class="font-medium text-brand-ink">{{ formatDateTimeBrazil(invitation.expires_at) }}</span>
+                    (horário de Brasília)
+                  </p>
+                </div>
+              </li>
+            </ul>
+          </div>
+
           <div class="mt-4 overflow-x-auto">
             <table class="w-full min-w-[720px] text-left text-sm">
               <thead class="text-[11px] font-bold uppercase text-brand-gray">

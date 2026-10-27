@@ -9,6 +9,17 @@ export interface Sector {
   agents?: TeamAgent[]
 }
 
+/** Pending invite row — `GET /api/team/invitations` (TeamInvitationResource). */
+export interface TeamInvitation {
+  id: number
+  name: string | null
+  email: string
+  role: TeamAgentRole
+  sector_id: number | null
+  expires_at: string | null
+  email_queued?: boolean
+}
+
 export interface TeamInvitationPreview {
   valid: boolean
   message: string | null
