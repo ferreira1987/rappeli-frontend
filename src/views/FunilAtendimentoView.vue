@@ -173,8 +173,9 @@ useEscapeKey(
         </RouterLink>
         <button
           type="button"
-          class="inline-flex items-center gap-1.5 rounded-lg bg-brand-indigo px-4 py-2 text-sm font-semibold text-white hover:bg-brand-indigo-hover"
+          class="inline-flex items-center gap-1.5 rounded-lg bg-brand-indigo px-4 py-2 text-sm font-semibold text-white hover:bg-brand-indigo-hover disabled:cursor-not-allowed disabled:opacity-60"
           :disabled="!stages.length"
+          :title="!stages.length ? 'Crie uma etapa no funil antes de adicionar cards' : undefined"
           @click="stages[0] && openAddCard(stages[0].id)"
         >
           <Plus class="h-4 w-4" />
@@ -226,10 +227,23 @@ useEscapeKey(
       </button>
     </div>
 
-    <div v-else-if="!stages.length" class="flex flex-1 flex-col items-center justify-center gap-3 p-8 text-center text-sm text-brand-gray">
-      <p>Nenhuma etapa no funil. Adicione a primeira etapa para começar.</p>
-      <button type="button" class="rounded-lg bg-brand-indigo px-4 py-2 text-sm font-semibold text-white" @click="openAddStage">
-        + Adicionar etapa
+    <div
+      v-else-if="!stages.length"
+      class="mx-4 my-8 flex flex-1 flex-col items-center justify-center gap-4 rounded-2xl border border-dashed border-slate-200 bg-white p-10 text-center sm:mx-6 lg:mx-8"
+    >
+      <h2 class="font-display text-lg font-semibold text-brand-ink">Nenhuma etapa no funil</h2>
+      <p class="max-w-md text-sm text-brand-gray">
+        O funil é organizado em etapas (por exemplo: Novo lead, Em negociação, Fechado). Crie a primeira etapa
+        para adicionar cards de contatos — o botão <strong class="text-brand-ink">Novo card</strong> ficará
+        disponível depois disso.
+      </p>
+      <button
+        type="button"
+        class="inline-flex items-center gap-2 rounded-lg bg-brand-indigo px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-indigo-hover"
+        @click="openAddStage"
+      >
+        <Plus class="h-4 w-4" />
+        Criar primeira etapa
       </button>
     </div>
 

@@ -17,7 +17,7 @@ import { initialsFromName } from '@/composables/useInitials'
 import type { Sector, TeamAgent, TeamDistributionSettings } from '@/types/team'
 import { getErrorMessage, getValidationErrors } from '@/utils/errors'
 import { pluralizePt } from '@/utils/pluralize'
-import { roleLabels } from '@/utils/teamLabels'
+import { formatAgentDisplayName, roleLabels } from '@/utils/teamLabels'
 
 const tab = ref<'atendentes' | 'setores' | 'papeis' | 'regras'>('atendentes')
 const search = ref('')
@@ -273,7 +273,7 @@ async function saveDistribution(): Promise<void> {
                         {{ initialsFromName(agent.name) }}
                       </span>
                       <div>
-                        <p class="font-semibold text-brand-ink">{{ agent.name }}</p>
+                        <p class="font-semibold text-brand-ink">{{ formatAgentDisplayName(agent, agents) }}</p>
                         <p class="text-xs text-brand-gray">{{ agent.phone || '—' }} · {{ agent.email }}</p>
                       </div>
                     </div>

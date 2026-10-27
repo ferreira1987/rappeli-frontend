@@ -15,22 +15,37 @@ const route = useRoute()
 const router = useRouter()
 
 const tabs = ['Empresa', 'Equipe', 'Plano e cobrança', 'WhatsApp'] as const
-const activeTab = ref<(typeof tabs)[number]>('Plano e cobrança')
+const activeTab = ref<(typeof tabs)[number]>('Empresa')
 
 watch(
   () => route.query.tab,
   (tab) => {
     if (tab === 'whatsapp' || tab === 'WhatsApp') {
       activeTab.value = 'WhatsApp'
+    } else if (tab === 'equipe' || tab === 'Equipe') {
+      activeTab.value = 'Equipe'
+    } else if (tab === 'plano' || tab === 'Plano') {
+      activeTab.value = 'Plano e cobrança'
+    } else if (tab === 'empresa' || tab === 'Empresa') {
+      activeTab.value = 'Empresa'
     }
   },
   { immediate: true },
 )
 
+function tabQueryValue(tab: (typeof tabs)[number]): string | null {
+  if (tab === 'WhatsApp') return 'whatsapp'
+  if (tab === 'Equipe') return 'equipe'
+  if (tab === 'Plano e cobrança') return 'plano'
+  if (tab === 'Empresa') return 'empresa'
+  return null
+}
+
 function selectTab(tab: (typeof tabs)[number]): void {
   activeTab.value = tab
-  if (tab === 'WhatsApp') {
-    void router.replace({ query: { ...route.query, tab: 'whatsapp' } })
+  const queryValue = tabQueryValue(tab)
+  if (queryValue) {
+    void router.replace({ query: { ...route.query, tab: queryValue } })
   } else {
     const query = { ...route.query }
     delete query.tab
@@ -116,11 +131,15 @@ function selectTab(tab: (typeof tabs)[number]): void {
                 <h2 class="font-display text-sm font-semibold text-brand-ink">Equipe</h2>
                 <Users class="h-4 w-4 text-brand-gray" aria-hidden="true" />
               </div>
-              <p class="mt-4 text-sm text-brand-gray">Convites e permissões de equipe em breve.</p>
-              <div class="mt-4 rounded-xl bg-brand-mist/50 p-3">
-                <p class="text-sm font-medium text-brand-ink">{{ auth.user?.name ?? 'Você' }}</p>
-                <p class="text-xs text-brand-gray">{{ auth.user?.email }}</p>
-              </div>
+              <p class="mt-4 text-sm text-brand-gray">
+                Convide colaboradores, defina setores e regras de distribuição.
+              </p>
+              <RouterLink
+                :to="{ name: 'equipe' }"
+                class="mt-4 inline-flex w-full items-center justify-center rounded-xl bg-brand-indigo px-4 py-2 text-sm font-semibold text-white hover:bg-brand-indigo-hover"
+              >
+                Gerenciar equipe
+              </RouterLink>
             </article>
 
             <article class="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
@@ -167,10 +186,18 @@ function selectTab(tab: (typeof tabs)[number]): void {
         </section>
       </template>
 
-      <template v-else>
-        <section class="rounded-2xl border border-dashed border-slate-200 bg-white p-12 text-center shadow-sm">
-          <p class="font-display text-lg font-semibold text-brand-ink">{{ activeTab }}</p>
-          <p class="mt-2 text-sm text-brand-gray">Em breve você poderá gerenciar convites e permissões da equipe.</p>
+      <template v-else-if="activeTab === 'Equipe'">
+        <section class="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
+          <h2 class="font-display text-lg font-semibold text-brand-ink">Equipe</h2>
+          <p class="mt-2 text-sm text-brand-gray">
+            Atendentes, setores, papéis e regras de distribuição estão na área dedicada de equipe.
+          </p>
+          <RouterLink
+            :to="{ name: 'equipe' }"
+            class="mt-6 inline-flex rounded-xl bg-brand-indigo px-4 py-2 text-sm font-semibold text-white hover:bg-brand-indigo-hover"
+          >
+            Abrir equipe e distribuição
+          </RouterLink>
         </section>
       </template>
 

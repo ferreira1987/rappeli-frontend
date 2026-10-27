@@ -6,6 +6,7 @@ import type { TransferConversationPayload } from '@/api/inbox'
 import { fetchSectors, fetchTeamAgents } from '@/api/team'
 import { useEscapeKey } from '@/composables/useEscapeKey'
 import type { Sector, TeamAgent } from '@/types/team'
+import { formatAgentDisplayName } from '@/utils/teamLabels'
 
 const props = defineProps<{
   open: boolean
@@ -29,10 +30,24 @@ const sectors = ref<Sector[]>([])
 const loading = ref(false)
 const fieldErrors = ref<Record<string, string>>({})
 
+const selectedAgent = computed(() => agents.value.find((a) => a.id === assigneeUserId.value) ?? null)
+
 const notifyPreview = computed(() => {
+  if (targetMode.value === 'agent') {
+    const name = selectedAgent.value?.name
+    if (name) {
+      return `Estamos transferindo você para o atendimento de ${name}.`
+    }
+    return 'Estamos transferindo você para outro atendente.'
+  }
   const sector = sectors.value.find((s) => s.id === sectorId.value)
-  const name = sector?.name ?? 'equipe'
-  return `Estamos transferindo você para o setor ${name}.`
+  if (sector?.name) {
+    if (selectedAgent.value?.name) {
+      return `Estamos transferindo você para o setor ${sector.name} (${selectedAgent.value.name}).`
+    }
+    return `Estamos transferindo você para o setor ${sector.name}.`
+  }
+  return 'Estamos transferindo você para nossa equipe.'
 })
 
 async function loadOptions(): Promise<void> {
@@ -204,7 +219,7 @@ function onSubmit(): void {
             >
               <option :value="null">{{ targetMode === 'sector' ? 'Distribuir automaticamente' : 'Selecione…' }}</option>
               <option v-for="agent in agents" :key="agent.id" :value="agent.id">
-                {{ agent.name }}
+                {{ formatAgentDisplayName(agent, agents) }}
               </option>
             </select>
             <p v-if="fieldErrors.assignee_user_id" class="mt-1 text-xs text-red-600">

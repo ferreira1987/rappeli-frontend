@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { CheckCircle2, Eye, EyeOff, Lock } from '@lucide/vue'
+import axios from 'axios'
 import { computed, ref } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 
@@ -22,7 +23,15 @@ const showPassword = ref(false)
 const submitting = ref(false)
 const formError = ref<string | null>(null)
 const fieldErrors = ref<Record<string, string>>({})
+const inviteInvalid = ref(false)
 const success = ref<{ name: string; email: string } | null>(null)
+
+const INVITE_INVALID_MESSAGE = 'Convite inválido ou expirado'
+
+function isInviteTokenError(status: number | undefined, validation: Record<string, string> | null): boolean {
+  if (validation?.token) return true
+  return status === 404 || status === 403 || status === 410 || status === 400
+}
 
 const termsUrl = 'https://rappeli.com.br/termos'
 const privacyUrl = 'https://rappeli.com.br/privacidade'
@@ -56,8 +65,20 @@ async function onSubmit(): Promise<void> {
     success.value = { name: user.name, email: user.email }
   } catch (error) {
     const validation = getValidationErrors(error)
+    const status = axios.isAxiosError(error) ? error.response?.status : undefined
+
     if (validation) {
       fieldErrors.value = validation
+      if (isInviteTokenError(status, validation)) {
+        inviteInvalid.value = true
+        formError.value = INVITE_INVALID_MESSAGE
+      } else {
+        formError.value = null
+      }
+    } else if (isInviteTokenError(status, null)) {
+      inviteInvalid.value = true
+      formError.value = INVITE_INVALID_MESSAGE
+      fieldErrors.value = {}
     } else {
       formError.value = getErrorMessage(error)
     }
@@ -99,13 +120,28 @@ async function onSubmit(): Promise<void> {
       </div>
 
       <form v-else class="mt-8 space-y-4" novalidate @submit.prevent="onSubmit">
+        <div
+          v-if="inviteInvalid"
+          class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+          role="alert"
+        >
+          <p class="font-medium">{{ INVITE_INVALID_MESSAGE }}</p>
+          <p v-if="fieldErrors.token" class="mt-1 text-red-700">{{ fieldErrors.token }}</p>
+        </div>
         <p
-          v-if="formError"
+          v-else-if="formError"
           class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
           role="alert"
         >
           {{ formError }}
         </p>
+        <ul
+          v-if="Object.keys(fieldErrors).length && !inviteInvalid"
+          class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+          role="alert"
+        >
+          <li v-for="(message, key) in fieldErrors" :key="key">{{ message }}</li>
+        </ul>
 
         <div>
           <label class="mb-1 block text-sm font-medium text-brand-ink" for="invite-password">Senha *</label>

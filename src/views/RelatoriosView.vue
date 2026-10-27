@@ -11,8 +11,9 @@ import type { ReportPayload, ReportPeriod } from '@/types/reports'
 import { formatAverageResponseTime } from '@/utils/formatDashboard'
 import { getErrorMessage } from '@/utils/errors'
 import { pluralizePt } from '@/utils/pluralize'
+import { formatReportAgentDisplayName } from '@/utils/teamLabels'
 
-const tab = ref<'overview' | 'agent' | 'campaign'>('agent')
+const tab = ref<'overview' | 'agent' | 'campaign'>('overview')
 const filtersOpen = ref(false)
 const period = ref<ReportPeriod>('7d')
 const loading = ref(true)
@@ -97,6 +98,15 @@ function readRate(row: { sent_count: number; read_count: number }): string {
   const pct = Math.round((row.read_count / row.sent_count) * 100)
   return `${pct}%`
 }
+
+const assignedOpenTotal = computed(() =>
+  report.value?.agents.reduce((sum, row) => sum + row.conversations_open, 0) ?? 0,
+)
+
+const unassignedOpenConversations = computed(() => {
+  const totalOpen = report.value?.kpis.conversations_open ?? 0
+  return Math.max(0, totalOpen - assignedOpenTotal.value)
+})
 
 async function exportCsv(): Promise<void> {
   exportMessage.value = null
@@ -186,24 +196,37 @@ async function exportCsv(): Promise<void> {
       </div>
 
       <template v-else-if="report">
-        <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <div
-            v-for="card in kpiCards"
-            :key="card.label"
-            class="relative rounded-xl border border-slate-200 bg-white p-4 shadow-xs"
-          >
-            <p class="text-xs font-medium text-brand-gray">{{ card.label }}</p>
-            <p class="mt-2 font-display text-2xl font-bold text-brand-ink">{{ card.value }}</p>
-            <p class="mt-1 flex items-center gap-1 text-xs text-brand-gray">
-              <component :is="card.icon" v-if="card.icon" class="h-3.5 w-3.5 text-emerald-600" />
-              {{ card.hint }}
-            </p>
+        <template v-if="tab === 'overview'">
+          <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <div
+              v-for="card in kpiCards"
+              :key="card.label"
+              class="relative rounded-xl border border-slate-200 bg-white p-4 shadow-xs"
+            >
+              <p class="text-xs font-medium text-brand-gray">{{ card.label }}</p>
+              <p class="mt-2 font-display text-2xl font-bold text-brand-ink">{{ card.value }}</p>
+              <p class="mt-1 flex items-center gap-1 text-xs text-brand-gray">
+                <component :is="card.icon" v-if="card.icon" class="h-3.5 w-3.5 text-emerald-600" />
+                {{ card.hint }}
+              </p>
+            </div>
           </div>
-        </div>
 
-        <p v-if="tab === 'overview'" class="text-sm text-brand-gray">
-          Use as abas para ver o detalhamento por atendente e por campanha.
-        </p>
+          <p class="text-sm text-brand-gray">
+            Use as abas <strong class="font-semibold text-brand-ink">Por atendente</strong> e
+            <strong class="font-semibold text-brand-ink">Por campanha</strong> para ver o detalhamento.
+          </p>
+
+          <p
+            v-if="unassignedOpenConversations > 0"
+            class="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"
+            role="note"
+          >
+            {{ pluralizePt(unassignedOpenConversations, 'conversa', { one: 'conversa em aberto', other: 'conversas em aberto' }) }}
+            sem atendente atribuído (fila geral ou aguardando distribuição). O total em
+            <strong>Conversas em aberto</strong> inclui essas conversas; a soma por atendente pode ser menor.
+          </p>
+        </template>
 
         <section v-if="tab === 'agent'" class="rounded-xl border border-slate-200 bg-white p-4 shadow-xs">
           <div class="flex flex-wrap items-end justify-between gap-2">
@@ -234,7 +257,9 @@ async function exportCsv(): Promise<void> {
                       <span class="flex h-8 w-8 items-center justify-center rounded-full bg-brand-mist text-xs font-bold text-brand-indigo">
                         {{ initialsFromName(row.name) }}
                       </span>
-                      <span class="font-medium text-brand-ink">{{ row.name }}</span>
+                      <span class="font-medium text-brand-ink">
+                        {{ formatReportAgentDisplayName(row, report.agents) }}
+                      </span>
                     </div>
                   </td>
                   <td class="px-2 py-3 text-right">{{ row.conversations_handled }}</td>
