@@ -1,9 +1,7 @@
 /** Dados de exemplo — substituir por API quando disponível. */
 
-import {
-  EXAMPLE_AVERAGE_RESPONSE_TIME_LABEL,
-  EXAMPLE_CONVERSATIONS_HANDLED,
-} from '@/mocks/sharedExampleMetrics'
+import { buildCampaignPerformanceFromCampaigns, exampleCampaigns } from '@/mocks/campaignBuilder'
+import { EXAMPLE_AVERAGE_RESPONSE_TIME_LABEL } from '@/mocks/sharedExampleMetrics'
 
 export type AgentPerformanceRow = {
   id: string
@@ -19,20 +17,11 @@ export type AgentPerformanceRow = {
   isCurrentUser?: boolean
 }
 
-export const exampleReportKpis = {
-  avgFirstResponse: EXAMPLE_AVERAGE_RESPONSE_TIME_LABEL,
-  conversationsHandled: EXAMPLE_CONVERSATIONS_HANDLED,
-  handledDelta: 'Mesmo volume da caixa de entrada (exemplo)',
-  resolved: 1,
-  resolutionRate: '100%',
-  open: 0,
-}
-
 export const exampleAgentPerformance: AgentPerformanceRow[] = [
   {
     id: 'mariana',
     name: 'Mariana Costa',
-    sector: 'Recepção',
+    sector: 'Recepção (Padrão)',
     sectorTone: 'blue',
     handled: 42,
     firstResponse: '01m 55s',
@@ -56,7 +45,7 @@ export const exampleAgentPerformance: AgentPerformanceRow[] = [
   {
     id: 'carlos',
     name: 'Carlos Eduardo',
-    sector: 'Recepção',
+    sector: 'Recepção (Padrão)',
     sectorTone: 'blue',
     handled: 26,
     firstResponse: '02m 45s',
@@ -80,7 +69,7 @@ export const exampleAgentPerformance: AgentPerformanceRow[] = [
   {
     id: 'adao',
     name: 'Adão Ferreira',
-    sector: 'Recepção',
+    sector: 'Recepção (Padrão)',
     sectorTone: 'blue',
     handled: 14,
     firstResponse: '03m 30s',
@@ -92,17 +81,24 @@ export const exampleAgentPerformance: AgentPerformanceRow[] = [
   },
 ]
 
-export const exampleCampaignPerformance = [
-  {
-    name: 'Lembrete retorno 6 meses',
-    sent: 142,
-    delivered: 138,
-    readRate: '64%',
-  },
-  {
-    name: 'Retorno preventivo odonto',
-    sent: 198,
-    delivered: 195,
-    readRate: '58%',
-  },
-]
+function sumAgentMetric(key: 'handled' | 'resolved' | 'open'): number {
+  return exampleAgentPerformance.reduce((total, row) => total + row[key], 0)
+}
+
+const conversationsHandled = sumAgentMetric('handled')
+const conversationsResolved = sumAgentMetric('resolved')
+const conversationsOpen = sumAgentMetric('open')
+
+export const exampleReportKpis = {
+  avgFirstResponse: EXAMPLE_AVERAGE_RESPONSE_TIME_LABEL,
+  conversationsHandled,
+  handledDelta: 'Soma das conversas atendidas na tabela abaixo',
+  resolved: conversationsResolved,
+  resolutionRate:
+    conversationsHandled > 0
+      ? `${((conversationsResolved / conversationsHandled) * 100).toFixed(1).replace('.', ',')}%`
+      : '0%',
+  open: conversationsOpen,
+}
+
+export const exampleCampaignPerformance = buildCampaignPerformanceFromCampaigns(exampleCampaigns)
