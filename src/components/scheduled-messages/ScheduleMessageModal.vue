@@ -1,10 +1,16 @@
 <script setup lang="ts">
-import { Calendar, Clock, Info, Send, X } from '@lucide/vue'
+import { Calendar, Clock, Info, Loader2, Send, X } from '@lucide/vue'
 import { computed, ref, watch } from 'vue'
 
+import { fetchContacts } from '@/api/contacts'
+import { createScheduledMessage } from '@/api/scheduledMessages'
 import { useEscapeKey } from '@/composables/useEscapeKey'
-import { scheduleMessageTemplateVariables } from '@/services/example'
+import type { Contact } from '@/types/contacts'
 import { formatRelativeScheduleDay } from '@/utils/scheduleRelative'
+import { formatBrazilPhone } from '@/utils/phone'
+import { getErrorMessage, getValidationErrors } from '@/utils/errors'
+
+const scheduleMessageTemplateVariables = ['{{nome}}', '{{data}}', '{{horario}}']
 
 const props = defineProps<{
   open: boolean
@@ -16,8 +22,16 @@ const emit = defineEmits<{
 }>()
 
 const messageType = ref<'free' | 'template'>('free')
-const scheduleDate = ref('2026-10-27')
+const scheduleDate = ref(new Date().toISOString().slice(0, 10))
 const scheduleTime = ref('14:30')
+
+const contactSearch = ref('')
+const contactResults = ref<Contact[]>([])
+const selectedContact = ref<Contact | null>(null)
+const contactLoading = ref(false)
+const submitting = ref(false)
+const formError = ref<string | null>(null)
+const fieldErrors = ref<Record<string, string>>({})
 
 function defaultMessageBody(): string {
   const dayLabel = formatRelativeScheduleDay(scheduleDate.value)
@@ -25,7 +39,7 @@ function defaultMessageBody(): string {
 }
 
 const messageBody = ref(defaultMessageBody())
-const repeat = ref('none')
+const repeat = ref<'none' | 'daily' | 'weekly'>('none')
 
 const previewText = computed(() => {
   const dayLabel = formatRelativeScheduleDay(scheduleDate.value)
@@ -43,8 +57,40 @@ watch(
     if (!isOpen) return
     messageType.value = 'free'
     messageBody.value = defaultMessageBody()
+    selectedContact.value = null
+    contactSearch.value = ''
+    contactResults.value = []
+    formError.value = null
+    fieldErrors.value = {}
   },
 )
+
+watch(contactSearch, async (query) => {
+  const q = query.trim()
+  if (q.length < 2) {
+    contactResults.value = []
+    return
+  }
+  contactLoading.value = true
+  try {
+    const page = await fetchContacts({ search: q, per_page: 8 })
+    contactResults.value = page.contacts
+  } catch {
+    contactResults.value = []
+  } finally {
+    contactLoading.value = false
+  }
+})
+
+function selectContact(contact: Contact): void {
+  selectedContact.value = contact
+  contactSearch.value = contact.display_name || formatBrazilPhone(contact.phone) || contact.phone
+  contactResults.value = []
+}
+
+function scheduledAtIso(): string {
+  return new Date(`${scheduleDate.value}T${scheduleTime.value}:00`).toISOString()
+}
 
 watch(scheduleDate, () => {
   if (messageBody.value.includes('consulta de avaliação')) {
@@ -65,9 +111,37 @@ function onClose(): void {
   emit('close')
 }
 
-function onSubmit(): void {
-  emit('scheduled')
-  emit('close')
+async function onSubmit(): Promise<void> {
+  if (messageType.value === 'template') {
+    formError.value = 'Templates oficiais da Meta para agendamento: Em breve. Use texto livre.'
+    return
+  }
+  if (!selectedContact.value) {
+    fieldErrors.value = { contact_id: 'Selecione um contato.' }
+    return
+  }
+  submitting.value = true
+  formError.value = null
+  fieldErrors.value = {}
+  try {
+    await createScheduledMessage({
+      contact_id: selectedContact.value.id,
+      body: messageBody.value,
+      scheduled_at: scheduledAtIso(),
+      repeat_rule: repeat.value === 'none' ? undefined : repeat.value,
+    })
+    emit('scheduled')
+    emit('close')
+  } catch (error) {
+    const validation = getValidationErrors(error)
+    if (validation) {
+      fieldErrors.value = validation
+    } else {
+      formError.value = getErrorMessage(error)
+    }
+  } finally {
+    submitting.value = false
+  }
 }
 </script>
 
@@ -99,16 +173,31 @@ function onSubmit(): void {
           </button>
         </div>
 
+        <p v-if="formError" class="text-sm text-red-600" role="alert">{{ formError }}</p>
+
         <div>
           <p class="mb-1 text-[11px] font-semibold uppercase tracking-wide text-brand-gray">Contato</p>
-          <div
-            class="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm"
-          >
-            <span>Mariana Costa (+55 62 99876-1234)</span>
-            <button type="button" class="text-brand-gray hover:text-brand-ink" aria-label="Remover contato">
-              <X class="h-4 w-4" />
-            </button>
-          </div>
+          <input
+            v-model="contactSearch"
+            type="search"
+            placeholder="Buscar contato por nome ou telefone…"
+            class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+          />
+          <p v-if="fieldErrors.contact_id" class="mt-1 text-xs text-red-600">{{ fieldErrors.contact_id }}</p>
+          <ul v-if="contactResults.length" class="mt-1 max-h-32 overflow-y-auto rounded-lg border border-slate-200 text-sm">
+            <li v-for="contact in contactResults" :key="contact.id">
+              <button
+                type="button"
+                class="w-full px-3 py-2 text-left hover:bg-slate-50"
+                @click="selectContact(contact)"
+              >
+                {{ contact.display_name || 'Sem nome' }} — {{ formatBrazilPhone(contact.phone) || contact.phone }}
+              </button>
+            </li>
+          </ul>
+          <p v-if="contactLoading" class="mt-1 flex items-center gap-1 text-xs text-brand-gray">
+            <Loader2 class="h-3 w-3 animate-spin" /> Buscando…
+          </p>
         </div>
 
         <div>
@@ -125,9 +214,10 @@ function onSubmit(): void {
             <button
               type="button"
               class="flex-1 rounded-md py-2 text-xs font-medium text-brand-gray"
+              title="Em breve"
               @click="messageType = 'template'"
             >
-              Template aprovado
+              Template aprovado (Em breve)
             </button>
           </div>
         </div>
@@ -194,6 +284,7 @@ function onSubmit(): void {
           <label class="mb-1 block text-[11px] font-semibold uppercase text-brand-gray">Repetir</label>
           <select v-model="repeat" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm">
             <option value="none">Não repetir</option>
+            <option value="daily">Diariamente</option>
             <option value="weekly">Semanalmente</option>
           </select>
         </div>
@@ -222,10 +313,11 @@ function onSubmit(): void {
           <button
             type="button"
             class="inline-flex items-center gap-2 rounded-lg bg-brand-indigo px-4 py-2 text-sm font-semibold text-white hover:bg-brand-indigo-hover"
+            :disabled="submitting"
             @click="onSubmit"
           >
             <Send class="h-4 w-4" />
-            Agendar
+            {{ submitting ? 'Agendando…' : 'Agendar' }}
           </button>
         </div>
       </div>

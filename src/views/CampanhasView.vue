@@ -1,22 +1,31 @@
 <script setup lang="ts">
-import { GitBranch, Info, Plus, Search } from '@lucide/vue'
-import { computed, ref } from 'vue'
+import { GitBranch, Info, Loader2, Plus, Search } from '@lucide/vue'
+import { computed, onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 
+import { fetchCampaigns } from '@/api/campaigns'
+import { fetchMessageTemplates } from '@/api/messageTemplates'
+import { fetchSequences } from '@/api/sequences'
 import AppPageHeader from '@/components/app/AppPageHeader.vue'
 import AppPageTabs from '@/components/app/AppPageTabs.vue'
 import { panelBreadcrumbs } from '@/constants/panelBreadcrumbs'
 import AppPageFooter from '@/components/layout/AppPageFooter.vue'
-import type { CampaignStatus } from '@/mocks/campaigns'
-import { exampleCampaigns, exampleMetaTemplates, exampleSequences } from '@/services/example'
+import type { Campaign, CampaignStatus, MessageTemplate, Sequence } from '@/types/campaigns'
+import { getErrorMessage } from '@/utils/errors'
 import { pluralizePt } from '@/utils/pluralize'
 
 const mainTab = ref<'campanhas' | 'sequencias' | 'modelos'>('campanhas')
 const statusChip = ref<CampaignStatus | 'all'>('all')
 const search = ref('')
+const loading = ref(true)
+const error = ref<string | null>(null)
+
+const campaigns = ref<Campaign[]>([])
+const sequences = ref<Sequence[]>([])
+const templates = ref<MessageTemplate[]>([])
 
 const filteredCampaigns = computed(() => {
-  let list = exampleCampaigns
+  let list = campaigns.value
   if (statusChip.value !== 'all') {
     list = list.filter((c) => c.status === statusChip.value)
   }
@@ -48,8 +57,27 @@ function statusClass(status: CampaignStatus): string {
 }
 
 function countStatus(status: CampaignStatus): number {
-  return exampleCampaigns.filter((c) => c.status === status).length
+  return campaigns.value.filter((c) => c.status === status).length
 }
+
+async function loadAll(): Promise<void> {
+  loading.value = true
+  error.value = null
+  try {
+    const [c, s, t] = await Promise.all([fetchCampaigns(), fetchSequences(), fetchMessageTemplates()])
+    campaigns.value = c
+    sequences.value = s
+    templates.value = t
+  } catch (err) {
+    error.value = getErrorMessage(err)
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(() => {
+  void loadAll()
+})
 </script>
 
 <template>
@@ -57,13 +85,11 @@ function countStatus(status: CampaignStatus): number {
     <AppPageHeader
       title="Campanhas"
       :breadcrumbs="panelBreadcrumbs({ label: 'Campanhas' })"
-      show-example-badge
     >
       <template #actions>
         <RouterLink
           :to="{ name: 'campanhas-sequencias' }"
           class="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-brand-ink hover:bg-slate-50"
-          @click="mainTab = 'sequencias'"
         >
           <GitBranch class="h-4 w-4 text-brand-gray" />
           Sequências
@@ -78,194 +104,124 @@ function countStatus(status: CampaignStatus): number {
       </template>
     </AppPageHeader>
 
+    <p class="mx-4 mt-2 flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900 lg:mx-8">
+      <Info class="h-4 w-4 shrink-0" />
+      Disparo automático de campanhas via WhatsApp: Em breve. CRUD e templates vêm da API.
+    </p>
+
     <AppPageTabs>
-        <button
-          type="button"
-          class="flex items-center gap-2 border-b-2 py-3 text-sm font-semibold"
-          :class="mainTab === 'campanhas' ? 'border-brand-indigo text-brand-indigo' : 'border-transparent text-brand-gray'"
-          @click="mainTab = 'campanhas'"
-        >
-          Campanhas
-          <span class="rounded-full bg-indigo-100 px-2 py-0.5 text-[11px] font-bold">{{ exampleCampaigns.length }}</span>
-        </button>
-        <button
-          type="button"
-          class="flex items-center gap-2 border-b-2 py-3 text-sm font-medium"
-          :class="
-            mainTab === 'sequencias'
-              ? 'border-brand-indigo text-brand-indigo'
-              : 'border-transparent text-brand-gray'
-          "
-          @click="mainTab = 'sequencias'"
-        >
-          Sequências
-          <span class="rounded-full bg-slate-100 px-2 py-0.5 text-[11px]">{{ exampleSequences.length }}</span>
-        </button>
-        <button
-          type="button"
-          class="border-b-2 py-3 text-sm font-medium"
-          :class="
-            mainTab === 'modelos'
-              ? 'border-brand-indigo text-brand-indigo'
-              : 'border-transparent text-brand-gray'
-          "
-          @click="mainTab = 'modelos'"
-        >
-          Modelos de mensagem
-        </button>
+      <button
+        type="button"
+        class="flex items-center gap-2 border-b-2 py-3 text-sm font-semibold"
+        :class="mainTab === 'campanhas' ? 'border-brand-indigo text-brand-indigo' : 'border-transparent text-brand-gray'"
+        @click="mainTab = 'campanhas'"
+      >
+        Campanhas
+        <span class="rounded-full bg-indigo-100 px-2 py-0.5 text-[11px] font-bold">{{ campaigns.length }}</span>
+      </button>
+      <button
+        type="button"
+        class="flex items-center gap-2 border-b-2 py-3 text-sm font-medium"
+        :class="mainTab === 'sequencias' ? 'border-brand-indigo text-brand-indigo' : 'border-transparent text-brand-gray'"
+        @click="mainTab = 'sequencias'"
+      >
+        Sequências
+        <span class="rounded-full bg-slate-100 px-2 py-0.5 text-[11px]">{{ sequences.length }}</span>
+      </button>
+      <button
+        type="button"
+        class="flex items-center gap-2 border-b-2 py-3 text-sm font-medium"
+        :class="mainTab === 'modelos' ? 'border-brand-indigo text-brand-indigo' : 'border-transparent text-brand-gray'"
+        @click="mainTab = 'modelos'"
+      >
+        Modelos Meta
+        <span class="rounded-full bg-slate-100 px-2 py-0.5 text-[11px]">{{ templates.length }}</span>
+      </button>
     </AppPageTabs>
 
-    <div class="flex-1 space-y-6 px-4 py-6 sm:px-6 lg:px-8">
-      <div class="flex gap-3 rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
-        <Info class="h-5 w-5 shrink-0 text-blue-600" />
-        <p>
-          Campanhas usam templates de mensagem aprovados pela Meta e só podem ser enviadas a contatos que deram
-          consentimento (opt-in) para receber mensagens. Respeite as regras e políticas do WhatsApp Business.
-          <a href="#" class="font-semibold hover:underline" @click.prevent>Saiba mais →</a>
-        </p>
+    <div class="flex-1 px-4 py-6 sm:px-6 lg:px-8">
+      <div v-if="loading" class="flex justify-center py-16">
+        <Loader2 class="h-8 w-8 animate-spin text-brand-indigo" aria-label="Carregando" />
+      </div>
+      <div v-else-if="error" class="rounded-xl border border-red-200 bg-red-50 p-6 text-center">
+        <p class="text-sm text-red-800">{{ error }}</p>
+        <button type="button" class="mt-3 rounded-lg bg-brand-indigo px-4 py-2 text-sm font-semibold text-white" @click="loadAll">
+          Tentar novamente
+        </button>
       </div>
 
-      <template v-if="mainTab === 'campanhas'">
-        <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-xs">
+      <template v-else>
+        <div v-if="mainTab === 'campanhas'" class="space-y-4">
           <div class="flex flex-wrap items-center gap-3">
             <div class="relative min-w-[200px] flex-1">
               <Search class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-gray" />
               <input
                 v-model="search"
                 type="search"
-                placeholder="Filtrar por nome de campanha…"
-                class="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-xs"
+                placeholder="Buscar campanha…"
+                class="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm"
               />
             </div>
-            <div class="flex flex-wrap gap-1.5">
+            <div class="flex flex-wrap gap-2">
               <button
+                v-for="chip in ['all', 'rascunho', 'agendada', 'enviando', 'concluida'] as const"
+                :key="chip"
                 type="button"
-                class="rounded-full border px-2.5 py-1 text-xs font-medium"
-                :class="statusChip === 'enviando' ? 'border-indigo-200 bg-indigo-50 text-brand-indigo' : 'border-slate-200 text-brand-gray'"
-                @click="statusChip = statusChip === 'enviando' ? 'all' : 'enviando'"
+                class="rounded-full border px-3 py-1 text-xs font-semibold"
+                :class="statusChip === chip ? 'border-brand-indigo bg-brand-mist text-brand-indigo' : 'border-slate-200 text-brand-gray'"
+                @click="statusChip = chip"
               >
-                Ativas ({{ countStatus('enviando') }})
-              </button>
-              <button
-                type="button"
-                class="rounded-full border px-2.5 py-1 text-xs font-medium"
-                :class="statusChip === 'agendada' ? 'border-indigo-200 bg-indigo-50 text-brand-indigo' : 'border-slate-200 text-brand-gray'"
-                @click="statusChip = statusChip === 'agendada' ? 'all' : 'agendada'"
-              >
-                Agendadas ({{ countStatus('agendada') }})
-              </button>
-              <button
-                type="button"
-                class="rounded-full border px-2.5 py-1 text-xs font-medium"
-                :class="statusChip === 'concluida' ? 'border-indigo-200 bg-indigo-50 text-brand-indigo' : 'border-slate-200 text-brand-gray'"
-                @click="statusChip = statusChip === 'concluida' ? 'all' : 'concluida'"
-              >
-                Concluídas ({{ countStatus('concluida') }})
+                {{ chip === 'all' ? 'Todas' : statusLabel(chip) }}
+                <span v-if="chip !== 'all'">({{ countStatus(chip) }})</span>
               </button>
             </div>
-            <span class="text-xs text-brand-gray">
-              Exibindo <strong>{{ pluralizePt(filteredCampaigns.length, 'campanha') }}</strong>
-            </span>
           </div>
+          <ul class="divide-y divide-slate-100 rounded-xl border border-slate-200 bg-white shadow-xs">
+            <li v-for="campaign in filteredCampaigns" :key="campaign.id" class="flex flex-wrap items-center justify-between gap-3 px-4 py-4">
+              <div>
+                <p class="font-semibold text-brand-ink">{{ campaign.name }}</p>
+                <p class="text-xs text-brand-gray">
+                  {{ campaign.template?.name ?? 'Sem template' }} · {{ campaign.sent_count }} enviadas
+                </p>
+              </div>
+              <span class="rounded-full border px-2 py-0.5 text-[11px] font-semibold" :class="statusClass(campaign.status)">
+                {{ statusLabel(campaign.status) }}
+              </span>
+            </li>
+            <li v-if="!filteredCampaigns.length" class="px-4 py-8 text-center text-sm text-brand-gray">
+              Nenhuma campanha encontrada.
+            </li>
+          </ul>
         </div>
 
-        <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xs">
-          <table class="w-full min-w-[900px] text-left text-xs">
-            <thead class="border-b border-slate-100 bg-slate-50 text-[11px] font-bold uppercase text-brand-gray">
-              <tr>
-                <th class="px-4 py-3">Nome da campanha</th>
-                <th class="px-4 py-3">Segmento</th>
-                <th class="px-4 py-3">Template Meta</th>
-                <th class="px-4 py-3">Agendamento</th>
-                <th class="px-4 py-3">Status</th>
-                <th class="px-4 py-3 text-center">Enviadas</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-slate-100">
-              <tr v-for="campaign in filteredCampaigns" :key="campaign.id" class="hover:bg-slate-50/80">
-                <td class="px-4 py-3">
-                  <p class="font-semibold text-brand-ink">{{ campaign.name }}</p>
-                  <p class="text-[11px] text-brand-gray">{{ campaign.description }}</p>
-                </td>
-                <td class="px-4 py-3">
-                  <div class="flex flex-wrap gap-1">
-                    <span
-                      v-for="tag in campaign.segmentTags"
-                      :key="tag"
-                      class="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-medium"
-                    >
-                      {{ tag }}
-                    </span>
-                  </div>
-                </td>
-                <td class="px-4 py-3">
-                  <p class="font-medium text-brand-ink">{{ campaign.templateName }}</p>
-                  <span
-                    v-if="campaign.templateApproved"
-                    class="mt-0.5 inline-block rounded-full bg-emerald-50 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-700"
-                  >
-                    Aprovado
-                  </span>
-                </td>
-                <td class="px-4 py-3 text-brand-gray">{{ campaign.scheduleLabel }}</td>
-                <td class="px-4 py-3">
-                  <span class="rounded-full border px-2 py-0.5 text-[10px] font-semibold" :class="statusClass(campaign.status)">
-                    {{ statusLabel(campaign.status) }}
-                  </span>
-                </td>
-                <td class="px-4 py-3 text-center font-medium">{{ campaign.sent }}</td>
-              </tr>
-            </tbody>
-          </table>
+        <div v-if="mainTab === 'sequencias'" class="rounded-xl border border-slate-200 bg-white p-4 shadow-xs">
+          <p class="text-sm text-brand-gray">
+            {{ pluralizePt(sequences.length, 'sequência') }} cadastradas.
+          </p>
+          <ul class="mt-4 divide-y divide-slate-100">
+            <li v-for="seq in sequences" :key="seq.id" class="py-3">
+              <RouterLink :to="{ name: 'campanhas-sequencia-detalhe', params: { id: seq.id } }" class="font-semibold text-brand-indigo hover:underline">
+                {{ seq.name }}
+              </RouterLink>
+              <p class="text-xs text-brand-gray">{{ seq.contacts_in_progress }} em andamento</p>
+            </li>
+            <li v-if="!sequences.length" class="py-6 text-center text-sm text-brand-gray">Nenhuma sequência.</li>
+          </ul>
+        </div>
+
+        <div v-if="mainTab === 'modelos'" class="rounded-xl border border-slate-200 bg-white p-4 shadow-xs">
+          <p class="text-xs text-brand-gray mb-3">
+            Templates sincronizados do banco (provider fake até integração Meta real).
+          </p>
+          <ul class="divide-y divide-slate-100">
+            <li v-for="template in templates" :key="template.id" class="py-3">
+              <p class="font-medium text-brand-ink">{{ template.name }}</p>
+              <p class="text-xs text-brand-gray">{{ template.category }} · {{ template.approved ? 'Aprovado' : 'Pendente' }}</p>
+            </li>
+            <li v-if="!templates.length" class="py-6 text-center text-sm text-brand-gray">Nenhum modelo.</li>
+          </ul>
         </div>
       </template>
-
-      <section
-        v-if="mainTab === 'sequencias'"
-        class="rounded-xl border border-slate-200 bg-white p-4 shadow-xs"
-      >
-        <div class="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h2 class="font-display text-base font-bold text-brand-ink">Sequências ativas</h2>
-            <p class="text-xs text-brand-gray">Disparos automáticos multi-etapas baseados em gatilhos e tempo</p>
-          </div>
-          <RouterLink
-            :to="{ name: 'campanhas-sequencias-nova' }"
-            class="inline-flex items-center gap-1 rounded-lg bg-brand-indigo px-3 py-2 text-sm font-semibold text-white"
-          >
-            <Plus class="h-4 w-4" /> Nova sequência
-          </RouterLink>
-        </div>
-        <div class="mt-4 grid gap-4 md:grid-cols-2">
-          <article
-            v-for="seq in exampleSequences"
-            :key="seq.id"
-            class="rounded-xl border border-slate-200 p-4"
-          >
-            <div class="flex items-start justify-between gap-2">
-              <h3 class="font-semibold text-sm text-brand-ink">{{ seq.name }}</h3>
-              <span class="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">Em execução</span>
-            </div>
-            <p class="mt-2 text-xs text-brand-gray">{{ seq.description }}</p>
-            <p class="mt-3 text-xs text-brand-gray">
-              {{ pluralizePt(seq.steps, 'etapa') }} ·
-              {{ pluralizePt(seq.contactsInProgress, 'contato') }} em andamento
-            </p>
-            <p class="mt-1 text-xs font-medium text-brand-indigo">✓ Somente contatos com opt-in</p>
-          </article>
-        </div>
-      </section>
-
-      <section v-if="mainTab === 'modelos'" class="rounded-xl border border-slate-200 bg-white p-4 shadow-xs">
-        <h2 class="font-display text-base font-bold text-brand-ink">Modelos aprovados pela Meta</h2>
-        <p class="mt-1 text-xs text-brand-gray">Sincronizados com a WhatsApp Cloud API (exemplo).</p>
-        <ul class="mt-4 divide-y divide-slate-100">
-          <li v-for="template in exampleMetaTemplates" :key="template.id" class="py-3">
-            <p class="font-semibold text-sm text-brand-ink">{{ template.name }}</p>
-            <p class="mt-1 text-xs text-brand-gray">{{ template.body }}</p>
-          </li>
-        </ul>
-      </section>
 
       <AppPageFooter />
     </div>

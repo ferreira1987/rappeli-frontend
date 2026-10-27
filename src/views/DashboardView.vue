@@ -7,7 +7,6 @@ import { fetchDashboardMetrics } from '@/api/dashboard'
 import { fetchInboxConversations } from '@/api/inbox'
 import AppPageHeader from '@/components/app/AppPageHeader.vue'
 import { panelBreadcrumbs } from '@/constants/panelBreadcrumbs'
-import { exampleDashboardMetrics } from '@/mocks/dashboardExample'
 import MessageVolumeChart from '@/components/dashboard/MessageVolumeChart.vue'
 import ConversationListItem from '@/components/conversations/ConversationListItem.vue'
 import AppPageFooter from '@/components/layout/AppPageFooter.vue'
@@ -96,13 +95,8 @@ async function loadDashboard(): Promise<void> {
   metricsLoading.value = true
   metricsUnavailable.value = false
   try {
-    const fromApi = await fetchDashboardMetrics()
-    if (fromApi == null) {
-      metrics.value = exampleDashboardMetrics()
-      metricsUnavailable.value = true
-    } else {
-      metrics.value = fromApi
-    }
+    metrics.value = await fetchDashboardMetrics()
+    metricsUnavailable.value = metrics.value == null
   } catch {
     metrics.value = null
     metricsUnavailable.value = true

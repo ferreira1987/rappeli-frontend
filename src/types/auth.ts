@@ -19,4 +19,6 @@ export interface RegisterCredentials {
   password: string
   password_confirmation: string
   terms_accepted: boolean
+  company_name?: string | null
+  business_whatsapp?: string | null
 }

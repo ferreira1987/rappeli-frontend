@@ -38,7 +38,14 @@ import {
   isMessagingWindowOpen,
 } from '@/utils/inbox'
 import { MESSAGING_WINDOW_CLOSED_MESSAGE } from '@/utils/messaging'
+import {
+  fetchConversationActivities,
+  resolveInboxConversation,
+  transferInboxConversation,
+  type ConversationActivity,
+} from '@/api/inbox'
 import { panelBreadcrumbs } from '@/constants/panelBreadcrumbs'
+import { getErrorMessage } from '@/utils/errors'
 
 const auth = useAuthStore()
 const route = useRoute()
@@ -79,6 +86,10 @@ const SCROLL_NEAR_BOTTOM_PX = 80
 const draft = ref('')
 const transferOpen = ref(false)
 const transferNotice = ref<string | null>(null)
+const resolveLoading = ref(false)
+const activities = ref<ConversationActivity[]>([])
+const activitiesLoading = ref(false)
+const activitiesError = ref<string | null>(null)
 
 const transferContactName = computed(() => {
   const conversation = selectedConversation.value
@@ -223,11 +234,60 @@ function openTransferModal(): void {
   transferOpen.value = true
 }
 
-function onTransferred(): void {
-  transferNotice.value = 'Transferência registrada (exemplo). A API de roteamento será conectada em breve.'
+async function loadActivities(conversationId: number): Promise<void> {
+  activitiesLoading.value = true
+  activitiesError.value = null
+  try {
+    activities.value = await fetchConversationActivities(conversationId)
+  } catch (err) {
+    activitiesError.value = getErrorMessage(err)
+    activities.value = []
+  } finally {
+    activitiesLoading.value = false
+  }
+}
+
+watch(selectedId, (id) => {
+  if (id != null) {
+    void loadActivities(id)
+  } else {
+    activities.value = []
+  }
+})
+
+async function onTransferred(assigneeUserId: number): Promise<void> {
+  const id = selectedId.value
+  if (id == null) return
+  try {
+    await transferInboxConversation(id, assigneeUserId)
+    transferNotice.value = 'Conversa transferida com sucesso.'
+    await loadConversations()
+    void loadActivities(id)
+  } catch (err) {
+    transferNotice.value = getErrorMessage(err)
+  }
   window.setTimeout(() => {
     transferNotice.value = null
   }, 5000)
+}
+
+async function onResolve(): Promise<void> {
+  const id = selectedId.value
+  if (id == null) return
+  resolveLoading.value = true
+  try {
+    await resolveInboxConversation(id)
+    transferNotice.value = 'Conversa marcada como resolvida.'
+    await loadConversations()
+    void loadActivities(id)
+  } catch (err) {
+    transferNotice.value = getErrorMessage(err)
+  } finally {
+    resolveLoading.value = false
+    window.setTimeout(() => {
+      transferNotice.value = null
+    }, 5000)
+  }
 }
 </script>
 
@@ -236,7 +296,6 @@ function onTransferred(): void {
     <AppPageHeader
       title="Conversas"
       :breadcrumbs="panelBreadcrumbs({ label: 'Conversas' })"
-      show-example-badge
     >
       <template #actions>
         <button
@@ -411,7 +470,9 @@ function onTransferred(): void {
               </button>
               <button
                 type="button"
-                class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-brand-ink hover:bg-slate-50"
+                class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-brand-ink hover:bg-slate-50 disabled:opacity-60"
+                :disabled="resolveLoading"
+                @click="onResolve"
               >
                 <CheckCircle2 class="h-3.5 w-3.5 text-emerald-600" />
                 Resolver
@@ -562,7 +623,12 @@ function onTransferred(): void {
         </template>
       </section>
 
-      <ContactDetailPanel :conversation="selectedConversation" />
+      <ContactDetailPanel
+        :conversation="selectedConversation"
+        :activities="activities"
+        :activities-loading="activitiesLoading"
+        :activities-error="activitiesError"
+      />
     </div>
 
     <TransferConversationModal

@@ -3,6 +3,7 @@ import {
   type InboxConversationsPage,
   parseInboxConversationsResponse,
 } from '@/api/inboxParsing'
+import { parseResourceCollection } from '@/api/resource'
 import type {
   Conversation,
   ConversationMessage,
@@ -83,4 +84,39 @@ export async function markInboxConversationRead(conversationId: number): Promise
     `/api/inbox/conversations/${conversationId}/read`,
   )
   return data
+}
+
+export interface ConversationActivity {
+  id: number
+  type: string
+  payload: Record<string, unknown> | null
+  actor_user_id: number | null
+  created_at: string | null
+}
+
+export async function transferInboxConversation(
+  conversationId: number,
+  assigneeUserId: number,
+): Promise<Conversation> {
+  const { data } = await http.post<Conversation>(
+    `/api/inbox/conversations/${conversationId}/transfer`,
+    { assignee_user_id: assigneeUserId },
+  )
+  return data
+}
+
+export async function resolveInboxConversation(conversationId: number): Promise<Conversation> {
+  const { data } = await http.post<Conversation>(
+    `/api/inbox/conversations/${conversationId}/resolve`,
+  )
+  return data
+}
+
+export async function fetchConversationActivities(
+  conversationId: number,
+): Promise<ConversationActivity[]> {
+  const { data } = await http.get<unknown>(
+    `/api/inbox/conversations/${conversationId}/activities`,
+  )
+  return parseResourceCollection<ConversationActivity>(data)
 }

@@ -30,6 +30,8 @@ export async function registerRequest(credentials: RegisterCredentials): Promise
     password: credentials.password,
     password_confirmation: credentials.password_confirmation,
     terms_accepted: credentials.terms_accepted,
+    company_name: credentials.company_name ?? undefined,
+    business_whatsapp: credentials.business_whatsapp ?? undefined,
   })
   return data.user
 }

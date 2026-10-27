@@ -54,12 +54,15 @@ async function onSubmit(): Promise<void> {
       companyName: companyName.value.trim(),
     })
 
+    const whatsappDigits = whatsapp.value.replace(/\D/g, '')
     await auth.register({
       name: name.value.trim(),
       email: email.value.trim(),
       password: password.value,
       password_confirmation: password.value,
       terms_accepted: true,
+      company_name: companyName.value.trim() || null,
+      business_whatsapp: whatsappDigits || null,
     })
 
     const redirect =
