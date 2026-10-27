@@ -1,5 +1,3 @@
-import axios from 'axios'
-
 import { fetchCsrfCookie } from '@/api/auth'
 import { http } from '@/api/http'
 import { parseResourceCollection, unwrapData } from '@/api/resource'
@@ -9,10 +7,25 @@ import type {
   Sector,
   TeamAgent,
   TeamDistributionSettings,
-  TeamInvitation,
+  TeamInvitationCreated,
   TeamInvitationPayload,
   TeamInvitationPreview,
+  TeamPendingInvitation,
 } from '@/types/team'
+
+export function mapCreatedInvitationToPending(
+  created: TeamInvitationCreated,
+): TeamPendingInvitation {
+  return {
+    id: created.id,
+    name: created.name,
+    email: created.email,
+    role: created.role,
+    sector_id: created.sector_id,
+    expires_at: created.expires_at,
+    status: 'pending',
+  }
+}
 
 export async function fetchSectors(): Promise<Sector[]> {
   const { data } = await http.get<unknown>('/api/sectors')
@@ -68,21 +81,14 @@ export async function updateTeamAgent(
   return unwrapData<TeamAgent>(data)
 }
 
-export async function fetchPendingTeamInvitations(): Promise<TeamInvitation[]> {
-  try {
-    const { data } = await http.get<unknown>('/api/team/invitations')
-    return parseResourceCollection<TeamInvitation>(data)
-  } catch (error) {
-    if (axios.isAxiosError(error) && (error.response?.status === 404 || error.response?.status === 405)) {
-      return []
-    }
-    throw error
-  }
+export async function fetchPendingTeamInvitations(): Promise<TeamPendingInvitation[]> {
+  const { data } = await http.get<unknown>('/api/team/invitations')
+  return parseResourceCollection<TeamPendingInvitation>(data)
 }
 
-export async function inviteTeamMember(payload: TeamInvitationPayload): Promise<TeamInvitation> {
+export async function inviteTeamMember(payload: TeamInvitationPayload): Promise<TeamInvitationCreated> {
   const { data } = await http.post<unknown>('/api/team/invitations', payload)
-  return unwrapData<TeamInvitation>(data)
+  return unwrapData<TeamInvitationCreated>(data)
 }
 
 export async function acceptTeamInvitation(

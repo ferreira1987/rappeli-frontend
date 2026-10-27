@@ -11,6 +11,7 @@ import {
   fetchSectors,
   fetchTeamAgents,
   inviteTeamMember,
+  mapCreatedInvitationToPending,
   updateDistributionSettings,
   updateSector,
 } from '@/api/team'
@@ -20,7 +21,7 @@ import SectorFormModal from '@/components/team/SectorFormModal.vue'
 import AppPageHeader from '@/components/app/AppPageHeader.vue'
 import AppPageFooter from '@/components/layout/AppPageFooter.vue'
 import { initialsFromName } from '@/composables/useInitials'
-import type { Sector, TeamAgent, TeamDistributionSettings, TeamInvitation } from '@/types/team'
+import type { Sector, TeamAgent, TeamDistributionSettings, TeamPendingInvitation } from '@/types/team'
 import { formatDateTimeBrazil } from '@/utils/datetime'
 import { getErrorMessage, getValidationErrors } from '@/utils/errors'
 import { pluralizePt } from '@/utils/pluralize'
@@ -33,7 +34,7 @@ const error = ref<string | null>(null)
 const statusMessage = ref<string | null>(null)
 
 const agents = ref<TeamAgent[]>([])
-const pendingInvitations = ref<TeamInvitation[]>([])
+const pendingInvitations = ref<TeamPendingInvitation[]>([])
 const sectors = ref<Sector[]>([])
 const settings = ref<TeamDistributionSettings | null>(null)
 const settingsSaving = ref(false)
@@ -146,25 +147,12 @@ async function confirmDeleteSector(): Promise<void> {
   }
 }
 
-function isInvitationPending(invitation: TeamInvitation): boolean {
-  if (!invitation.expires_at) {
-    return true
-  }
-  return new Date(invitation.expires_at).getTime() > Date.now()
-}
-
-function upsertPendingInvitation(invitation: TeamInvitation): void {
+function upsertPendingInvitation(invitation: TeamPendingInvitation): void {
   const list = pendingInvitations.value.filter((item) => item.id !== invitation.id)
-  if (isInvitationPending(invitation)) {
-    pendingInvitations.value = [invitation, ...list]
-  } else {
-    pendingInvitations.value = list
-  }
+  pendingInvitations.value = [invitation, ...list]
 }
 
-const activePendingInvitations = computed(() =>
-  pendingInvitations.value.filter((invitation) => isInvitationPending(invitation)),
-)
+const activePendingInvitations = computed(() => pendingInvitations.value)
 
 const filteredAgents = computed(() => {
   const q = search.value.trim().toLowerCase()
@@ -185,8 +173,13 @@ const filteredPendingInvitations = computed(() => {
   })
 })
 
-function invitationDisplayName(invitation: TeamInvitation): string {
+function invitationDisplayName(invitation: TeamPendingInvitation): string {
   return invitation.name?.trim() || invitation.email
+}
+
+function invitationRoleLabel(role: TeamPendingInvitation['role']): string {
+  if (!role) return '—'
+  return roleLabels[role]
 }
 
 function roleBadgeClass(role: TeamAgent['role']): string {
@@ -221,7 +214,7 @@ async function loadAll(): Promise<void> {
       fetchPendingTeamInvitations(),
     ])
     agents.value = agentList
-    pendingInvitations.value = invitations.filter((invitation) => isInvitationPending(invitation))
+    pendingInvitations.value = invitations
     sectors.value = sectorList
     settings.value = dist
     routingMethod.value = dist.routing_method
@@ -262,13 +255,13 @@ async function onInvited(payload: {
   sectorId: number | null
 }): Promise<void> {
   try {
-    const invitation = await inviteTeamMember({
+    const created = await inviteTeamMember({
       name: payload.name || null,
       email: payload.email,
       role: payload.role,
       sector_id: payload.sectorId,
     })
-    upsertPendingInvitation(invitation)
+    upsertPendingInvitation(mapCreatedInvitationToPending(created))
     statusMessage.value = `Convite enviado para ${payload.email}. O link foi disparado por e-mail.`
     await loadAll()
   } catch (err) {
@@ -403,7 +396,7 @@ async function saveDistribution(): Promise<void> {
                 <div class="text-right text-xs text-brand-gray">
                   <p>
                     Papel:
-                    <span class="font-medium text-brand-ink">{{ roleLabels[invitation.role] }}</span>
+                    <span class="font-medium text-brand-ink">{{ invitationRoleLabel(invitation.role) }}</span>
                   </p>
                   <p>
                     Setor:
