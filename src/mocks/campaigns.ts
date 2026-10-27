@@ -1,6 +1,10 @@
 /** Dados de exemplo — substituir por API quando disponível. */
 
+import { EXAMPLE_CAMPAIGN_SEGMENT_CONTACTS } from '@/mocks/sharedExampleMetrics'
+
 export type CampaignStatus = 'enviando' | 'agendada' | 'concluida' | 'rascunho'
+
+export const exampleCampaignSegmentContactCount = EXAMPLE_CAMPAIGN_SEGMENT_CONTACTS
 
 export type ExampleCampaign = {
   id: string
@@ -146,7 +150,7 @@ export const exampleMetaTemplates: MetaTemplate[] = [
     locale: 'pt_BR',
     approved: true,
     body:
-      'Olá, {{1}}! Identificamos que já faz 6 meses desde o seu último procedimento de {{2}}. Que tal agendar sua consulta preventiva com a {{3}}?',
+      'Olá, {{nome}}! Identificamos que já faz 6 meses desde o seu último procedimento de {{procedimento}}. Que tal agendar sua consulta preventiva com a {{profissional}}?',
     footer: "Botão interativo: 'Confirmar consulta' • 3 variáveis mapeadas",
   },
   {
@@ -155,7 +159,7 @@ export const exampleMetaTemplates: MetaTemplate[] = [
     category: 'Utilidade',
     locale: 'pt_BR',
     approved: true,
-    body: 'Temos novos horários disponíveis para {{1}}. Gostaria de agendar?',
+    body: 'Temos novos horários disponíveis para {{nome}}. Gostaria de agendar?',
   },
   {
     id: 't3',

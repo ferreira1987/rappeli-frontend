@@ -24,10 +24,14 @@ import { useAppSidebar } from '@/composables/useAppSidebar'
 import { useInitials } from '@/composables/useInitials'
 import { useMediaQuery } from '@/composables/useMediaQuery'
 import { useAuthStore } from '@/stores/auth'
+import { useInboxNavStore } from '@/stores/inboxNav'
+import { useWhatsAppStore } from '@/stores/whatsapp'
 
 const route = useRoute()
 const router = useRouter()
 const auth = useAuthStore()
+const whatsappStore = useWhatsAppStore()
+const inboxNav = useInboxNavStore()
 const { isOpen, close, menuButtonId } = useAppSidebar()
 const isLgViewport = useMediaQuery('(min-width: 1024px)')
 const initials = useInitials(computed(() => auth.user?.name))
@@ -40,12 +44,18 @@ type NavItem = {
   to: string
   icon: LucideIcon
   soon?: boolean
-  badge?: number
+  badge?: number | (() => number)
 }
 
 const navItems: NavItem[] = [
   { name: 'painel', label: 'Painel', to: '/painel', icon: LayoutGrid },
-  { name: 'conversas', label: 'Conversas', to: '/conversas', icon: MessageCircle, badge: 3 },
+  {
+    name: 'conversas',
+    label: 'Conversas',
+    to: '/conversas',
+    icon: MessageCircle,
+    badge: () => inboxNav.unreadCount,
+  },
   { name: 'funil-atendimento', label: 'Funil de atendimento', to: '/funil-atendimento', icon: Kanban },
   {
     name: 'mensagens-agendadas',
@@ -66,6 +76,13 @@ const navItems: NavItem[] = [
   { name: 'equipe', label: 'Equipe', to: '/equipe', icon: UserCog },
   { name: 'configuracoes', label: 'Configurações', to: '/configuracoes', icon: Settings },
 ]
+
+function navBadge(item: NavItem): number {
+  if (item.badge == null) {
+    return 0
+  }
+  return typeof item.badge === 'function' ? item.badge() : item.badge
+}
 
 function isNavActive(item: NavItem): boolean {
   const activeNav = route.meta.activeNav
@@ -138,10 +155,10 @@ function closeAndFocusMenu(): void {
         <component :is="item.icon" class="h-[18px] w-[18px] shrink-0" aria-hidden="true" />
         <span class="min-w-0 truncate">{{ item.label }}</span>
         <span
-          v-if="item.badge != null && item.badge > 0"
+          v-if="navBadge(item) > 0"
           class="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white"
         >
-          {{ item.badge }}
+          {{ navBadge(item) }}
         </span>
         <span
           v-else-if="item.soon"
@@ -155,14 +172,25 @@ function closeAndFocusMenu(): void {
     <div class="mt-auto space-y-2 border-t border-slate-100 pt-4">
       <RouterLink
         :to="{ name: 'configuracoes-whatsapp' }"
-        class="flex items-center justify-between rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-brand-ink transition hover:border-slate-300"
+        class="flex items-center justify-between rounded-full border px-3 py-1.5 text-xs font-medium transition hover:border-slate-300"
+        :class="
+          whatsappStore.connected
+            ? 'border-emerald-200 bg-emerald-50/80 text-emerald-900'
+            : 'border-slate-200 bg-slate-50 text-brand-ink'
+        "
       >
         <span class="flex items-center gap-2">
           <span class="relative flex h-2 w-2">
-            <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-            <span class="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+            <span
+              v-if="whatsappStore.connected"
+              class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"
+            />
+            <span
+              class="relative inline-flex h-2 w-2 rounded-full"
+              :class="whatsappStore.connected ? 'bg-emerald-500' : 'bg-slate-400'"
+            />
           </span>
-          WhatsApp: Conectado
+          WhatsApp: {{ whatsappStore.connected ? 'Conectado' : 'Não conectado' }}
         </span>
       </RouterLink>
       <a

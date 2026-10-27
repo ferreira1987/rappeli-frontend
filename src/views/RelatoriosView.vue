@@ -2,16 +2,50 @@
 import { CheckCircle2, Download, Filter, Hourglass, TrendingUp } from '@lucide/vue'
 import { ref } from 'vue'
 
+import ExampleFiltersModal from '@/components/app/ExampleFiltersModal.vue'
 import AppPageHeader from '@/components/app/AppPageHeader.vue'
 import AppPageFooter from '@/components/layout/AppPageFooter.vue'
+import { useExampleToast } from '@/composables/useExampleToast'
 import { initialsFromName } from '@/composables/useInitials'
 import {
   exampleAgentPerformance,
   exampleCampaignPerformance,
   exampleReportKpis,
 } from '@/services/example'
+import { downloadCsv } from '@/utils/exportCsv'
+import { pluralizePt } from '@/utils/pluralize'
 
 const tab = ref<'overview' | 'agent' | 'campaign'>('agent')
+const filtersOpen = ref(false)
+const { message: toast, show: showToast } = useExampleToast()
+
+function exportCsv(): void {
+  if (tab.value === 'campaign') {
+    downloadCsv(
+      'relatorio-campanhas-exemplo.csv',
+      ['Campanha', 'Enviadas', 'Entregues', 'Taxa de leitura'],
+      exampleCampaignPerformance.map((row) => [
+        row.name,
+        String(row.sent),
+        String(row.delivered),
+        row.readRate,
+      ]),
+    )
+  } else {
+    downloadCsv(
+      'relatorio-atendentes-exemplo.csv',
+      ['Atendente', 'Setor', 'Atendidas', 'Resolvidas', 'Em aberto'],
+      exampleAgentPerformance.map((row) => [
+        row.name,
+        row.sector,
+        String(row.handled),
+        String(row.resolved),
+        String(row.open),
+      ]),
+    )
+  }
+  showToast('CSV exportado com os dados exibidos (exemplo).')
+}
 
 function sectorClass(tone: 'blue' | 'green' | 'red'): string {
   const map = {
@@ -34,10 +68,18 @@ function sectorClass(tone: 'blue' | 'green' | 'red'): string {
         <select class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm">
           <option>Últimos 7 dias</option>
         </select>
-        <button type="button" class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium">
+        <button
+          type="button"
+          class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium"
+          @click="filtersOpen = true"
+        >
           <Filter class="h-4 w-4" /> Filtros
         </button>
-        <button type="button" class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold">
+        <button
+          type="button"
+          class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold"
+          @click="exportCsv"
+        >
           <Download class="h-4 w-4" /> Exportar CSV
         </button>
       </template>
@@ -67,6 +109,7 @@ function sectorClass(tone: 'blue' | 'green' | 'red'): string {
     </div>
 
     <div class="flex-1 space-y-6 px-4 py-6 sm:px-6 lg:px-8">
+      <p v-if="toast" class="text-sm text-brand-indigo" role="status">{{ toast }}</p>
       <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <div
           v-for="card in [
@@ -96,7 +139,9 @@ function sectorClass(tone: 'blue' | 'green' | 'red'): string {
               Métricas de atendimento individual da equipe da clínica (dados de exemplo)
             </p>
           </div>
-          <p class="text-xs text-brand-gray">{{ exampleAgentPerformance.length }} colaboradores listados</p>
+          <p class="text-xs text-brand-gray">
+            {{ pluralizePt(exampleAgentPerformance.length, 'colaborador') }} listados
+          </p>
         </div>
         <div class="mt-4 overflow-x-auto">
           <table class="w-full min-w-[800px] text-sm">
@@ -174,5 +219,17 @@ function sectorClass(tone: 'blue' | 'green' | 'red'): string {
 
       <AppPageFooter />
     </div>
+
+    <ExampleFiltersModal
+      :open="filtersOpen"
+      title="Filtros de relatórios"
+      @close="filtersOpen = false"
+      @apply="
+        () => {
+          filtersOpen = false
+          showToast('Filtros aplicados (exemplo).')
+        }
+      "
+    />
   </div>
 </template>

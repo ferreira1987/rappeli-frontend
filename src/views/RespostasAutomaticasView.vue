@@ -154,10 +154,10 @@ function setBusinessDayOpen(slot: BusinessHourSlot, open: boolean): void {
 
 function validateWelcome(): boolean {
   const errors: Record<string, string> = {}
+  if (!welcomeMessageDraft.value.trim()) {
+    errors.message = 'Informe a mensagem de boas-vindas.'
+  }
   if (welcome.value.enabled) {
-    if (!welcomeMessageDraft.value.trim()) {
-      errors.message = 'Informe a mensagem de boas-vindas.'
-    }
     const hours = welcome.value.inactivity_hours
     if (hours !== null && (!Number.isFinite(hours) || hours < 1 || hours > 720)) {
       errors.inactivity_hours = 'Use entre 1 e 720 horas, ou desative o reenvio por inatividade.'
@@ -169,10 +169,10 @@ function validateWelcome(): boolean {
 
 function validateOutOfHours(): boolean {
   const errors: Record<string, string> = {}
+  if (!outOfHoursMessageDraft.value.trim()) {
+    errors.message = 'Informe a mensagem fora do horário.'
+  }
   if (outOfHours.value.enabled) {
-    if (!outOfHoursMessageDraft.value.trim()) {
-      errors.message = 'Informe a mensagem fora do horário.'
-    }
     if (
       outOfHours.value.cooldown_minutes < 5 ||
       outOfHours.value.cooldown_minutes > 1440

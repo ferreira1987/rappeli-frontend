@@ -91,6 +91,9 @@ const mobileShowThread = ref(false)
 const threadScrollEl = ref<HTMLElement | null>(null)
 const filterCounts = computed(() => filterCountsFromApi(listCounts.value))
 
+const isSearchActive = computed(() => searchQuery.value.trim().length > 0)
+const searchActiveLabel = computed(() => searchQuery.value.trim())
+
 type ThreadItem =
   | { kind: 'date'; key: string; label: string }
   | { kind: 'message'; key: string; message: ConversationMessage }
@@ -338,10 +341,15 @@ function onTransferred(): void {
           class="flex flex-1 flex-col items-center justify-center gap-2 p-8 text-center text-sm text-brand-gray"
         >
           <MessageSquare class="h-10 w-10 text-slate-300" aria-hidden="true" />
-          <p class="font-medium text-brand-ink">Nenhuma conversa ainda</p>
-          <p class="max-w-xs text-xs">
-            Quando clientes enviarem mensagens pelo WhatsApp, elas aparecerão aqui.
+          <p v-if="isSearchActive" class="font-medium text-brand-ink">
+            Nenhuma conversa encontrada para “{{ searchActiveLabel }}”
           </p>
+          <template v-else>
+            <p class="font-medium text-brand-ink">Nenhuma conversa ainda</p>
+            <p class="max-w-xs text-xs">
+              Quando clientes enviarem mensagens pelo WhatsApp, elas aparecerão aqui.
+            </p>
+          </template>
         </div>
       </section>
 

@@ -11,11 +11,13 @@ import {
 import WhatsAppDisconnectDialog from '@/components/whatsapp/WhatsAppDisconnectDialog.vue'
 import WhatsAppPinModal from '@/components/whatsapp/WhatsAppPinModal.vue'
 import { useWhatsAppEmbeddedSignup } from '@/composables/useWhatsAppEmbeddedSignup'
+import { useWhatsAppStore } from '@/stores/whatsapp'
 import type { ConnectWhatsAppPayload, WhatsAppAccount } from '@/types/whatsapp'
 import { formatDateTime } from '@/utils/datetime'
 import { getErrorMessage } from '@/utils/errors'
 import { formatAccountStatus, formatQualityRating, getWhatsAppConnectError } from '@/utils/whatsapp'
 
+const whatsappStore = useWhatsAppStore()
 const account = ref<WhatsAppAccount | null>(null)
 const loading = ref(true)
 const loadError = ref<string | null>(null)
@@ -38,9 +40,11 @@ async function loadAccount(): Promise<void> {
   loadError.value = null
   try {
     account.value = await fetchWhatsAppAccount()
+    whatsappStore.setAccount(account.value)
   } catch (error) {
     loadError.value = getErrorMessage(error)
     account.value = null
+    whatsappStore.setAccount(null)
   } finally {
     loading.value = false
   }
@@ -82,6 +86,7 @@ async function onPinSubmit(pin: string): Promise<void> {
       pin,
     }
     account.value = await connectWhatsAppAccount(payload)
+    whatsappStore.setAccount(account.value)
     pinModalOpen.value = false
     pendingConnect.value = null
   } catch (error) {
@@ -107,6 +112,7 @@ async function onDisconnectConfirm(): Promise<void> {
     await fetchCsrfCookie()
     await disconnectWhatsAppAccount()
     account.value = null
+    whatsappStore.setAccount(null)
     disconnectDialogOpen.value = false
   } catch (error) {
     actionError.value = getErrorMessage(error)

@@ -4,7 +4,9 @@ import { RouterLink } from 'vue-router'
 
 import AppPageHeader from '@/components/app/AppPageHeader.vue'
 import AppPageFooter from '@/components/layout/AppPageFooter.vue'
-import { exampleMetaTemplates } from '@/services/example'
+import { useExampleToast } from '@/composables/useExampleToast'
+import { panelBreadcrumbs } from '@/constants/panelBreadcrumbs'
+import { exampleCampaignSegmentContactCount, exampleMetaTemplates } from '@/services/example'
 
 const campaignName = ref('Lembrete de retorno - Pacientes 6 meses')
 const optInOnly = ref(true)
@@ -13,6 +15,12 @@ const scheduleMode = ref<'now' | 'scheduled'>('scheduled')
 const scheduleDate = ref('2026-10-28')
 const scheduleTime = ref('14:30')
 const sendRate = ref('default')
+const { message: toast, show: showToast } = useExampleToast()
+
+const sendRateOptions = [
+  { value: 'default', label: 'Padrão (1 mensagem a cada 2 segundos)' },
+  { value: 'slow', label: 'Lento (1 mensagem a cada 5 segundos)' },
+]
 
 const selectedTemplate = computed(() =>
   exampleMetaTemplates.find((t) => t.id === selectedTemplateId.value),
@@ -21,32 +29,44 @@ const selectedTemplate = computed(() =>
 const previewBody = computed(() => {
   const body = selectedTemplate.value?.body ?? ''
   return body
-    .replace('{{1}}', 'Mariana Costa')
-    .replace('{{2}}', 'limpeza e avaliação preventiva')
-    .replace('{{3}}', 'Dra. Fernanda Lins')
+    .replace(/\{\{nome\}\}/gi, 'Mariana Costa')
+    .replace(/\{\{procedimento\}\}/gi, 'limpeza e avaliação preventiva')
+    .replace(/\{\{profissional\}\}/gi, 'Dra. Fernanda Lins')
 })
+
+function scheduleCampaign(): void {
+  if (!campaignName.value.trim()) {
+    showToast('Informe o nome da campanha antes de agendar.')
+    return
+  }
+  showToast('Campanha agendada (exemplo). Integração com API em breve.')
+}
 </script>
 
 <template>
   <div class="flex min-h-full flex-col bg-brand-mist">
     <AppPageHeader
       title="Nova campanha"
-      :breadcrumbs="[
-        { label: 'Painel', to: '/painel' },
-        { label: 'Campanhas', to: '/campanhas' },
-        { label: 'Nova campanha' },
-      ]"
+      :breadcrumbs="
+        panelBreadcrumbs({ label: 'Campanhas', to: { name: 'campanhas' } }, { label: 'Nova campanha' })
+      "
       show-example-badge
     >
       <template #actions>
         <button type="button" class="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold">
           Salvar rascunho
         </button>
-        <button type="button" class="rounded-lg bg-brand-indigo px-4 py-2 text-sm font-semibold text-white">
+        <button
+          type="button"
+          class="rounded-lg bg-brand-indigo px-4 py-2 text-sm font-semibold text-white"
+          @click="scheduleCampaign"
+        >
           Agendar campanha
         </button>
       </template>
     </AppPageHeader>
+
+    <p v-if="toast" class="px-4 text-sm text-brand-indigo lg:px-8" role="status">{{ toast }}</p>
 
     <div class="flex flex-1 flex-col gap-6 px-4 py-6 lg:flex-row lg:px-8">
       <div class="min-w-0 flex-1 space-y-4">
@@ -78,7 +98,7 @@ const previewBody = computed(() => {
             </label>
             <p class="text-[11px] text-brand-gray">Obrigatório para conformidade com a Meta WhatsApp API</p>
             <div class="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-800">
-              CONTATOS NO SEGMENTO 214 (exemplo)
+              CONTATOS NO SEGMENTO {{ exampleCampaignSegmentContactCount }} (exemplo)
             </div>
           </div>
         </section>
@@ -133,10 +153,16 @@ const previewBody = computed(() => {
             </button>
           </div>
           <div v-if="scheduleMode === 'scheduled'" class="mt-4 grid gap-3 sm:grid-cols-3">
-            <input v-model="scheduleDate" type="date" class="rounded-lg border border-slate-200 px-3 py-2 text-sm" />
-            <input v-model="scheduleTime" type="time" class="rounded-lg border border-slate-200 px-3 py-2 text-sm" />
-            <select v-model="sendRate" class="rounded-lg border border-slate-200 px-3 py-2 text-sm">
-              <option value="default">Padrão (1 msg a cada 2 seg…)</option>
+            <input v-model="scheduleDate" type="date" class="min-w-0 rounded-lg border border-slate-200 px-3 py-2 text-sm" />
+            <input v-model="scheduleTime" type="time" class="min-w-0 rounded-lg border border-slate-200 px-3 py-2 text-sm" />
+            <select
+              v-model="sendRate"
+              class="min-w-0 max-w-full truncate rounded-lg border border-slate-200 px-3 py-2 text-sm"
+              :title="sendRateOptions.find((o) => o.value === sendRate)?.label"
+            >
+              <option v-for="option in sendRateOptions" :key="option.value" :value="option.value">
+                {{ option.label }}
+              </option>
             </select>
           </div>
         </section>
@@ -162,7 +188,10 @@ const previewBody = computed(() => {
           <h3 class="font-bold text-brand-ink">Resumo do disparo</h3>
           <ul class="mt-2 space-y-1 text-brand-gray">
             <li>Segmento: <strong class="text-brand-ink">Tags: Retorno + Limpeza</strong></li>
-            <li>Contatos elegíveis: <strong class="text-brand-indigo">214 contatos</strong></li>
+            <li>
+              Contatos elegíveis:
+              <strong class="text-brand-indigo">{{ exampleCampaignSegmentContactCount }} contatos</strong>
+            </li>
             <li>Template Meta: <strong class="text-brand-ink">{{ selectedTemplate?.name }}</strong></li>
             <li>Programação: <strong class="text-brand-ink">28/10/2026 às 14:30</strong></li>
           </ul>

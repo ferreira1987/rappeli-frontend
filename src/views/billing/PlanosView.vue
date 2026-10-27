@@ -3,7 +3,8 @@ import { Check, CheckCircle2, Info, LockOpen, PiggyBank, Star, UserRound } from 
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
-import { fetchBillingPlans } from '@/api/billing'
+
+import { fetchBillingPlans, fetchCurrentSubscription } from '@/api/billing'
 import OnboardingActionBar from '@/components/onboarding/OnboardingActionBar.vue'
 import OnboardingShell from '@/components/onboarding/OnboardingShell.vue'
 import {
@@ -18,6 +19,7 @@ import { getErrorMessage } from '@/utils/errors'
 
 const router = useRouter()
 const checkoutFlow = useCheckoutFlowStore()
+const activeSubscriptionTier = ref<string | null>(null)
 
 const loading = ref(true)
 const error = ref<string | null>(null)
@@ -91,12 +93,21 @@ onMounted(async () => {
     if (!plansByTier.value.has(selectedTier.value)) {
       selectedTier.value = 'profissional'
     }
+    const subscription = await fetchCurrentSubscription()
+    if (subscription?.status === 'ACTIVE') {
+      activeSubscriptionTier.value = subscription.tier
+      selectedTier.value = subscription.tier
+    }
   } catch (err) {
     error.value = getErrorMessage(err)
   } finally {
     loading.value = false
   }
 })
+
+function isActivePlanTier(tier: string): boolean {
+  return activeSubscriptionTier.value != null && activeSubscriptionTier.value === tier
+}
 
 function selectTier(tier: string): void {
   selectedTier.value = tier
@@ -240,10 +251,16 @@ function goBack(): void {
               >
                 {{ plansByTier.get(tier)!.name }}
                 <span
-                  v-if="selectedTier === tier"
-                  class="rounded-full bg-brand-mist px-2 py-0.5 text-xs font-semibold text-brand-indigo"
+                  v-if="isActivePlanTier(tier)"
+                  class="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-800"
                 >
                   Ativo
+                </span>
+                <span
+                  v-else-if="selectedTier === tier"
+                  class="rounded-full bg-brand-mist px-2 py-0.5 text-xs font-semibold text-brand-indigo"
+                >
+                  Selecionado
                 </span>
               </h2>
               <p class="mt-0.5 text-xs text-slate-500">{{ PLAN_TIER_SUBTITLES[tier] }}</p>

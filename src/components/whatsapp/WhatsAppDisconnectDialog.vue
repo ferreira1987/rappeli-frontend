@@ -1,5 +1,7 @@
 <script setup lang="ts">
-defineProps<{
+import { useEscapeKey } from '@/composables/useEscapeKey'
+
+const props = defineProps<{
   open: boolean
   loading?: boolean
 }>()
@@ -8,6 +10,11 @@ const emit = defineEmits<{
   close: []
   confirm: []
 }>()
+
+useEscapeKey(
+  () => props.open,
+  () => emit('close'),
+)
 </script>
 
 <template>

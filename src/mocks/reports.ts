@@ -1,5 +1,10 @@
 /** Dados de exemplo — substituir por API quando disponível. */
 
+import {
+  EXAMPLE_AVERAGE_RESPONSE_TIME_LABEL,
+  EXAMPLE_CONVERSATIONS_HANDLED,
+} from '@/mocks/sharedExampleMetrics'
+
 export type AgentPerformanceRow = {
   id: string
   name: string
@@ -15,12 +20,12 @@ export type AgentPerformanceRow = {
 }
 
 export const exampleReportKpis = {
-  avgFirstResponse: '02m 40s',
-  conversationsHandled: 128,
-  handledDelta: '+12 vs semana anterior',
-  resolved: 97,
-  resolutionRate: '75,8%',
-  open: 31,
+  avgFirstResponse: EXAMPLE_AVERAGE_RESPONSE_TIME_LABEL,
+  conversationsHandled: EXAMPLE_CONVERSATIONS_HANDLED,
+  handledDelta: 'Mesmo volume da caixa de entrada (exemplo)',
+  resolved: 1,
+  resolutionRate: '100%',
+  open: 0,
 }
 
 export const exampleAgentPerformance: AgentPerformanceRow[] = [
@@ -90,8 +95,8 @@ export const exampleAgentPerformance: AgentPerformanceRow[] = [
 export const exampleCampaignPerformance = [
   {
     name: 'Lembrete retorno 6 meses',
-    sent: 310,
-    delivered: 305,
+    sent: 142,
+    delivered: 138,
     readRate: '64%',
   },
   {

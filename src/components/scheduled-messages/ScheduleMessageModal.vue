@@ -2,7 +2,9 @@
 import { Calendar, Clock, Info, Send, X } from '@lucide/vue'
 import { computed, ref, watch } from 'vue'
 
+import { useEscapeKey } from '@/composables/useEscapeKey'
 import { scheduleMessageTemplateVariables } from '@/services/example'
+import { formatRelativeScheduleDay } from '@/utils/scheduleRelative'
 
 const props = defineProps<{
   open: boolean
@@ -14,16 +16,24 @@ const emit = defineEmits<{
 }>()
 
 const messageType = ref<'free' | 'template'>('free')
-const messageBody = ref(
-  'Olá, {{nome}}! Lembrando da sua consulta de avaliação amanhã às 14:30. Podemos confirmar sua presença?',
-)
 const scheduleDate = ref('2026-10-27')
 const scheduleTime = ref('14:30')
+
+function defaultMessageBody(): string {
+  const dayLabel = formatRelativeScheduleDay(scheduleDate.value)
+  return `Olá, {{nome}}! Lembrando da sua consulta de avaliação ${dayLabel} às {{horario}}. Podemos confirmar sua presença?`
+}
+
+const messageBody = ref(defaultMessageBody())
 const repeat = ref('none')
 
-const previewText = computed(() =>
-  messageBody.value.replace(/\{\{nome\}\}/gi, 'Mariana').replace(/\{\{data\}\}/gi, '27/10').replace(/\{\{horario\}\}/gi, '14:30'),
-)
+const previewText = computed(() => {
+  const dayLabel = formatRelativeScheduleDay(scheduleDate.value)
+  return messageBody.value
+    .replace(/\{\{nome\}\}/gi, 'Mariana')
+    .replace(/\{\{data\}\}/gi, dayLabel)
+    .replace(/\{\{horario\}\}/gi, scheduleTime.value)
+})
 
 const charCount = computed(() => messageBody.value.length)
 
@@ -32,7 +42,19 @@ watch(
   (isOpen) => {
     if (!isOpen) return
     messageType.value = 'free'
+    messageBody.value = defaultMessageBody()
   },
+)
+
+watch(scheduleDate, () => {
+  if (messageBody.value.includes('consulta de avaliação')) {
+    messageBody.value = defaultMessageBody()
+  }
+})
+
+useEscapeKey(
+  () => props.open,
+  () => onClose(),
 )
 
 function insertVariable(variable: string): void {
