@@ -3,32 +3,33 @@ import { UserPlus, X } from '@lucide/vue'
 import { computed, reactive, ref, watch } from 'vue'
 
 import { useEscapeKey } from '@/composables/useEscapeKey'
-import { exampleSectors, roleLabels, type ExampleAgent } from '@/mocks/team'
+import type { Sector, TeamAgentRole } from '@/types/team'
+import { roleLabels } from '@/utils/teamLabels'
 
 const props = defineProps<{
   open: boolean
+  sectors: Sector[]
 }>()
 
 const emit = defineEmits<{
   close: []
-  invited: [payload: { name: string; email: string; sectorId: string; role: ExampleAgent['role'] }]
+  invited: [payload: { email: string; sectorId: number; role: TeamAgentRole }]
 }>()
 
 const form = reactive({
-  name: '',
   email: '',
-  sectorId: exampleSectors.find((s) => s.isDefault)?.id ?? exampleSectors[0]?.id ?? 'recepcao',
-  role: 'atendente' as ExampleAgent['role'],
+  sectorId: 0,
+  role: 'atendente' as TeamAgentRole,
 })
 
 const fieldErrors = ref<Record<string, string>>({})
 
-const roleOptions = Object.entries(roleLabels) as [ExampleAgent['role'], string][]
+const roleOptions = Object.entries(roleLabels) as [TeamAgentRole, string][]
 
 const sectorOptions = computed(() =>
-  exampleSectors.map((sector) => ({
+  props.sectors.map((sector) => ({
     id: sector.id,
-    label: sector.isDefault ? `${sector.name} (Padrão)` : sector.name,
+    label: sector.is_default ? `${sector.name} (Padrão)` : sector.name,
   })),
 )
 
@@ -38,9 +39,9 @@ watch(
     if (!isOpen) {
       return
     }
-    form.name = ''
     form.email = ''
-    form.sectorId = exampleSectors.find((s) => s.isDefault)?.id ?? 'recepcao'
+    const defaultSector = props.sectors.find((s) => s.is_default) ?? props.sectors[0]
+    form.sectorId = defaultSector?.id ?? 0
     form.role = 'atendente'
     fieldErrors.value = {}
   },
@@ -48,9 +49,6 @@ watch(
 
 function validate(): boolean {
   const errors: Record<string, string> = {}
-  if (!form.name.trim()) {
-    errors.name = 'Informe o nome do atendente.'
-  }
   const email = form.email.trim()
   if (!email) {
     errors.email = 'Informe o e-mail.'
@@ -73,7 +71,6 @@ function onSubmit(): void {
     return
   }
   emit('invited', {
-    name: form.name.trim(),
     email: form.email.trim(),
     sectorId: form.sectorId,
     role: form.role,
@@ -119,22 +116,10 @@ useEscapeKey(
         </div>
 
         <p class="mt-2 text-sm text-brand-gray">
-          Envio de convite simulado — os dados não são persistidos (exemplo).
+          O convite é registrado na API. Envio automático de e-mail: Em breve.
         </p>
 
         <div class="mt-4 space-y-3">
-          <div>
-            <label class="text-xs font-semibold text-brand-ink" for="invite-name">Nome *</label>
-            <input
-              id="invite-name"
-              v-model="form.name"
-              type="text"
-              autocomplete="name"
-              placeholder="Ex.: Ana Paula Silva"
-              class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
-            />
-            <p v-if="fieldErrors.name" class="mt-1 text-xs text-red-600">{{ fieldErrors.name }}</p>
-          </div>
           <div>
             <label class="text-xs font-semibold text-brand-ink" for="invite-email">E-mail *</label>
             <input
@@ -151,13 +136,14 @@ useEscapeKey(
             <label class="text-xs font-semibold text-brand-ink" for="invite-sector">Setor *</label>
             <select
               id="invite-sector"
-              v-model="form.sectorId"
+              v-model.number="form.sectorId"
               class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
             >
               <option v-for="sector in sectorOptions" :key="sector.id" :value="sector.id">
                 {{ sector.label }}
               </option>
             </select>
+            <p v-if="fieldErrors.sectorId" class="mt-1 text-xs text-red-600">{{ fieldErrors.sectorId }}</p>
           </div>
           <div>
             <label class="text-xs font-semibold text-brand-ink" for="invite-role">Papel *</label>

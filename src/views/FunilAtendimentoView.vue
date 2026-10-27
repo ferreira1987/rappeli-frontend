@@ -1,43 +1,138 @@
 <script setup lang="ts">
-import { Calendar, Filter, MessageSquare, Plus, Search } from '@lucide/vue'
-import { computed, ref } from 'vue'
+import { Calendar, Filter, Loader2, MessageSquare, Plus, Search } from '@lucide/vue'
+import { computed, onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 
+import { createFunnelCard, createFunnelStage, fetchFunnelBoard } from '@/api/funnel'
 import ExampleFiltersModal from '@/components/app/ExampleFiltersModal.vue'
 import AppPageHeader from '@/components/app/AppPageHeader.vue'
 import AppPageFooter from '@/components/layout/AppPageFooter.vue'
-import { useExampleToast } from '@/composables/useExampleToast'
-import type { FunnelCard, FunnelStageId } from '@/mocks/funnel'
-import { exampleFunnelCards, funnelStages } from '@/services/example'
+import { useEscapeKey } from '@/composables/useEscapeKey'
+import type { FunnelCard, FunnelStage } from '@/types/funnel'
+import { formatBrazilPhone } from '@/utils/phone'
+import { getErrorMessage, getValidationErrors } from '@/utils/errors'
 
+const stages = ref<FunnelStage[]>([])
+const loading = ref(true)
+const error = ref<string | null>(null)
 const search = ref('')
 const filtersOpen = ref(false)
-const { message: toast, show: showToast } = useExampleToast()
+const statusMessage = ref<string | null>(null)
+
+const addStageOpen = ref(false)
+const newStageTitle = ref('')
+const addStageSubmitting = ref(false)
+const addStageErrors = ref<Record<string, string>>({})
+
+const addCardOpen = ref(false)
+const addCardStageId = ref<number | null>(null)
+const addCardName = ref('')
+const addCardPhone = ref('')
+const addCardSubmitting = ref(false)
+const addCardErrors = ref<Record<string, string>>({})
 
 const cardsByStage = computed(() => {
   const q = search.value.trim().toLowerCase()
-  const map = new Map<FunnelStageId, FunnelCard[]>()
-  for (const stage of funnelStages) {
-    map.set(stage.id, [])
-  }
-  for (const card of exampleFunnelCards) {
-    if (q && !card.contactName.toLowerCase().includes(q) && !card.phone.includes(q)) {
-      continue
-    }
-    map.get(card.stageId)?.push(card)
+  const map = new Map<number, FunnelCard[]>()
+  for (const stage of stages.value) {
+    const cards = (stage.cards ?? []).filter((card) => {
+      if (!q) return true
+      const name = (card.contact_name ?? '').toLowerCase()
+      const phone = (card.phone ?? '').toLowerCase()
+      return name.includes(q) || phone.includes(q)
+    })
+    map.set(stage.id, cards)
   }
   return map
 })
 
-function tagClasses(tone: FunnelCard['tags'][number]['tone']): string {
-  const map = {
-    purple: 'bg-violet-50 text-violet-700 border-violet-200',
-    gray: 'bg-slate-50 text-slate-600 border-slate-200',
-    green: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-    blue: 'bg-blue-50 text-blue-700 border-blue-200',
-  }
-  return map[tone]
+function stageDotClass(stage: FunnelStage): string {
+  if (stage.color?.includes('emerald')) return 'bg-emerald-500'
+  if (stage.color?.includes('amber')) return 'bg-amber-500'
+  if (stage.color?.includes('violet')) return 'bg-violet-500'
+  return 'bg-brand-indigo'
 }
+
+async function loadBoard(): Promise<void> {
+  loading.value = true
+  error.value = null
+  try {
+    const board = await fetchFunnelBoard()
+    stages.value = board.stages ?? []
+  } catch (err) {
+    error.value = getErrorMessage(err)
+    stages.value = []
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(() => {
+  void loadBoard()
+})
+
+function openAddStage(): void {
+  newStageTitle.value = ''
+  addStageErrors.value = {}
+  addStageOpen.value = true
+}
+
+async function submitAddStage(): Promise<void> {
+  addStageSubmitting.value = true
+  addStageErrors.value = {}
+  try {
+    await createFunnelStage({ title: newStageTitle.value.trim() })
+    addStageOpen.value = false
+    await loadBoard()
+    statusMessage.value = 'Etapa criada.'
+  } catch (err) {
+    addStageErrors.value = getValidationErrors(err) ?? {}
+    if (!Object.keys(addStageErrors.value).length) {
+      statusMessage.value = getErrorMessage(err)
+    }
+  } finally {
+    addStageSubmitting.value = false
+  }
+}
+
+function openAddCard(stageId: number): void {
+  addCardStageId.value = stageId
+  addCardName.value = ''
+  addCardPhone.value = ''
+  addCardErrors.value = {}
+  addCardOpen.value = true
+}
+
+async function submitAddCard(): Promise<void> {
+  if (addCardStageId.value == null) return
+  addCardSubmitting.value = true
+  addCardErrors.value = {}
+  try {
+    await createFunnelCard({
+      funnel_stage_id: addCardStageId.value,
+      contact_name: addCardName.value.trim() || null,
+      phone: addCardPhone.value.replace(/\D/g, '') || null,
+    })
+    addCardOpen.value = false
+    await loadBoard()
+    statusMessage.value = 'Card adicionado ao funil.'
+  } catch (err) {
+    addCardErrors.value = getValidationErrors(err) ?? {}
+    if (!Object.keys(addCardErrors.value).length) {
+      statusMessage.value = getErrorMessage(err)
+    }
+  } finally {
+    addCardSubmitting.value = false
+  }
+}
+
+useEscapeKey(
+  () => addStageOpen.value || addCardOpen.value,
+  () => {
+    addStageOpen.value = false
+    addCardOpen.value = false
+  },
+)
 </script>
 
 <template>
@@ -45,7 +140,6 @@ function tagClasses(tone: FunnelCard['tags'][number]['tone']): string {
     <AppPageHeader
       title="Funil de atendimento"
       :breadcrumbs="[{ label: 'Painel', to: '/painel' }, { label: 'Funil de atendimento' }]"
-      show-example-badge
     >
       <template #actions>
         <button
@@ -66,7 +160,8 @@ function tagClasses(tone: FunnelCard['tags'][number]['tone']): string {
         <button
           type="button"
           class="inline-flex items-center gap-1.5 rounded-lg bg-brand-indigo px-4 py-2 text-sm font-semibold text-white hover:bg-brand-indigo-hover"
-          @click="showToast('Card de exemplo criado no funil.')"
+          :disabled="!stages.length"
+          @click="stages[0] && openAddCard(stages[0].id)"
         >
           <Plus class="h-4 w-4" />
           Novo card
@@ -85,54 +180,67 @@ function tagClasses(tone: FunnelCard['tags'][number]['tone']): string {
             class="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm focus:border-brand-indigo focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-indigo/20"
           />
         </div>
-        <select class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-brand-ink">
-          <option>Todos os atendentes</option>
-        </select>
-        <select class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-brand-ink">
-          <option>Todos os setores</option>
-        </select>
-        <select class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-brand-ink">
-          <option>Origem</option>
-        </select>
         <button
           type="button"
-          class="ml-auto text-sm font-semibold text-brand-gray"
-          disabled
-          title="Em breve"
+          class="ml-auto text-sm font-semibold text-brand-indigo hover:underline"
+          @click="openAddStage"
         >
           + Adicionar etapa
         </button>
       </div>
+      <p class="mt-2 text-[11px] text-brand-gray">
+        Excluir cards do funil ainda não está disponível na API (Em breve).
+      </p>
     </div>
 
-    <p v-if="toast" class="px-4 pt-4 text-sm text-brand-indigo sm:px-6 lg:px-8" role="status">{{ toast }}</p>
+    <p v-if="statusMessage" class="px-4 pt-4 text-sm text-brand-indigo sm:px-6 lg:px-8" role="status">
+      {{ statusMessage }}
+    </p>
 
     <ExampleFiltersModal
       :open="filtersOpen"
       title="Filtros do funil"
       @close="filtersOpen = false"
-      @apply="
-        () => {
-          filtersOpen = false
-          showToast('Filtros aplicados (exemplo).')
-        }
-      "
+      @apply="filtersOpen = false"
     />
 
-    <div class="flex-1 overflow-x-auto p-4 sm:p-6 lg:p-8">
+    <div v-if="loading" class="flex flex-1 items-center justify-center p-12">
+      <Loader2 class="h-8 w-8 animate-spin text-brand-indigo" aria-label="Carregando funil" />
+    </div>
+
+    <div v-else-if="error" class="flex flex-1 flex-col items-center justify-center gap-3 p-8 text-center">
+      <p class="text-sm text-red-600">{{ error }}</p>
+      <button type="button" class="rounded-lg bg-brand-indigo px-4 py-2 text-sm font-semibold text-white" @click="loadBoard">
+        Tentar novamente
+      </button>
+    </div>
+
+    <div v-else-if="!stages.length" class="flex flex-1 flex-col items-center justify-center gap-3 p-8 text-center text-sm text-brand-gray">
+      <p>Nenhuma etapa no funil. Adicione a primeira etapa para começar.</p>
+      <button type="button" class="rounded-lg bg-brand-indigo px-4 py-2 text-sm font-semibold text-white" @click="openAddStage">
+        + Adicionar etapa
+      </button>
+    </div>
+
+    <div v-else class="flex-1 overflow-x-auto p-4 sm:p-6 lg:p-8">
       <div class="flex min-h-[420px] gap-4">
         <div
-          v-for="stage in funnelStages"
+          v-for="stage in stages"
           :key="stage.id"
           class="flex w-[min(100%,280px)] shrink-0 flex-col rounded-xl border border-slate-200/80 bg-white/80"
         >
           <div class="flex items-center gap-2 border-b border-slate-100 px-3 py-3">
-            <span class="h-2 w-2 rounded-full" :class="stage.dotClass" />
+            <span class="h-2 w-2 rounded-full" :class="stageDotClass(stage)" />
             <h2 class="text-sm font-semibold text-brand-ink">{{ stage.title }}</h2>
             <span class="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-bold text-brand-gray">
               {{ cardsByStage.get(stage.id)?.length ?? 0 }}
             </span>
-            <button type="button" class="ml-auto rounded p-1 text-brand-gray hover:bg-slate-100">
+            <button
+              type="button"
+              class="ml-auto rounded p-1 text-brand-gray hover:bg-slate-100"
+              aria-label="Adicionar card"
+              @click="openAddCard(stage.id)"
+            >
               <Plus class="h-4 w-4" />
             </button>
           </div>
@@ -140,48 +248,29 @@ function tagClasses(tone: FunnelCard['tags'][number]['tone']): string {
             <article
               v-for="card in cardsByStage.get(stage.id)"
               :key="card.id"
-              class="relative rounded-xl border border-slate-200 bg-white p-3 shadow-xs transition"
-              :class="card.moving ? 'ring-2 ring-blue-200' : ''"
+              class="rounded-xl border border-slate-200 bg-white p-3 shadow-xs"
             >
-              <span
-                v-if="card.moving"
-                class="absolute right-2 top-2 rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-bold text-blue-700"
-              >
-                Movendo
-              </span>
-              <div v-if="card.scheduledBanner" class="mb-2 rounded-md bg-amber-50 px-2 py-1 text-[10px] font-medium text-amber-800">
-                {{ card.scheduledBanner }}
-              </div>
               <div class="flex items-start justify-between gap-2">
-                <p class="font-semibold text-sm text-brand-ink">{{ card.contactName }}</p>
-                <span class="shrink-0 text-[11px] text-brand-gray">{{ card.relativeTime }}</span>
+                <p class="text-sm font-semibold text-brand-ink">{{ card.contact_name || 'Contato' }}</p>
               </div>
-              <p class="mt-0.5 flex items-center gap-1 text-[11px] text-brand-gray">
+              <p v-if="card.phone" class="mt-0.5 flex items-center gap-1 text-[11px] text-brand-gray">
                 <MessageSquare class="h-3 w-3" />
-                {{ card.phone }}
+                {{ formatBrazilPhone(card.phone) || card.phone }}
               </p>
-              <p class="mt-2 line-clamp-2 text-xs text-brand-gray">{{ card.lastMessage }}</p>
-              <div class="mt-2 flex flex-wrap gap-1">
+              <p v-if="card.last_message" class="mt-2 line-clamp-2 text-xs text-brand-gray">{{ card.last_message }}</p>
+              <div v-if="card.tags?.length" class="mt-2 flex flex-wrap gap-1">
                 <span
                   v-for="tag in card.tags"
-                  :key="tag.label"
-                  class="rounded-full border px-2 py-0.5 text-[10px] font-semibold"
-                  :class="tagClasses(tag.tone)"
+                  :key="tag"
+                  class="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-semibold text-slate-600"
                 >
-                  {{ tag.label }}
+                  {{ tag }}
                 </span>
               </div>
-              <div class="mt-3 flex items-center justify-between border-t border-slate-100 pt-2">
-                <div class="flex items-center gap-2">
-                  <span
-                    class="flex h-6 w-6 items-center justify-center rounded-full bg-brand-mist text-[10px] font-bold text-brand-indigo"
-                  >
-                    {{ card.assigneeInitials }}
-                  </span>
-                  <span class="text-[11px] text-brand-gray">{{ card.assigneeShortName }}</span>
-                </div>
+              <div class="mt-3 flex justify-end border-t border-slate-100 pt-2">
                 <RouterLink
-                  :to="{ name: 'conversas' }"
+                  v-if="card.conversation_id"
+                  :to="{ name: 'conversas', query: { conversation: card.conversation_id } }"
                   class="inline-flex items-center gap-1 text-[11px] font-semibold text-brand-indigo hover:underline"
                 >
                   <MessageSquare class="h-3 w-3" />
@@ -196,5 +285,50 @@ function tagClasses(tone: FunnelCard['tags'][number]['tone']): string {
         <AppPageFooter />
       </div>
     </div>
+
+    <Teleport to="body">
+      <div
+        v-if="addStageOpen"
+        class="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/50 p-4"
+        @click.self="addStageOpen = false"
+      >
+        <form class="w-full max-w-sm rounded-xl bg-white p-6 shadow-2xl" @submit.prevent="submitAddStage">
+          <h3 class="font-display font-bold text-brand-ink">Nova etapa</h3>
+          <input
+            v-model="newStageTitle"
+            type="text"
+            placeholder="Nome da etapa"
+            class="mt-3 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+          />
+          <p v-if="addStageErrors.title" class="mt-1 text-xs text-red-600">{{ addStageErrors.title }}</p>
+          <div class="mt-4 flex justify-end gap-2">
+            <button type="button" class="rounded-lg border px-3 py-1.5 text-sm" @click="addStageOpen = false">Cancelar</button>
+            <button type="submit" class="rounded-lg bg-brand-indigo px-3 py-1.5 text-sm font-semibold text-white" :disabled="addStageSubmitting">
+              Criar
+            </button>
+          </div>
+        </form>
+      </div>
+      <div
+        v-if="addCardOpen"
+        class="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/50 p-4"
+        @click.self="addCardOpen = false"
+      >
+        <form class="w-full max-w-sm rounded-xl bg-white p-6 shadow-2xl" @submit.prevent="submitAddCard">
+          <h3 class="font-display font-bold text-brand-ink">Novo card</h3>
+          <div class="mt-3 space-y-2">
+            <input v-model="addCardName" type="text" placeholder="Nome do contato" class="w-full rounded-lg border px-3 py-2 text-sm" />
+            <input v-model="addCardPhone" type="tel" placeholder="Telefone" class="w-full rounded-lg border px-3 py-2 text-sm" />
+          </div>
+          <p v-for="(msg, key) in addCardErrors" :key="key" class="mt-1 text-xs text-red-600">{{ msg }}</p>
+          <div class="mt-4 flex justify-end gap-2">
+            <button type="button" class="rounded-lg border px-3 py-1.5 text-sm" @click="addCardOpen = false">Cancelar</button>
+            <button type="submit" class="rounded-lg bg-brand-indigo px-3 py-1.5 text-sm font-semibold text-white" :disabled="addCardSubmitting">
+              Adicionar
+            </button>
+          </div>
+        </form>
+      </div>
+    </Teleport>
   </div>
 </template>

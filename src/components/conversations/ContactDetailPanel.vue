@@ -3,6 +3,7 @@ import { Check, Copy, Tag, User } from '@lucide/vue'
 import { ref } from 'vue'
 
 import { initialsFromName } from '@/composables/useInitials'
+import type { ConversationActivity } from '@/api/inbox'
 import type { Conversation } from '@/types/conversations'
 import { formatDateTime } from '@/utils/datetime'
 import {
@@ -14,6 +15,9 @@ import { formatBrazilPhone } from '@/utils/phone'
 
 const props = defineProps<{
   conversation: Conversation | null
+  activities?: ConversationActivity[]
+  activitiesLoading?: boolean
+  activitiesError?: string | null
 }>()
 
 const copied = ref(false)
@@ -109,6 +113,21 @@ async function copyPhone(): Promise<void> {
         <div>
           <dt class="text-xs font-semibold uppercase tracking-wide text-brand-gray">Última interação</dt>
           <dd class="mt-1 text-brand-ink">{{ formatDateTime(conversation.last_message_at) }}</dd>
+        </div>
+
+        <div>
+          <dt class="text-xs font-semibold uppercase tracking-wide text-brand-gray">Histórico</dt>
+          <dd class="mt-2">
+            <p v-if="activitiesLoading" class="text-xs text-brand-gray">Carregando…</p>
+            <p v-else-if="activitiesError" class="text-xs text-red-600">{{ activitiesError }}</p>
+            <ul v-else-if="activities?.length" class="space-y-2 text-xs text-brand-gray">
+              <li v-for="item in activities" :key="item.id" class="rounded-lg border border-slate-100 px-2 py-1.5">
+                <span class="font-semibold text-brand-ink">{{ item.type }}</span>
+                <span class="block text-[11px]">{{ formatDateTime(item.created_at) }}</span>
+              </li>
+            </ul>
+            <p v-else class="text-xs text-brand-gray">Nenhuma atividade registrada.</p>
+          </dd>
         </div>
       </dl>
     </div>

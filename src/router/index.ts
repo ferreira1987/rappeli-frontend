@@ -128,6 +128,12 @@ const router = createRouter({
           meta: { title: 'Nova sequência', activeNav: 'campanhas' },
         },
         {
+          path: 'campanhas/sequencias/:id',
+          name: 'campanhas-sequencia-detalhe',
+          component: () => import('@/views/SequenciaFollowUpView.vue'),
+          meta: { title: 'Sequência', activeNav: 'campanhas' },
+        },
+        {
           path: 'automacoes',
           name: 'automacoes',
           component: () => import('@/views/AutomacoesView.vue'),
