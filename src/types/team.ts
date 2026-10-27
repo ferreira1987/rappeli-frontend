@@ -28,7 +28,21 @@ export interface TeamDistributionSettings {
 }
 
 export interface TeamInvitationPayload {
+  name?: string | null
   email: string
   role?: TeamAgentRole | null
   sector_id?: number | null
+}
+
+export interface AcceptTeamInvitationPayload {
+  token: string
+  password: string
+  password_confirmation: string
+  terms_accepted: boolean
+}
+
+export interface AcceptTeamInvitationResult {
+  id: number
+  email: string
+  name: string
 }

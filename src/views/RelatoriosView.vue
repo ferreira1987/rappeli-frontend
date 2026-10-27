@@ -48,8 +48,8 @@ const kpiCards = computed(() => {
   const periodHint = days === 1 ? 'Último dia' : `Últimos ${days} dias`
   return [
     {
-      label: 'Tempo médio de resposta',
-      value: formatAverageResponseTime(kpis?.average_response_time_seconds ?? null),
+      label: 'Tempo médio de 1ª resposta',
+      value: formatAverageResponseTime(kpis?.average_first_response_time_seconds ?? null),
       hint: periodHint,
       icon: null,
     },
@@ -60,16 +60,34 @@ const kpiCards = computed(() => {
       icon: TrendingUp,
     },
     {
+      label: 'Conversas resolvidas',
+      value: String(kpis?.conversations_resolved ?? 0),
+      hint: periodHint,
+      icon: CheckCircle2,
+    },
+    {
+      label: 'Conversas em aberto',
+      value: String(kpis?.conversations_open ?? 0),
+      hint: 'Fila atual',
+      icon: Hourglass,
+    },
+    {
+      label: 'Tempo médio de resposta',
+      value: formatAverageResponseTime(kpis?.average_response_time_seconds ?? null),
+      hint: periodHint,
+      icon: null,
+    },
+    {
       label: 'Novos contatos',
       value: String(kpis?.new_contacts ?? 0),
       hint: periodHint,
-      icon: CheckCircle2,
+      icon: null,
     },
     {
       label: 'Mensagens automáticas',
       value: String(kpis?.automated_messages ?? 0),
       hint: periodHint,
-      icon: Hourglass,
+      icon: null,
     },
   ]
 })
@@ -184,8 +202,7 @@ async function exportCsv(): Promise<void> {
         </div>
 
         <p v-if="tab === 'overview'" class="text-sm text-brand-gray">
-          Métricas detalhadas por atendente e campanha estão nas abas correspondentes. KPIs de resolvidas/em aberto
-          ainda não são expostos pela API.
+          Use as abas para ver o detalhamento por atendente e por campanha.
         </p>
 
         <section v-if="tab === 'agent'" class="rounded-xl border border-slate-200 bg-white p-4 shadow-xs">
@@ -199,12 +216,15 @@ async function exportCsv(): Promise<void> {
             </p>
           </div>
           <div class="mt-4 overflow-x-auto">
-            <table class="w-full min-w-[480px] text-sm">
+            <table class="w-full min-w-[720px] text-sm">
               <thead class="border-b border-slate-100 text-[11px] font-bold uppercase text-brand-gray">
                 <tr>
                   <th class="py-2 text-left">Colaborador</th>
-                  <th class="px-2 py-2 text-right">Conversas atendidas</th>
-                  <th class="px-2 py-2 text-right">Mensagens enviadas</th>
+                  <th class="px-2 py-2 text-right">Atendidas</th>
+                  <th class="px-2 py-2 text-right">Mensagens</th>
+                  <th class="px-2 py-2 text-right">Resolvidas</th>
+                  <th class="px-2 py-2 text-right">Em aberto</th>
+                  <th class="px-2 py-2 text-right">1ª resposta</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-slate-100">
@@ -219,9 +239,14 @@ async function exportCsv(): Promise<void> {
                   </td>
                   <td class="px-2 py-3 text-right">{{ row.conversations_handled }}</td>
                   <td class="px-2 py-3 text-right">{{ row.messages_sent }}</td>
+                  <td class="px-2 py-3 text-right text-emerald-700">{{ row.conversations_resolved }}</td>
+                  <td class="px-2 py-3 text-right">{{ row.conversations_open }}</td>
+                  <td class="px-2 py-3 text-right text-brand-gray">
+                    {{ formatAverageResponseTime(row.average_first_response_time_seconds) }}
+                  </td>
                 </tr>
                 <tr v-if="!report.agents.length">
-                  <td colspan="3" class="py-6 text-center text-brand-gray">Nenhum dado no período.</td>
+                  <td colspan="6" class="py-6 text-center text-brand-gray">Nenhum dado no período.</td>
                 </tr>
               </tbody>
             </table>

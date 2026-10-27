@@ -94,13 +94,20 @@ export interface ConversationActivity {
   created_at: string | null
 }
 
+export type TransferConversationPayload = {
+  assignee_user_id?: number | null
+  sector_id?: number | null
+  note?: string | null
+  notify_client?: boolean
+}
+
 export async function transferInboxConversation(
   conversationId: number,
-  assigneeUserId: number,
+  payload: TransferConversationPayload,
 ): Promise<Conversation> {
   const { data } = await http.post<Conversation>(
     `/api/inbox/conversations/${conversationId}/transfer`,
-    { assignee_user_id: assigneeUserId },
+    payload,
   )
   return data
 }

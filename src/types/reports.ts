@@ -2,7 +2,10 @@ export type ReportPeriod = `${number}d` | '7d' | '30d'
 
 export interface ReportKpis {
   conversations_handled: number
+  conversations_resolved: number
+  conversations_open: number
   average_response_time_seconds: number | null
+  average_first_response_time_seconds: number | null
   new_contacts: number
   automated_messages: number
   period_days: number
@@ -13,6 +16,9 @@ export interface ReportAgentRow {
   name: string
   conversations_handled: number
   messages_sent: number
+  conversations_resolved: number
+  conversations_open: number
+  average_first_response_time_seconds: number | null
 }
 
 export interface ReportCampaignRow {

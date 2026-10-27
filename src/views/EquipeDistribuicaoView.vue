@@ -137,9 +137,15 @@ async function exportTeamCsv(): Promise<void> {
   }
 }
 
-async function onInvited(payload: { email: string; role: TeamAgent['role']; sectorId: number }): Promise<void> {
+async function onInvited(payload: {
+  name: string
+  email: string
+  role: TeamAgent['role']
+  sectorId: number
+}): Promise<void> {
   try {
     await inviteTeamMember({
+      name: payload.name || null,
       email: payload.email,
       role: payload.role,
       sector_id: payload.sectorId,

@@ -43,6 +43,7 @@ import {
   resolveInboxConversation,
   transferInboxConversation,
   type ConversationActivity,
+  type TransferConversationPayload,
 } from '@/api/inbox'
 import { panelBreadcrumbs } from '@/constants/panelBreadcrumbs'
 import { getErrorMessage } from '@/utils/errors'
@@ -255,11 +256,11 @@ watch(selectedId, (id) => {
   }
 })
 
-async function onTransferred(assigneeUserId: number): Promise<void> {
+async function onTransferred(payload: TransferConversationPayload): Promise<void> {
   const id = selectedId.value
   if (id == null) return
   try {
-    await transferInboxConversation(id, assigneeUserId)
+    await transferInboxConversation(id, payload)
     transferNotice.value = 'Conversa transferida com sucesso.'
     await loadConversations()
     void loadActivities(id)
