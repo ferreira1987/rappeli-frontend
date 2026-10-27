@@ -4,6 +4,7 @@ import { onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 
 import { createSequence, fetchSequences } from '@/api/sequences'
+import CreateSequenceModal from '@/components/sequences/CreateSequenceModal.vue'
 import AppPageHeader from '@/components/app/AppPageHeader.vue'
 import AppPageFooter from '@/components/layout/AppPageFooter.vue'
 import { panelBreadcrumbs } from '@/constants/panelBreadcrumbs'
@@ -15,6 +16,7 @@ const sequences = ref<Sequence[]>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
 const creating = ref(false)
+const createModalOpen = ref(false)
 
 async function load(): Promise<void> {
   loading.value = true
@@ -32,12 +34,15 @@ onMounted(() => {
   void load()
 })
 
-async function addSequence(): Promise<void> {
-  const name = window.prompt('Nome da nova sequência:')
-  if (!name?.trim()) return
+function openCreateModal(): void {
+  createModalOpen.value = true
+}
+
+async function confirmCreateSequence(name: string): Promise<void> {
   creating.value = true
   try {
-    await createSequence({ name: name.trim(), active: true })
+    await createSequence({ name, active: true })
+    createModalOpen.value = false
     await load()
   } catch (err) {
     error.value = getErrorMessage(err)
@@ -57,7 +62,7 @@ const breadcrumbs = panelBreadcrumbs({ label: 'Campanhas', to: { name: 'campanha
           type="button"
           class="inline-flex items-center gap-2 rounded-lg bg-brand-indigo px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
           :disabled="creating"
-          @click="addSequence"
+          @click="openCreateModal"
         >
           <Plus class="h-4 w-4" />
           Nova sequência
@@ -99,5 +104,12 @@ const breadcrumbs = panelBreadcrumbs({ label: 'Campanhas', to: { name: 'campanha
       </template>
       <AppPageFooter />
     </div>
+
+    <CreateSequenceModal
+      :open="createModalOpen"
+      :submitting="creating"
+      @close="createModalOpen = false"
+      @create="confirmCreateSequence"
+    />
   </div>
 </template>

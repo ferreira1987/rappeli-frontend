@@ -14,6 +14,7 @@ export interface ReportKpis {
 export interface ReportAgentRow {
   user_id: number
   name: string
+  email?: string | null
   conversations_handled: number
   messages_sent: number
   conversations_resolved: number
