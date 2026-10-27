@@ -13,13 +13,13 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   close: []
-  invited: [payload: { name: string; email: string; sectorId: number; role: TeamAgentRole }]
+  invited: [payload: { name: string; email: string; sectorId: number | null; role: TeamAgentRole }]
 }>()
 
 const form = reactive({
   name: '',
   email: '',
-  sectorId: 0,
+  sectorId: null as number | null,
   role: 'atendente' as TeamAgentRole,
 })
 
@@ -42,8 +42,7 @@ watch(
     }
     form.name = ''
     form.email = ''
-    const defaultSector = props.sectors.find((s) => s.is_default) ?? props.sectors[0]
-    form.sectorId = defaultSector?.id ?? 0
+    form.sectorId = null
     form.role = 'atendente'
     fieldErrors.value = {}
   },
@@ -56,9 +55,6 @@ function validate(): boolean {
     errors.email = 'Informe o e-mail.'
   } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     errors.email = 'Informe um e-mail válido.'
-  }
-  if (!form.sectorId) {
-    errors.sectorId = 'Selecione o setor.'
   }
   fieldErrors.value = errors
   return Object.keys(errors).length === 0
@@ -147,12 +143,13 @@ useEscapeKey(
             <p v-if="fieldErrors.email" class="mt-1 text-xs text-red-600">{{ fieldErrors.email }}</p>
           </div>
           <div>
-            <label class="text-xs font-semibold text-brand-ink" for="invite-sector">Setor *</label>
+            <label class="text-xs font-semibold text-brand-ink" for="invite-sector">Setor (opcional)</label>
             <select
               id="invite-sector"
-              v-model.number="form.sectorId"
+              v-model="form.sectorId"
               class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
             >
+              <option :value="null">Sem setor — definir depois</option>
               <option v-for="sector in sectorOptions" :key="sector.id" :value="sector.id">
                 {{ sector.label }}
               </option>

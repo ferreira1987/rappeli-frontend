@@ -51,7 +51,7 @@ const kpiCards = computed(() => {
     {
       label: 'Tempo médio de 1ª resposta',
       value: formatAverageResponseTime(kpis?.average_first_response_time_seconds ?? null),
-      hint: periodHint,
+      hint: 'Até a primeira mensagem do atendente · ' + periodHint,
       icon: null,
     },
     {
@@ -69,13 +69,19 @@ const kpiCards = computed(() => {
     {
       label: 'Conversas em aberto',
       value: String(kpis?.conversations_open ?? 0),
-      hint: 'Fila atual',
+      hint: 'Total na fila (todos os atendentes)',
+      icon: Hourglass,
+    },
+    {
+      label: 'Em aberto sem atendente',
+      value: String(kpis?.conversations_open_unassigned ?? 0),
+      hint: 'Fila geral / aguardando distribuição',
       icon: Hourglass,
     },
     {
       label: 'Tempo médio de resposta',
       value: formatAverageResponseTime(kpis?.average_response_time_seconds ?? null),
-      hint: periodHint,
+      hint: 'Entre mensagens no período · ' + periodHint,
       icon: null,
     },
     {
@@ -99,14 +105,9 @@ function readRate(row: { sent_count: number; read_count: number }): string {
   return `${pct}%`
 }
 
-const assignedOpenTotal = computed(() =>
-  report.value?.agents.reduce((sum, row) => sum + row.conversations_open, 0) ?? 0,
+const unassignedOpenConversations = computed(
+  () => report.value?.kpis.conversations_open_unassigned ?? 0,
 )
-
-const unassignedOpenConversations = computed(() => {
-  const totalOpen = report.value?.kpis.conversations_open ?? 0
-  return Math.max(0, totalOpen - assignedOpenTotal.value)
-})
 
 async function exportCsv(): Promise<void> {
   exportMessage.value = null
@@ -223,8 +224,8 @@ async function exportCsv(): Promise<void> {
             role="note"
           >
             {{ pluralizePt(unassignedOpenConversations, 'conversa', { one: 'conversa em aberto', other: 'conversas em aberto' }) }}
-            sem atendente atribuído (fila geral ou aguardando distribuição). O total em
-            <strong>Conversas em aberto</strong> inclui essas conversas; a soma por atendente pode ser menor.
+            sem atendente atribuído. O KPI <strong>Em aberto sem atendente</strong> usa o mesmo critério do backend;
+            a soma por atendente na aba Por atendente não inclui essas conversas.
           </p>
         </template>
 
