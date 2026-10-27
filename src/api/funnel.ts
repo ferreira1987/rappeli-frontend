@@ -68,3 +68,7 @@ export async function updateFunnelCard(
   const { data } = await http.patch<unknown>(`/api/funnel/cards/${cardId}`, payload)
   return unwrapData<FunnelCard>(data)
 }
+
+export async function deleteFunnelCard(cardId: number): Promise<void> {
+  await http.delete(`/api/funnel/cards/${cardId}`)
+}

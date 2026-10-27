@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { Loader2 } from '@lucide/vue'
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 
-import { enrollSequence, fetchSequence } from '@/api/sequences'
+import { enrollSequence, fetchSequences, findSequenceInList } from '@/api/sequences'
 import AppPageHeader from '@/components/app/AppPageHeader.vue'
 import AppPageFooter from '@/components/layout/AppPageFooter.vue'
 import { panelBreadcrumbs } from '@/constants/panelBreadcrumbs'
@@ -11,7 +11,7 @@ import type { Sequence } from '@/types/campaigns'
 import { getErrorMessage } from '@/utils/errors'
 
 const route = useRoute()
-const sequence = ref<Sequence | null>(null)
+const sequences = ref<Sequence[]>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
 const enrollIds = ref('')
@@ -23,14 +23,19 @@ const sequenceId = computed(() => {
   return Number.isFinite(id) ? id : 0
 })
 
+const sequence = computed(() => findSequenceInList(sequences.value, sequenceId.value) ?? null)
+
 async function load(): Promise<void> {
   loading.value = true
   error.value = null
   try {
-    sequence.value = await fetchSequence(sequenceId.value)
+    sequences.value = await fetchSequences()
+    if (sequenceId.value && !findSequenceInList(sequences.value, sequenceId.value)) {
+      error.value = 'Sequência não encontrada.'
+    }
   } catch (err) {
     error.value = getErrorMessage(err)
-    sequence.value = null
+    sequences.value = []
   } finally {
     loading.value = false
   }
@@ -38,6 +43,12 @@ async function load(): Promise<void> {
 
 onMounted(() => {
   void load()
+})
+
+watch(sequenceId, () => {
+  if (!loading.value && sequenceId.value && !sequence.value) {
+    error.value = 'Sequência não encontrada.'
+  }
 })
 
 const breadcrumbs = computed(() =>
@@ -49,6 +60,7 @@ const breadcrumbs = computed(() =>
 )
 
 async function onEnroll(): Promise<void> {
+  if (!sequenceId.value) return
   const ids = enrollIds.value
     .split(',')
     .map((s) => Number(s.trim()))

@@ -13,10 +13,11 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   close: []
-  invited: [payload: { email: string; sectorId: number; role: TeamAgentRole }]
+  invited: [payload: { name: string; email: string; sectorId: number; role: TeamAgentRole }]
 }>()
 
 const form = reactive({
+  name: '',
   email: '',
   sectorId: 0,
   role: 'atendente' as TeamAgentRole,
@@ -39,6 +40,7 @@ watch(
     if (!isOpen) {
       return
     }
+    form.name = ''
     form.email = ''
     const defaultSector = props.sectors.find((s) => s.is_default) ?? props.sectors[0]
     form.sectorId = defaultSector?.id ?? 0
@@ -71,6 +73,7 @@ function onSubmit(): void {
     return
   }
   emit('invited', {
+    name: form.name.trim(),
     email: form.email.trim(),
     sectorId: form.sectorId,
     role: form.role,
@@ -116,10 +119,21 @@ useEscapeKey(
         </div>
 
         <p class="mt-2 text-sm text-brand-gray">
-          O convite é registrado na API. Envio automático de e-mail: Em breve.
+          O convite é registrado na API. O link com token será enviado por e-mail quando o envio estiver ativo.
         </p>
 
         <div class="mt-4 space-y-3">
+          <div>
+            <label class="text-xs font-semibold text-brand-ink" for="invite-name">Nome</label>
+            <input
+              id="invite-name"
+              v-model="form.name"
+              type="text"
+              autocomplete="name"
+              placeholder="Ex.: Ana Paula Silva"
+              class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+            />
+          </div>
           <div>
             <label class="text-xs font-semibold text-brand-ink" for="invite-email">E-mail *</label>
             <input

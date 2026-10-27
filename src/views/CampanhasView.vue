@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { GitBranch, Info, Loader2, Plus, Search } from '@lucide/vue'
+import { GitBranch, Loader2, Plus, Search } from '@lucide/vue'
 import { computed, onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 
-import { fetchCampaigns } from '@/api/campaigns'
+import { fetchCampaigns, sendCampaignNow } from '@/api/campaigns'
 import { fetchMessageTemplates } from '@/api/messageTemplates'
 import { fetchSequences } from '@/api/sequences'
 import AppPageHeader from '@/components/app/AppPageHeader.vue'
@@ -23,6 +23,8 @@ const error = ref<string | null>(null)
 const campaigns = ref<Campaign[]>([])
 const sequences = ref<Sequence[]>([])
 const templates = ref<MessageTemplate[]>([])
+const sendingId = ref<number | null>(null)
+const actionMessage = ref<string | null>(null)
 
 const filteredCampaigns = computed(() => {
   let list = campaigns.value
@@ -78,6 +80,29 @@ async function loadAll(): Promise<void> {
 onMounted(() => {
   void loadAll()
 })
+
+async function onSendNow(campaign: Campaign): Promise<void> {
+  if (!window.confirm(`Enviar a campanha "${campaign.name}" agora?`)) {
+    return
+  }
+  sendingId.value = campaign.id
+  actionMessage.value = null
+  try {
+    const result = await sendCampaignNow(campaign.id)
+    actionMessage.value = result.queued
+      ? `Campanha enfileirada para envio (status: ${result.status}).`
+      : `Campanha atualizada (status: ${result.status}).`
+    await loadAll()
+  } catch (err) {
+    actionMessage.value = getErrorMessage(err)
+  } finally {
+    sendingId.value = null
+  }
+}
+
+function canSendNow(campaign: Campaign): boolean {
+  return campaign.status === 'rascunho' || campaign.status === 'agendada'
+}
 </script>
 
 <template>
@@ -104,10 +129,7 @@ onMounted(() => {
       </template>
     </AppPageHeader>
 
-    <p class="mx-4 mt-2 flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900 lg:mx-8">
-      <Info class="h-4 w-4 shrink-0" />
-      Disparo automático de campanhas via WhatsApp: Em breve. CRUD e templates vêm da API.
-    </p>
+    <p v-if="actionMessage" class="mx-4 mt-2 text-sm text-brand-indigo lg:mx-8" role="status">{{ actionMessage }}</p>
 
     <AppPageTabs>
       <button
@@ -184,9 +206,20 @@ onMounted(() => {
                   {{ campaign.template?.name ?? 'Sem template' }} · {{ campaign.sent_count }} enviadas
                 </p>
               </div>
-              <span class="rounded-full border px-2 py-0.5 text-[11px] font-semibold" :class="statusClass(campaign.status)">
-                {{ statusLabel(campaign.status) }}
-              </span>
+              <div class="flex flex-wrap items-center gap-2">
+                <button
+                  v-if="canSendNow(campaign)"
+                  type="button"
+                  class="rounded-lg border border-brand-indigo bg-white px-3 py-1.5 text-xs font-semibold text-brand-indigo hover:bg-brand-mist disabled:opacity-60"
+                  :disabled="sendingId === campaign.id"
+                  @click="onSendNow(campaign)"
+                >
+                  {{ sendingId === campaign.id ? 'Enviando…' : 'Enviar agora' }}
+                </button>
+                <span class="rounded-full border px-2 py-0.5 text-[11px] font-semibold" :class="statusClass(campaign.status)">
+                  {{ statusLabel(campaign.status) }}
+                </span>
+              </div>
             </li>
             <li v-if="!filteredCampaigns.length" class="px-4 py-8 text-center text-sm text-brand-gray">
               Nenhuma campanha encontrada.

@@ -88,7 +88,9 @@ const breadcrumbs = panelBreadcrumbs({ label: 'Campanhas', to: { name: 'campanha
               {{ seq.name }}
             </RouterLink>
             <p class="text-xs text-brand-gray">{{ seq.description || 'Sem descrição' }}</p>
-            <p class="text-[11px] text-brand-gray">{{ seq.contacts_in_progress }} em andamento</p>
+            <p class="text-[11px] text-brand-gray">
+              {{ seq.steps?.length ?? 0 }} passos · {{ seq.contacts_in_progress }} em andamento
+            </p>
           </li>
           <li v-if="!sequences.length" class="px-4 py-8 text-center text-sm text-brand-gray">
             Nenhuma sequência cadastrada.

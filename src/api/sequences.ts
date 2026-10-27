@@ -7,13 +7,8 @@ export async function fetchSequences(): Promise<Sequence[]> {
   return parseResourceCollection<Sequence>(data)
 }
 
-export async function fetchSequence(id: number): Promise<Sequence> {
-  const list = await fetchSequences()
-  const found = list.find((s) => s.id === id)
-  if (!found) {
-    throw new Error('Sequência não encontrada.')
-  }
-  return found
+export function findSequenceInList(sequences: Sequence[], id: number): Sequence | undefined {
+  return sequences.find((s) => s.id === id)
 }
 
 export async function createSequence(payload: {

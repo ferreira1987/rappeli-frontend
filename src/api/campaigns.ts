@@ -48,3 +48,14 @@ export async function fetchCampaignSegmentPreview(
   const { data } = await http.get<unknown>(`/api/campaigns/${campaignId}/segment-preview`)
   return unwrapData<CampaignSegmentPreview>(data)
 }
+
+export interface CampaignSendNowResult {
+  id: number
+  status: string
+  queued: boolean
+}
+
+export async function sendCampaignNow(campaignId: number): Promise<CampaignSendNowResult> {
+  const { data } = await http.post<unknown>(`/api/campaigns/${campaignId}/send-now`)
+  return unwrapData<CampaignSendNowResult>(data)
+}

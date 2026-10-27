@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { ArrowRightLeft, Loader2, X } from '@lucide/vue'
-import { onMounted, ref, watch } from 'vue'
+import { ArrowRightLeft, Loader2, PauseCircle, X } from '@lucide/vue'
+import { computed, ref, watch } from 'vue'
 
-import { fetchTeamAgents } from '@/api/team'
+import type { TransferConversationPayload } from '@/api/inbox'
+import { fetchSectors, fetchTeamAgents } from '@/api/team'
 import { useEscapeKey } from '@/composables/useEscapeKey'
-import type { TeamAgent } from '@/types/team'
+import type { Sector, TeamAgent } from '@/types/team'
 
 const props = defineProps<{
   open: boolean
@@ -13,46 +14,58 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   close: []
-  transferred: [assigneeUserId: number]
+  transferred: [payload: TransferConversationPayload]
 }>()
 
-const agents = ref<TeamAgent[]>([])
-const agentsLoading = ref(false)
+const targetMode = ref<'agent' | 'sector'>('agent')
+const pauseAutomations = ref(true)
+const sectorId = ref<number | null>(null)
 const assigneeUserId = ref<number | null>(null)
-const submitError = ref<string | null>(null)
+const internalNote = ref('')
+const notifyClient = ref(true)
+
+const agents = ref<TeamAgent[]>([])
+const sectors = ref<Sector[]>([])
+const loading = ref(false)
 const fieldErrors = ref<Record<string, string>>({})
 
-async function loadAgents(): Promise<void> {
-  agentsLoading.value = true
+const notifyPreview = computed(() => {
+  const sector = sectors.value.find((s) => s.id === sectorId.value)
+  const name = sector?.name ?? 'equipe'
+  return `Estamos transferindo você para o setor ${name}.`
+})
+
+async function loadOptions(): Promise<void> {
+  loading.value = true
   try {
-    agents.value = await fetchTeamAgents()
-    if (!assigneeUserId.value && agents.value[0]) {
-      assigneeUserId.value = agents.value[0].id
+    const [agentList, sectorList] = await Promise.all([fetchTeamAgents(), fetchSectors()])
+    agents.value = agentList
+    sectors.value = sectorList
+    if (sectorId.value == null) {
+      const defaultSector = sectorList.find((s) => s.is_default) ?? sectorList[0]
+      sectorId.value = defaultSector?.id ?? null
     }
   } catch {
     agents.value = []
+    sectors.value = []
   } finally {
-    agentsLoading.value = false
+    loading.value = false
   }
 }
 
 watch(
   () => props.open,
   (isOpen) => {
-    if (isOpen) {
-      assigneeUserId.value = null
-      submitError.value = null
-      fieldErrors.value = {}
-      void loadAgents()
-    }
+    if (!isOpen) return
+    targetMode.value = 'agent'
+    assigneeUserId.value = null
+    internalNote.value = ''
+    notifyClient.value = true
+    pauseAutomations.value = true
+    fieldErrors.value = {}
+    void loadOptions()
   },
 )
-
-onMounted(() => {
-  if (props.open) {
-    void loadAgents()
-  }
-})
 
 function onClose(): void {
   emit('close')
@@ -64,11 +77,28 @@ useEscapeKey(
 )
 
 function onSubmit(): void {
-  if (assigneeUserId.value == null) {
-    fieldErrors.value = { assignee_user_id: 'Selecione um atendente.' }
-    return
+  fieldErrors.value = {}
+  const payload: TransferConversationPayload = {
+    note: internalNote.value.trim() || null,
+    notify_client: notifyClient.value,
   }
-  emit('transferred', assigneeUserId.value)
+  if (targetMode.value === 'sector') {
+    if (sectorId.value == null) {
+      fieldErrors.value = { sector_id: 'Selecione um setor.' }
+      return
+    }
+    payload.sector_id = sectorId.value
+    if (assigneeUserId.value != null) {
+      payload.assignee_user_id = assigneeUserId.value
+    }
+  } else {
+    if (assigneeUserId.value == null) {
+      fieldErrors.value = { assignee_user_id: 'Selecione um atendente.' }
+      return
+    }
+    payload.assignee_user_id = assigneeUserId.value
+  }
+  emit('transferred', payload)
   emit('close')
 }
 </script>
@@ -90,7 +120,7 @@ function onSubmit(): void {
               Transferir atendimento
             </h2>
             <p class="mt-0.5 text-xs text-brand-gray">
-              Transfira esta conversa com {{ contactName }} para outro atendente.
+              Transfira esta conversa com {{ contactName }} para outro atendente ou setor.
             </p>
           </div>
           <button
@@ -103,33 +133,105 @@ function onSubmit(): void {
           </button>
         </div>
 
-        <p class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
-          Transferência para setor com nota interna ou aviso ao cliente: Em breve. A API aceita apenas
-          <strong>assignee_user_id</strong>.
-        </p>
-
-        <p v-if="submitError" class="text-sm text-red-600" role="alert">{{ submitError }}</p>
-
-        <div>
-          <label class="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-brand-gray">
-            Atendente *
-          </label>
-          <div v-if="agentsLoading" class="flex items-center gap-2 text-sm text-brand-gray">
-            <Loader2 class="h-4 w-4 animate-spin" /> Carregando equipe…
+        <label
+          class="flex cursor-pointer items-center justify-between gap-3 rounded-lg border border-brand-indigo/20 bg-brand-mist/80 p-3"
+        >
+          <div class="flex items-center gap-2.5">
+            <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-brand-indigo text-white">
+              <PauseCircle class="h-4 w-4" />
+            </div>
+            <div>
+              <p class="text-xs font-semibold text-brand-indigo">Transferir para atendimento humano</p>
+              <p class="text-[11px] text-brand-gray">Pausa automações nesta conversa (preferência local)</p>
+            </div>
           </div>
-          <select
-            v-else
-            v-model.number="assigneeUserId"
-            class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-brand-indigo focus:outline-none focus:ring-2 focus:ring-brand-indigo/20"
+          <input v-model="pauseAutomations" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-brand-indigo" />
+        </label>
+
+        <div class="flex rounded-lg bg-slate-100 p-1">
+          <button
+            type="button"
+            class="flex-1 rounded-md py-1.5 text-xs font-medium transition"
+            :class="
+              targetMode === 'agent'
+                ? 'bg-white font-semibold text-brand-indigo shadow-xs'
+                : 'text-brand-gray hover:text-brand-ink'
+            "
+            @click="targetMode = 'agent'"
           >
-            <option :value="null" disabled>Selecione…</option>
-            <option v-for="agent in agents" :key="agent.id" :value="agent.id">
-              {{ agent.name }}
-            </option>
-          </select>
-          <p v-if="fieldErrors.assignee_user_id" class="mt-1 text-xs text-red-600">
-            {{ fieldErrors.assignee_user_id }}
-          </p>
+            Para atendente
+          </button>
+          <button
+            type="button"
+            class="flex-1 rounded-md py-1.5 text-xs font-medium transition"
+            :class="
+              targetMode === 'sector'
+                ? 'bg-white font-semibold text-brand-indigo shadow-xs'
+                : 'text-brand-gray hover:text-brand-ink'
+            "
+            @click="targetMode = 'sector'"
+          >
+            Para setor
+          </button>
+        </div>
+
+        <div v-if="loading" class="flex items-center gap-2 text-sm text-brand-gray">
+          <Loader2 class="h-4 w-4 animate-spin" /> Carregando equipe…
+        </div>
+
+        <div v-else class="space-y-4">
+          <div v-if="targetMode === 'sector'">
+            <label class="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-brand-gray">Setor *</label>
+            <select
+              v-model.number="sectorId"
+              class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
+            >
+              <option :value="null" disabled>Selecione…</option>
+              <option v-for="sector in sectors" :key="sector.id" :value="sector.id">
+                {{ sector.name }}
+              </option>
+            </select>
+            <p v-if="fieldErrors.sector_id" class="mt-1 text-xs text-red-600">{{ fieldErrors.sector_id }}</p>
+          </div>
+
+          <div>
+            <label class="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-brand-gray">
+              Atendente {{ targetMode === 'sector' ? '(opcional)' : '*' }}
+            </label>
+            <select
+              v-model.number="assigneeUserId"
+              class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
+            >
+              <option :value="null">{{ targetMode === 'sector' ? 'Distribuir automaticamente' : 'Selecione…' }}</option>
+              <option v-for="agent in agents" :key="agent.id" :value="agent.id">
+                {{ agent.name }}
+              </option>
+            </select>
+            <p v-if="fieldErrors.assignee_user_id" class="mt-1 text-xs text-red-600">
+              {{ fieldErrors.assignee_user_id }}
+            </p>
+          </div>
+
+          <div>
+            <label class="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-brand-gray">
+              Nota interna
+            </label>
+            <textarea
+              v-model="internalNote"
+              rows="3"
+              placeholder="Resuma o contexto do atendimento…"
+              class="w-full resize-none rounded-lg border border-slate-200 px-3 py-2 text-sm"
+            />
+            <p v-if="fieldErrors.note" class="mt-1 text-xs text-red-600">{{ fieldErrors.note }}</p>
+          </div>
+
+          <label class="flex cursor-pointer items-start gap-2 text-xs text-brand-ink">
+            <input v-model="notifyClient" type="checkbox" class="mt-0.5 h-4 w-4 rounded border-slate-300 text-brand-indigo" />
+            <span>
+              Enviar aviso ao cliente:
+              <span class="text-brand-gray">"{{ notifyPreview }}"</span>
+            </span>
+          </label>
         </div>
 
         <div class="flex justify-end gap-2 border-t border-slate-100 pt-2">
@@ -143,6 +245,7 @@ function onSubmit(): void {
           <button
             type="button"
             class="inline-flex items-center gap-2 rounded-lg bg-brand-indigo px-4 py-2 text-sm font-semibold text-white hover:bg-brand-indigo-hover"
+            :disabled="loading"
             @click="onSubmit"
           >
             <ArrowRightLeft class="h-4 w-4" />

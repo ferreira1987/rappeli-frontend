@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { Calendar, Filter, Loader2, MessageSquare, Plus, Search } from '@lucide/vue'
+import { Calendar, Filter, Loader2, MessageSquare, Plus, Search, Trash2 } from '@lucide/vue'
 import { computed, onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 
-import { createFunnelCard, createFunnelStage, fetchFunnelBoard } from '@/api/funnel'
+import { createFunnelCard, createFunnelStage, deleteFunnelCard, fetchFunnelBoard } from '@/api/funnel'
 import ExampleFiltersModal from '@/components/app/ExampleFiltersModal.vue'
 import AppPageHeader from '@/components/app/AppPageHeader.vue'
 import AppPageFooter from '@/components/layout/AppPageFooter.vue'
@@ -103,6 +103,20 @@ function openAddCard(stageId: number): void {
   addCardOpen.value = true
 }
 
+async function confirmDeleteCard(card: FunnelCard): Promise<void> {
+  const label = card.contact_name || card.phone || `card #${card.id}`
+  if (!window.confirm(`Excluir o card "${label}" do funil? Esta ação não pode ser desfeita.`)) {
+    return
+  }
+  try {
+    await deleteFunnelCard(card.id)
+    await loadBoard()
+    statusMessage.value = 'Card removido do funil.'
+  } catch (err) {
+    statusMessage.value = getErrorMessage(err)
+  }
+}
+
 async function submitAddCard(): Promise<void> {
   if (addCardStageId.value == null) return
   addCardSubmitting.value = true
@@ -188,9 +202,6 @@ useEscapeKey(
           + Adicionar etapa
         </button>
       </div>
-      <p class="mt-2 text-[11px] text-brand-gray">
-        Excluir cards do funil ainda não está disponível na API (Em breve).
-      </p>
     </div>
 
     <p v-if="statusMessage" class="px-4 pt-4 text-sm text-brand-indigo sm:px-6 lg:px-8" role="status">
@@ -252,6 +263,14 @@ useEscapeKey(
             >
               <div class="flex items-start justify-between gap-2">
                 <p class="text-sm font-semibold text-brand-ink">{{ card.contact_name || 'Contato' }}</p>
+                <button
+                  type="button"
+                  class="rounded p-1 text-brand-gray hover:bg-red-50 hover:text-red-600"
+                  aria-label="Excluir card"
+                  @click="confirmDeleteCard(card)"
+                >
+                  <Trash2 class="h-3.5 w-3.5" />
+                </button>
               </div>
               <p v-if="card.phone" class="mt-0.5 flex items-center gap-1 text-[11px] text-brand-gray">
                 <MessageSquare class="h-3 w-3" />

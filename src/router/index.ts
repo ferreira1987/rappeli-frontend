@@ -20,6 +20,12 @@ const router = createRouter({
       meta: { guestOnly: true },
     },
     {
+      path: '/aceitar-convite',
+      name: 'aceitar-convite',
+      component: () => import('@/views/auth/AcceptInviteView.vue'),
+      meta: { title: 'Aceitar convite' },
+    },
+    {
       path: '/onboarding/whatsapp',
       name: 'onboarding-whatsapp',
       component: () => import('@/views/onboarding/OnboardingWhatsappView.vue'),
