@@ -80,6 +80,48 @@ const router = createRouter({
           meta: { title: 'Conversas', fullBleed: true },
         },
         {
+          path: 'funil-atendimento',
+          name: 'funil-atendimento',
+          component: () => import('@/views/FunilAtendimentoView.vue'),
+          meta: { title: 'Funil de atendimento' },
+        },
+        {
+          path: 'mensagens-agendadas',
+          name: 'mensagens-agendadas',
+          component: () => import('@/views/MensagensAgendadasView.vue'),
+          meta: { title: 'Mensagens agendadas' },
+        },
+        {
+          path: 'equipe',
+          name: 'equipe',
+          component: () => import('@/views/EquipeDistribuicaoView.vue'),
+          meta: { title: 'Equipe e distribuição' },
+        },
+        {
+          path: 'relatorios',
+          name: 'relatorios',
+          component: () => import('@/views/RelatoriosView.vue'),
+          meta: { title: 'Relatórios' },
+        },
+        {
+          path: 'campanhas',
+          name: 'campanhas',
+          component: () => import('@/views/CampanhasView.vue'),
+          meta: { title: 'Campanhas', activeNav: 'campanhas' },
+        },
+        {
+          path: 'campanhas/nova',
+          name: 'campanhas-nova',
+          component: () => import('@/views/NovaCampanhaView.vue'),
+          meta: { title: 'Nova campanha', activeNav: 'campanhas' },
+        },
+        {
+          path: 'campanhas/sequencias',
+          name: 'campanhas-sequencias',
+          component: () => import('@/views/SequenciaFollowUpView.vue'),
+          meta: { title: 'Sequência de follow-up', activeNav: 'campanhas' },
+        },
+        {
           path: 'automacoes',
           name: 'automacoes',
           component: () => import('@/views/AutomacoesView.vue'),

@@ -83,7 +83,9 @@ async function onSubmit(): Promise<void> {
         class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm lg:col-span-7 md:p-8"
       >
         <div class="mb-6">
-          <h1 class="text-2xl font-semibold tracking-tight text-brand-ink">Crie sua conta no Rappeli</h1>
+          <h1 class="text-2xl font-semibold tracking-tight text-brand-ink">
+            Crie sua conta no Rappeli
+          </h1>
           <p class="mt-1 text-sm text-brand-gray">
             Automatize atendimentos, lembretes e confirmações pelo WhatsApp com a API oficial.
           </p>
@@ -99,7 +101,10 @@ async function onSubmit(): Promise<void> {
           </p>
 
           <div>
-            <label for="name" class="text-[11px] font-semibold uppercase tracking-wide text-brand-gray">
+            <label
+              for="name"
+              class="text-[11px] font-semibold uppercase tracking-wide text-brand-gray"
+            >
               Nome completo
             </label>
             <input
@@ -115,7 +120,10 @@ async function onSubmit(): Promise<void> {
           </div>
 
           <div>
-            <label for="email" class="text-[11px] font-semibold uppercase tracking-wide text-brand-gray">
+            <label
+              for="email"
+              class="text-[11px] font-semibold uppercase tracking-wide text-brand-gray"
+            >
               E-mail
             </label>
             <input
@@ -127,11 +135,16 @@ async function onSubmit(): Promise<void> {
               class="mt-1 h-[42px] w-full rounded-lg border px-3 text-sm outline-none ring-0 focus:ring-2"
               :class="inputClass('email')"
             />
-            <p v-if="fieldErrors.email" class="mt-1 text-xs text-red-600">{{ fieldErrors.email }}</p>
+            <p v-if="fieldErrors.email" class="mt-1 text-xs text-red-600">
+              {{ fieldErrors.email }}
+            </p>
           </div>
 
           <div>
-            <label for="whatsapp" class="text-[11px] font-semibold uppercase tracking-wide text-brand-gray">
+            <label
+              for="whatsapp"
+              class="text-[11px] font-semibold uppercase tracking-wide text-brand-gray"
+            >
               WhatsApp
             </label>
             <input
@@ -140,13 +153,16 @@ async function onSubmit(): Promise<void> {
               type="tel"
               autocomplete="tel"
               placeholder="(00) 00000-0000"
-              class="mt-1 h-[42px] w-full rounded-lg border px-3 text-sm outline-none ring-0 focus:ring-2"
+              class="mt-1 h-[42px] w-full rounded-lg border px-3 text-sm outline-none ring-0"
               @input="onWhatsappInput"
             />
           </div>
 
           <div>
-            <label for="company" class="text-[11px] font-semibold uppercase tracking-wide text-brand-gray">
+            <label
+              for="company"
+              class="text-[11px] font-semibold uppercase tracking-wide text-brand-gray"
+            >
               Nome da empresa
             </label>
             <input
@@ -160,7 +176,10 @@ async function onSubmit(): Promise<void> {
 
           <div>
             <div class="mb-1 flex items-center justify-between">
-              <label for="password" class="text-[11px] font-semibold uppercase tracking-wide text-brand-gray">
+              <label
+                for="password"
+                class="text-[11px] font-semibold uppercase tracking-wide text-brand-gray"
+              >
                 Senha
               </label>
               <span class="text-xs text-slate-400">(mínimo 8 caracteres)</span>
@@ -186,7 +205,9 @@ async function onSubmit(): Promise<void> {
                 <Eye v-else class="h-4 w-4" />
               </button>
             </div>
-            <p v-if="fieldErrors.password" class="mt-1 text-xs text-red-600">{{ fieldErrors.password }}</p>
+            <p v-if="fieldErrors.password" class="mt-1 text-xs text-red-600">
+              {{ fieldErrors.password }}
+            </p>
           </div>
 
           <label class="flex cursor-pointer items-start gap-2 text-sm text-brand-gray">
@@ -197,21 +218,36 @@ async function onSubmit(): Promise<void> {
             />
             <span>
               Li e concordo com os
-              <a :href="termsUrl" target="_blank" rel="noopener noreferrer" class="font-semibold text-brand-indigo hover:underline">
+              <a
+                :href="termsUrl"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="font-semibold text-brand-indigo hover:underline"
+              >
                 Termos de Uso
               </a>
               e a
-              <a :href="privacyUrl" target="_blank" rel="noopener noreferrer" class="font-semibold text-brand-indigo hover:underline">
-                Política de Privacidade
-              </a>.
+              <a
+                :href="privacyUrl"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="font-semibold text-brand-indigo hover:underline"
+              >
+                Política de Privacidade </a
+              >.
             </span>
           </label>
-          <p v-if="fieldErrors.terms_accepted" class="text-xs text-red-600">{{ fieldErrors.terms_accepted }}</p>
+          <p v-if="fieldErrors.terms_accepted" class="text-xs text-red-600">
+            {{ fieldErrors.terms_accepted }}
+          </p>
 
           <div class="mt-6 flex items-center justify-between border-t border-slate-200 pt-6">
             <p class="text-sm text-brand-gray">
               Já tem conta?
-              <RouterLink :to="{ name: 'login' }" class="font-semibold text-brand-indigo hover:underline">
+              <RouterLink
+                :to="{ name: 'login' }"
+                class="font-semibold text-brand-indigo hover:underline"
+              >
                 Entrar
               </RouterLink>
             </p>
@@ -231,11 +267,15 @@ async function onSubmit(): Promise<void> {
         class="flex flex-col justify-between rounded-xl border border-brand-indigo/30 bg-gradient-to-br from-brand-indigo to-[#312e81] p-6 text-white shadow-sm lg:col-span-5 md:p-8"
       >
         <div>
-          <p class="text-[11px] font-semibold uppercase tracking-wider text-indigo-200">Visão geral</p>
+          <p class="text-[11px] font-semibold uppercase tracking-wider text-indigo-200">
+            Visão geral
+          </p>
           <h2 class="mt-1 text-xl font-bold">Por que escolher o Rappeli</h2>
           <ul class="mt-6 space-y-4">
             <li class="flex gap-3 rounded-lg border border-white/10 bg-white/5 p-3">
-              <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white/10">
+              <div
+                class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white/10"
+              >
                 <Share2 class="h-5 w-5 text-indigo-200" aria-hidden="true" />
               </div>
               <div>
@@ -246,7 +286,9 @@ async function onSubmit(): Promise<void> {
               </div>
             </li>
             <li class="flex gap-3 rounded-lg border border-white/10 bg-white/5 p-3">
-              <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white/10">
+              <div
+                class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white/10"
+              >
                 <Bell class="h-5 w-5 text-indigo-200" aria-hidden="true" />
               </div>
               <div>
@@ -257,7 +299,9 @@ async function onSubmit(): Promise<void> {
               </div>
             </li>
             <li class="flex gap-3 rounded-lg border border-white/10 bg-white/5 p-3">
-              <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white/10">
+              <div
+                class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white/10"
+              >
                 <Group class="h-5 w-5 text-indigo-200" aria-hidden="true" />
               </div>
               <div>
@@ -269,7 +313,9 @@ async function onSubmit(): Promise<void> {
             </li>
           </ul>
         </div>
-        <p class="mt-8 flex items-center gap-2 border-t border-white/10 pt-4 text-sm text-indigo-100">
+        <p
+          class="mt-8 flex items-center gap-2 border-t border-white/10 pt-4 text-sm text-indigo-100"
+        >
           <ShieldCheck class="h-4 w-4" aria-hidden="true" />
           Sem fidelidade. Cancele quando quiser.
         </p>

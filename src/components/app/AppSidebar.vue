@@ -1,12 +1,17 @@
 <script setup lang="ts">
 import {
+  BarChart3,
   Bot,
+  CalendarClock,
   CircleHelp,
+  GitBranch,
+  Kanban,
   LayoutGrid,
   LogOut,
   MessageCircle,
   MessageSquareReply,
   Settings,
+  UserCog,
   Users,
   X,
   type LucideIcon,
@@ -35,11 +40,19 @@ type NavItem = {
   to: string
   icon: LucideIcon
   soon?: boolean
+  badge?: number
 }
 
 const navItems: NavItem[] = [
   { name: 'painel', label: 'Painel', to: '/painel', icon: LayoutGrid },
-  { name: 'conversas', label: 'Conversas', to: '/conversas', icon: MessageCircle },
+  { name: 'conversas', label: 'Conversas', to: '/conversas', icon: MessageCircle, badge: 3 },
+  { name: 'funil-atendimento', label: 'Funil de atendimento', to: '/funil-atendimento', icon: Kanban },
+  {
+    name: 'mensagens-agendadas',
+    label: 'Mensagens agendadas',
+    to: '/mensagens-agendadas',
+    icon: CalendarClock,
+  },
   { name: 'automacoes', label: 'Automações', to: '/automacoes', icon: Bot, soon: true },
   {
     name: 'respostas-automaticas',
@@ -47,9 +60,20 @@ const navItems: NavItem[] = [
     to: '/respostas-automaticas',
     icon: MessageSquareReply,
   },
+  { name: 'campanhas', label: 'Campanhas', to: '/campanhas', icon: GitBranch },
   { name: 'contatos', label: 'Contatos', to: '/contatos', icon: Users },
+  { name: 'relatorios', label: 'Relatórios', to: '/relatorios', icon: BarChart3 },
+  { name: 'equipe', label: 'Equipe', to: '/equipe', icon: UserCog },
   { name: 'configuracoes', label: 'Configurações', to: '/configuracoes', icon: Settings },
 ]
+
+function isNavActive(item: NavItem): boolean {
+  const activeNav = route.meta.activeNav
+  if (typeof activeNav === 'string') {
+    return activeNav === item.name
+  }
+  return route.name === item.name
+}
 
 async function onLogout(): Promise<void> {
   await auth.logout()
@@ -100,21 +124,27 @@ function closeAndFocusMenu(): void {
         :to="item.to"
         class="relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors"
         :class="
-          route.name === item.name
+          isNavActive(item)
             ? 'bg-brand-mist text-brand-indigo'
             : 'text-brand-gray hover:bg-slate-50 hover:text-brand-ink'
         "
         @click="onNavigate"
       >
         <span
-          v-if="route.name === item.name"
+          v-if="isNavActive(item)"
           class="absolute -left-4 top-2 bottom-2 w-1 rounded-full bg-brand-indigo"
           aria-hidden="true"
         />
         <component :is="item.icon" class="h-[18px] w-[18px] shrink-0" aria-hidden="true" />
         <span class="min-w-0 truncate">{{ item.label }}</span>
         <span
-          v-if="item.soon"
+          v-if="item.badge != null && item.badge > 0"
+          class="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white"
+        >
+          {{ item.badge }}
+        </span>
+        <span
+          v-else-if="item.soon"
           class="ml-auto shrink-0 rounded-full bg-slate-100 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-brand-gray"
         >
           Em breve
@@ -123,6 +153,18 @@ function closeAndFocusMenu(): void {
     </nav>
 
     <div class="mt-auto space-y-2 border-t border-slate-100 pt-4">
+      <RouterLink
+        :to="{ name: 'configuracoes-whatsapp' }"
+        class="flex items-center justify-between rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-brand-ink transition hover:border-slate-300"
+      >
+        <span class="flex items-center gap-2">
+          <span class="relative flex h-2 w-2">
+            <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+            <span class="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+          </span>
+          WhatsApp: Conectado
+        </span>
+      </RouterLink>
       <a
         href="#"
         class="flex items-center gap-2 px-2 py-1.5 text-sm text-brand-gray transition hover:text-brand-ink"
