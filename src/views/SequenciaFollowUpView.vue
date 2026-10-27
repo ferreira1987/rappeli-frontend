@@ -12,12 +12,13 @@ import {
   reorderSequenceSteps,
   updateSequenceStep,
 } from '@/api/sequences'
+import AppConfirmModal from '@/components/app/AppConfirmModal.vue'
 import SequenceStepFormModal from '@/components/sequences/SequenceStepFormModal.vue'
 import AppPageHeader from '@/components/app/AppPageHeader.vue'
 import AppPageFooter from '@/components/layout/AppPageFooter.vue'
 import { panelBreadcrumbs } from '@/constants/panelBreadcrumbs'
 import type { Sequence, SequenceStep } from '@/types/campaigns'
-import { getErrorMessage } from '@/utils/errors'
+import { getErrorMessage, getValidationErrors } from '@/utils/errors'
 
 const route = useRoute()
 const sequences = ref<Sequence[]>([])
@@ -34,6 +35,12 @@ const reordering = ref(false)
 const stepModalOpen = ref(false)
 const editingStep = ref<SequenceStep | null>(null)
 const stepSaving = ref(false)
+const stepFieldErrors = ref<Record<string, string>>({})
+const stepFormError = ref<string | null>(null)
+
+const deleteConfirmOpen = ref(false)
+const stepPendingDelete = ref<SequenceStep | null>(null)
+const deleteSubmitting = ref(false)
 
 const sequenceId = computed(() => {
   const raw = route.params.id
@@ -43,8 +50,20 @@ const sequenceId = computed(() => {
 
 const sequence = computed(() => findSequenceInList(sequences.value, sequenceId.value) ?? null)
 
+function sortStepsByServerPosition(steps: SequenceStep[]): SequenceStep[] {
+  return [...steps].sort((a, b) => a.position - b.position)
+}
+
 function syncSteps(): void {
-  orderedSteps.value = [...(sequence.value?.steps ?? [])].sort((a, b) => a.position - b.position)
+  orderedSteps.value = sortStepsByServerPosition(sequence.value?.steps ?? [])
+}
+
+function patchSequenceSteps(nextSteps: SequenceStep[]): void {
+  const seq = sequences.value.find((s) => s.id === sequenceId.value)
+  if (seq) {
+    seq.steps = sortStepsByServerPosition(nextSteps)
+  }
+  syncSteps()
 }
 
 async function load(): Promise<void> {
@@ -77,7 +96,11 @@ watch(sequenceId, () => {
   }
 })
 
-watch(sequence, () => syncSteps())
+const deleteConfirmMessage = computed(() => {
+  if (!stepPendingDelete.value) return ''
+  const label = stepPendingDelete.value.label || stepKindLabel(stepPendingDelete.value.kind)
+  return `Remover o passo "${label}" da sequência?`
+})
 
 const breadcrumbs = computed(() =>
   panelBreadcrumbs(
@@ -96,11 +119,15 @@ function stepKindLabel(kind: string): string {
 
 function openCreateStep(): void {
   editingStep.value = null
+  stepFieldErrors.value = {}
+  stepFormError.value = null
   stepModalOpen.value = true
 }
 
 function openEditStep(step: SequenceStep): void {
   editingStep.value = step
+  stepFieldErrors.value = {}
+  stepFormError.value = null
   stepModalOpen.value = true
 }
 
@@ -114,32 +141,51 @@ async function onStepSave(payload: {
   if (!sequenceId.value) return
   stepSaving.value = true
   stepsMessage.value = null
+  stepFieldErrors.value = {}
+  stepFormError.value = null
   try {
     if (editingStep.value) {
-      await updateSequenceStep(sequenceId.value, editingStep.value.id, payload)
+      const updated = await updateSequenceStep(sequenceId.value, editingStep.value.id, payload)
+      const current = sequence.value?.steps ?? []
+      patchSequenceSteps(current.map((step) => (step.id === updated.id ? updated : step)))
       stepsMessage.value = 'Passo atualizado.'
+      stepModalOpen.value = false
     } else {
-      await createSequenceStep(sequenceId.value, payload)
+      const created = await createSequenceStep(sequenceId.value, payload)
+      patchSequenceSteps([...(sequence.value?.steps ?? []), created])
       stepsMessage.value = 'Passo adicionado.'
+      stepModalOpen.value = false
     }
-    stepModalOpen.value = false
-    await load()
   } catch (err) {
-    stepsMessage.value = getErrorMessage(err)
+    const validation = getValidationErrors(err)
+    if (validation) {
+      stepFieldErrors.value = validation
+      return
+    }
+    stepFormError.value = getErrorMessage(err)
   } finally {
     stepSaving.value = false
   }
 }
 
-async function onDeleteStep(step: SequenceStep): Promise<void> {
-  if (!sequenceId.value) return
-  if (!window.confirm(`Remover o passo "${step.label || stepKindLabel(step.kind)}"?`)) return
+function requestDeleteStep(step: SequenceStep): void {
+  stepPendingDelete.value = step
+  deleteConfirmOpen.value = true
+}
+
+async function confirmDeleteStep(): Promise<void> {
+  if (!sequenceId.value || !stepPendingDelete.value) return
+  deleteSubmitting.value = true
   try {
-    await deleteSequenceStep(sequenceId.value, step.id)
+    await deleteSequenceStep(sequenceId.value, stepPendingDelete.value.id)
+    patchSequenceSteps((sequence.value?.steps ?? []).filter((s) => s.id !== stepPendingDelete.value?.id))
     stepsMessage.value = 'Passo removido.'
-    await load()
+    deleteConfirmOpen.value = false
+    stepPendingDelete.value = null
   } catch (err) {
     stepsMessage.value = getErrorMessage(err)
+  } finally {
+    deleteSubmitting.value = false
   }
 }
 
@@ -175,8 +221,9 @@ async function onDrop(targetStepId: number): Promise<void> {
   stepsMessage.value = null
   try {
     await reorderSequenceSteps(sequenceId.value, list.map((s) => s.id))
+    sequences.value = await fetchSequences()
+    syncSteps()
     stepsMessage.value = 'Ordem dos passos atualizada.'
-    await load()
   } catch (err) {
     stepsMessage.value = getErrorMessage(err)
     syncSteps()
@@ -279,7 +326,7 @@ async function onEnroll(): Promise<void> {
                   type="button"
                   class="rounded p-2 text-brand-gray hover:bg-white hover:text-red-600"
                   aria-label="Excluir passo"
-                  @click="onDeleteStep(step)"
+                  @click="requestDeleteStep(step)"
                 >
                   <Trash2 class="h-4 w-4" />
                 </button>
@@ -316,8 +363,20 @@ async function onEnroll(): Promise<void> {
       :open="stepModalOpen"
       :step="editingStep"
       :submitting="stepSaving"
+      :server-field-errors="stepFieldErrors"
+      :form-error="stepFormError"
       @close="stepModalOpen = false"
       @save="onStepSave"
+    />
+
+    <AppConfirmModal
+      :open="deleteConfirmOpen"
+      title="Remover passo"
+      :message="deleteConfirmMessage"
+      confirm-label="Remover"
+      :loading="deleteSubmitting"
+      @close="deleteConfirmOpen = false"
+      @confirm="confirmDeleteStep"
     />
   </div>
 </template>

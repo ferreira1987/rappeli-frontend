@@ -225,7 +225,12 @@ async function onImportFile(event: Event): Promise<void> {
 
       <section v-else class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xs">
         <p class="border-b border-slate-100 px-4 py-3 text-xs text-brand-gray">
-          {{ pluralizePt(contacts.length, 'contato') }} listados
+          {{
+            pluralizePt(contacts.length, 'contato', {
+              one: 'contato listado',
+              other: 'contatos listados',
+            })
+          }}
         </p>
         <table class="w-full text-left text-sm">
           <thead class="border-b border-slate-100 bg-slate-50 text-[11px] font-bold uppercase text-brand-gray">

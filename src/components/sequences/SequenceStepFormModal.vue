@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ListOrdered, X } from '@lucide/vue'
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 
 import { useEscapeKey } from '@/composables/useEscapeKey'
 import type { SequenceStep } from '@/types/campaigns'
@@ -11,6 +11,8 @@ const props = defineProps<{
   open: boolean
   submitting?: boolean
   step?: SequenceStep | null
+  serverFieldErrors?: Record<string, string>
+  formError?: string | null
 }>()
 
 const emit = defineEmits<{
@@ -49,6 +51,8 @@ watch(
     fieldErrors.value = {}
   },
 )
+
+const displayFieldErrors = computed(() => ({ ...fieldErrors.value, ...props.serverFieldErrors }))
 
 function onClose(): void {
   emit('close')
@@ -101,6 +105,10 @@ function onSubmit(): void {
           </button>
         </div>
 
+        <p v-if="formError" class="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">
+          {{ formError }}
+        </p>
+
         <div>
           <label class="mb-1 block text-xs font-semibold text-brand-ink" for="step-kind">Tipo *</label>
           <select id="step-kind" v-model="kind" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm">
@@ -122,7 +130,7 @@ function onSubmit(): void {
             min="0"
             class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
           />
-          <p v-if="fieldErrors.wait_minutes" class="mt-1 text-xs text-red-600">{{ fieldErrors.wait_minutes }}</p>
+          <p v-if="displayFieldErrors.wait_minutes" class="mt-1 text-xs text-red-600">{{ displayFieldErrors.wait_minutes }}</p>
         </div>
 
         <div v-if="kind === 'message'">
@@ -135,6 +143,9 @@ function onSubmit(): void {
             class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
             placeholder="Opcional"
           />
+          <p v-if="displayFieldErrors.message_template_id" class="mt-1 text-xs text-red-600">
+            {{ displayFieldErrors.message_template_id }}
+          </p>
         </div>
 
         <div>

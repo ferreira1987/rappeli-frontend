@@ -110,6 +110,10 @@ const router = createRouter({
           meta: { title: 'Relatórios' },
         },
         {
+          path: 'sequencias',
+          redirect: { name: 'campanhas-sequencias' },
+        },
+        {
           path: 'campanhas',
           name: 'campanhas',
           component: () => import('@/views/CampanhasView.vue'),

@@ -13,6 +13,7 @@ import {
   updateDistributionSettings,
   updateSector,
 } from '@/api/team'
+import AppConfirmModal from '@/components/app/AppConfirmModal.vue'
 import InviteTeamMemberModal from '@/components/team/InviteTeamMemberModal.vue'
 import SectorFormModal from '@/components/team/SectorFormModal.vue'
 import AppPageHeader from '@/components/app/AppPageHeader.vue'
@@ -39,6 +40,15 @@ const inviteOpen = ref(false)
 const sectorModalOpen = ref(false)
 const editingSector = ref<Sector | null>(null)
 const sectorSaving = ref(false)
+
+const sectorDeleteConfirmOpen = ref(false)
+const sectorPendingDelete = ref<Sector | null>(null)
+const sectorDeleteSubmitting = ref(false)
+
+const sectorDeleteMessage = computed(() => {
+  if (!sectorPendingDelete.value) return ''
+  return `Excluir o setor "${sectorPendingDelete.value.name}"? Atendentes vinculados precisarão ser realocados.`
+})
 
 const routingMethod = ref<TeamDistributionSettings['routing_method']>('round_robin')
 const respectLimit = ref(true)
@@ -108,20 +118,28 @@ async function onSectorSave(payload: { name: string; description: string | null 
   }
 }
 
-async function onDeleteSector(sector: Sector): Promise<void> {
+function requestDeleteSector(sector: Sector): void {
   if (sector.is_default) {
     statusMessage.value = 'O setor padrão não pode ser excluído.'
     return
   }
-  if (!window.confirm(`Excluir o setor "${sector.name}"? Atendentes vinculados precisarão ser realocados.`)) {
-    return
-  }
+  sectorPendingDelete.value = sector
+  sectorDeleteConfirmOpen.value = true
+}
+
+async function confirmDeleteSector(): Promise<void> {
+  if (!sectorPendingDelete.value) return
+  sectorDeleteSubmitting.value = true
   try {
-    await deleteSector(sector.id)
+    await deleteSector(sectorPendingDelete.value.id)
     statusMessage.value = 'Setor removido.'
+    sectorDeleteConfirmOpen.value = false
+    sectorPendingDelete.value = null
     await loadAll()
   } catch (err) {
     statusMessage.value = getErrorMessage(err)
+  } finally {
+    sectorDeleteSubmitting.value = false
   }
 }
 
@@ -210,8 +228,7 @@ async function onInvited(payload: {
       role: payload.role,
       sector_id: payload.sectorId,
     })
-    statusMessage.value =
-      `Convite registrado para ${payload.email}. Envio automático de e-mail: Em breve.`
+    statusMessage.value = `Convite registrado para ${payload.email}. O convidado receberá o link por e-mail.`
     await loadAll()
   } catch (err) {
     const validation = getValidationErrors(err)
@@ -361,7 +378,12 @@ async function saveDistribution(): Promise<void> {
             </table>
           </div>
           <p class="mt-3 text-xs text-brand-gray">
-            {{ pluralizePt(filteredAgents.length, 'atendente') }} exibidos. Edição inline: Em breve.
+            {{
+              pluralizePt(filteredAgents.length, 'atendente', {
+                one: 'atendente exibido',
+                other: 'atendentes exibidos',
+              })
+            }}. Edição inline: Em breve.
           </p>
         </section>
 
@@ -408,7 +430,7 @@ async function saveDistribution(): Promise<void> {
                     type="button"
                     class="rounded-lg p-2 text-brand-gray hover:bg-red-50 hover:text-red-600"
                     aria-label="Excluir setor"
-                    @click="onDeleteSector(sector)"
+                    @click="requestDeleteSector(sector)"
                   >
                     <Trash2 class="h-4 w-4" />
                   </button>
@@ -529,6 +551,16 @@ async function saveDistribution(): Promise<void> {
       :submitting="sectorSaving"
       @close="sectorModalOpen = false"
       @save="onSectorSave"
+    />
+
+    <AppConfirmModal
+      :open="sectorDeleteConfirmOpen"
+      title="Excluir setor"
+      :message="sectorDeleteMessage"
+      confirm-label="Excluir"
+      :loading="sectorDeleteSubmitting"
+      @close="sectorDeleteConfirmOpen = false"
+      @confirm="confirmDeleteSector"
     />
   </div>
 </template>
