@@ -2,6 +2,7 @@
 import { Download, Pencil, Plus, Trash2, UserPlus } from '@lucide/vue'
 import { computed, ref } from 'vue'
 
+import InviteTeamMemberModal from '@/components/team/InviteTeamMemberModal.vue'
 import AppPageHeader from '@/components/app/AppPageHeader.vue'
 import AppPageFooter from '@/components/layout/AppPageFooter.vue'
 import { useExampleToast } from '@/composables/useExampleToast'
@@ -23,6 +24,7 @@ const respectLimit = ref(true)
 const overflowQueue = ref(true)
 const chatLimit = ref(8)
 const { message: toast, show: showToast } = useExampleToast()
+const inviteOpen = ref(false)
 
 function exportTeamCsv(): void {
   downloadCsv(
@@ -110,7 +112,7 @@ function roleBadgeClass(role: ExampleAgent['role']): string {
         <button
           type="button"
           class="inline-flex items-center gap-2 rounded-lg bg-brand-indigo px-4 py-2 text-sm font-semibold text-white hover:bg-brand-indigo-hover"
-          @click="showToast('Convite enviado (exemplo). Integração com API em breve.')"
+          @click="inviteOpen = true"
         >
           <UserPlus class="h-4 w-4" />
           Convidar atendente
@@ -252,7 +254,6 @@ function roleBadgeClass(role: ExampleAgent['role']): string {
               <div>
                 <p class="font-semibold text-sm text-brand-ink">
                   {{ sector.name }}
-                  <span v-if="sector.isDefault" class="text-xs font-normal text-brand-gray">(Padrão)</span>
                 </p>
                 <p class="mt-1 text-xs text-brand-gray">{{ sector.description }}</p>
                 <p class="mt-1 text-[11px] text-brand-gray">
@@ -333,7 +334,7 @@ function roleBadgeClass(role: ExampleAgent['role']): string {
           <div>
             <label class="mb-1 block text-xs font-semibold uppercase text-brand-gray">Setor padrão para novos contatos</label>
             <select class="w-full max-w-md rounded-lg border border-slate-200 px-3 py-2 text-sm">
-              <option>Recepção (Principal)</option>
+              <option>Recepção (Padrão)</option>
             </select>
           </div>
         </div>
@@ -345,5 +346,14 @@ function roleBadgeClass(role: ExampleAgent['role']): string {
 
       <AppPageFooter />
     </div>
+
+    <InviteTeamMemberModal
+      :open="inviteOpen"
+      @close="inviteOpen = false"
+      @invited="
+        (payload) =>
+          showToast(`Convite enviado para ${payload.email} (exemplo). Integração com API em breve.`)
+      "
+    />
   </div>
 </template>

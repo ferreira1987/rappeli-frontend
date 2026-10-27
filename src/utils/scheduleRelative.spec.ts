@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { formatRelativeScheduleDay } from '@/utils/scheduleRelative'
+import { formatCampaignScheduleLabel, formatRelativeScheduleDay } from '@/utils/scheduleRelative'
 
 describe('formatRelativeScheduleDay', () => {
   beforeEach(() => {
@@ -18,5 +18,17 @@ describe('formatRelativeScheduleDay', () => {
 
   it('labels next day as amanhã', () => {
     expect(formatRelativeScheduleDay('2026-10-28')).toBe('amanhã')
+  })
+
+  it('formats campaign schedule without mixing relative and absolute dates', () => {
+    expect(formatCampaignScheduleLabel('2026-10-27', '14:00')).toBe('Hoje, 14:00')
+    expect(formatCampaignScheduleLabel('2026-10-20', '09:30')).toMatch(/20\/10\/2026 às 09:30/)
+  })
+})
+
+describe('exampleReportKpis alignment', () => {
+  it('sums agent handled to 128', async () => {
+    const { exampleReportKpis } = await import('@/mocks/reports')
+    expect(exampleReportKpis.conversationsHandled).toBe(128)
   })
 })

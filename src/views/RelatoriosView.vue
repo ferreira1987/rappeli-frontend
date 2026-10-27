@@ -114,7 +114,7 @@ function sectorClass(tone: 'blue' | 'green' | 'red'): string {
         <div
           v-for="card in [
             { label: 'Tempo médio de 1ª resposta', value: exampleReportKpis.avgFirstResponse, hint: 'Média dos últimos 7 dias (exemplo)', icon: null },
-            { label: 'Conversas atendidas', value: String(exampleReportKpis.conversationsHandled), hint: exampleReportKpis.handledDelta + ' (exemplo)', icon: TrendingUp },
+            { label: 'Conversas atendidas', value: String(exampleReportKpis.conversationsHandled), hint: exampleReportKpis.handledDelta, icon: TrendingUp },
             { label: 'Conversas resolvidas', value: String(exampleReportKpis.resolved), hint: `Taxa de resolução ${exampleReportKpis.resolutionRate} (exemplo)`, icon: CheckCircle2 },
             { label: 'Conversas em aberto', value: String(exampleReportKpis.open), hint: 'Fila atual e em atendimento (exemplo)', icon: Hourglass },
           ]"

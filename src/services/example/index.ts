@@ -6,8 +6,8 @@
 export { exampleAgents, exampleSectors, roleLabels, sectorNameById } from '@/mocks/team'
 export { exampleFunnelCards, funnelStages } from '@/mocks/funnel'
 export { exampleScheduledMessages, scheduleMessageTemplateVariables } from '@/mocks/scheduledMessages'
+export { exampleCampaigns } from '@/mocks/campaignBuilder'
 export {
-  exampleCampaigns,
   exampleCampaignSegmentContactCount,
   exampleMetaTemplates,
   exampleSequences,

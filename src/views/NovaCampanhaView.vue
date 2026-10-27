@@ -8,7 +8,7 @@ import { useExampleToast } from '@/composables/useExampleToast'
 import { panelBreadcrumbs } from '@/constants/panelBreadcrumbs'
 import { exampleCampaignSegmentContactCount, exampleMetaTemplates } from '@/services/example'
 
-const campaignName = ref('Lembrete de retorno - Pacientes 6 meses')
+const campaignName = ref('')
 const optInOnly = ref(true)
 const selectedTemplateId = ref('t1')
 const scheduleMode = ref<'now' | 'scheduled'>('scheduled')
@@ -75,7 +75,12 @@ function scheduleCampaign(): void {
           <p class="text-xs text-brand-gray">Identifique a campanha para controle e relatórios internos</p>
           <label class="mt-4 block text-sm font-medium text-brand-ink">Nome da campanha *</label>
           <div class="relative mt-1">
-            <input v-model="campaignName" type="text" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm" />
+            <input
+              v-model="campaignName"
+              type="text"
+              placeholder="Ex.: Lembrete de retorno — pacientes 6 meses"
+              class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+            />
             <span class="absolute right-2 top-1/2 -translate-y-1/2 rounded bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-brand-gray">
               Exemplo
             </span>

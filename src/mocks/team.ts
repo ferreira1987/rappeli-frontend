@@ -24,7 +24,7 @@ export type ExampleSector = {
 export const exampleSectors: ExampleSector[] = [
   {
     id: 'recepcao',
-    name: 'Recepção',
+    name: 'Recepção (Padrão)',
     description: 'Primeiro contato, triagem e agendamentos gerais.',
     memberCount: 3,
     isDefault: true,

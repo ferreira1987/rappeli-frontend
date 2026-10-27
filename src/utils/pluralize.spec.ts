@@ -5,6 +5,7 @@ import { pluralWordPt, pluralizePt } from '@/utils/pluralize'
 describe('pluralizePt', () => {
   it('uses singular form for count 1', () => {
     expect(pluralizePt(1, 'campanha')).toBe('1 campanha')
+    expect(pluralizePt(1, 'campanha')).not.toContain('campanhas')
     expect(pluralWordPt(1, 'membro')).toBe('membro')
   })
 

@@ -7,9 +7,6 @@ export const EXAMPLE_AVERAGE_RESPONSE_TIME_LABEL = '8m 57s'
 /** Conversas com atividade hoje (exemplo, alinhado à caixa de entrada de demonstração). */
 export const EXAMPLE_CONVERSATIONS_TODAY = 1
 
-/** Total atendidas no período dos relatórios de exemplo (7 dias). */
-export const EXAMPLE_CONVERSATIONS_HANDLED = 1
-
 export const EXAMPLE_CAMPAIGN_SEGMENT_CONTACTS = 214
 
 export const EXAMPLE_SEQUENCE_ELIGIBLE_CONTACTS = 128
