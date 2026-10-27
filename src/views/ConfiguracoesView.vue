@@ -3,8 +3,11 @@ import { Bell, CircleHelp, Users } from '@lucide/vue'
 import { ref, watch } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 
+import AppPageHeader from '@/components/app/AppPageHeader.vue'
+import AppPageTabs from '@/components/app/AppPageTabs.vue'
 import WhatsAppSettingsPanel from '@/components/whatsapp/WhatsAppSettingsPanel.vue'
 import AppPageFooter from '@/components/layout/AppPageFooter.vue'
+import { panelBreadcrumbs } from '@/constants/panelBreadcrumbs'
 import { useAuthStore } from '@/stores/auth'
 
 const auth = useAuthStore()
@@ -37,37 +40,38 @@ function selectTab(tab: (typeof tabs)[number]): void {
 </script>
 
 <template>
-  <div class="min-h-full px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
-    <header class="flex flex-wrap items-start justify-between gap-4">
-      <div>
-        <h1 class="font-display text-2xl font-semibold text-brand-ink">Configurações</h1>
-        <p class="mt-1 text-sm text-brand-gray">
-          Gerencie sua conta, equipe, dados fiscais e cobrança.
-        </p>
-      </div>
-      <div class="flex gap-2">
+  <div class="flex min-h-full flex-col bg-brand-mist">
+    <AppPageHeader
+      title="Configurações"
+      subtitle="Gerencie sua conta, equipe, dados fiscais e cobrança."
+      :breadcrumbs="panelBreadcrumbs({ label: 'Configurações' })"
+    >
+      <template #actions>
         <button
           type="button"
-          class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-brand-gray"
+          class="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-brand-ink hover:bg-slate-50"
           disabled
         >
-          <CircleHelp class="h-4 w-4" />
+          <CircleHelp class="h-4 w-4 text-brand-gray" />
           Suporte
         </button>
-        <button type="button" class="rounded-xl border border-slate-200 bg-white p-2 text-brand-gray" disabled aria-label="Notificações">
+        <button
+          type="button"
+          class="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white p-2 text-brand-gray hover:bg-slate-50"
+          disabled
+          aria-label="Notificações"
+        >
           <Bell class="h-4 w-4" />
         </button>
-      </div>
-    </header>
+      </template>
+    </AppPageHeader>
 
-    <nav
-      class="scrollbar-none -mx-4 mt-6 flex gap-4 overflow-x-auto border-b border-slate-200 px-4 text-sm font-medium sm:mx-0 sm:gap-6 sm:px-0"
-    >
+    <AppPageTabs>
       <button
         v-for="tab in tabs"
         :key="tab"
         type="button"
-        class="-mb-px shrink-0 whitespace-nowrap border-b-2 pb-3 transition"
+        class="shrink-0 whitespace-nowrap border-b-2 py-3 text-sm font-semibold transition"
         :class="
           activeTab === tab
             ? 'border-brand-indigo text-brand-indigo'
@@ -77,9 +81,9 @@ function selectTab(tab: (typeof tabs)[number]): void {
       >
         {{ tab }}
       </button>
-    </nav>
+    </AppPageTabs>
 
-    <div class="mt-6 space-y-6">
+    <div class="flex-1 space-y-6 px-4 py-6 sm:px-6 lg:px-8">
       <template v-if="activeTab === 'Plano e cobrança'">
         <div class="grid gap-6 lg:grid-cols-3">
           <section class="space-y-4 lg:col-span-2">

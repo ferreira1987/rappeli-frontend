@@ -14,7 +14,7 @@ import {
 import { computed, nextTick, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
-import ExampleDataBadge from '@/components/app/ExampleDataBadge.vue'
+import AppPageHeader from '@/components/app/AppPageHeader.vue'
 import ContactDetailPanel from '@/components/conversations/ContactDetailPanel.vue'
 import TransferConversationModal from '@/components/conversations/TransferConversationModal.vue'
 import ConversationFilterTabs from '@/components/conversations/ConversationFilterTabs.vue'
@@ -38,6 +38,7 @@ import {
   isMessagingWindowOpen,
 } from '@/utils/inbox'
 import { MESSAGING_WINDOW_CLOSED_MESSAGE } from '@/utils/messaging'
+import { panelBreadcrumbs } from '@/constants/panelBreadcrumbs'
 
 const auth = useAuthStore()
 const route = useRoute()
@@ -228,26 +229,28 @@ function onTransferred(): void {
 </script>
 
 <template>
-  <div class="flex h-full min-h-0 flex-col bg-white">
-    <header
-      class="flex shrink-0 flex-wrap items-center gap-2 border-b border-slate-100 px-4 py-3 shadow-xs sm:gap-3 sm:px-5"
+  <div class="flex h-full min-h-0 flex-col bg-brand-mist">
+    <AppPageHeader
+      title="Conversas"
+      :breadcrumbs="panelBreadcrumbs({ label: 'Conversas' })"
+      show-example-badge
     >
-      <h1 class="font-display text-lg font-bold text-brand-ink">Conversas</h1>
-      <ExampleDataBadge />
-      <button
-        type="button"
-        class="ml-auto inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-brand-gray transition hover:bg-slate-50 hover:text-brand-ink"
-        :disabled="listLoading"
-        @click="loadConversations()"
-      >
-        <RefreshCw
-          class="h-3.5 w-3.5"
-          :class="listLoading ? 'animate-spin' : ''"
-          aria-hidden="true"
-        />
-        Atualizar
-      </button>
-    </header>
+      <template #actions>
+        <button
+          type="button"
+          class="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-brand-ink hover:bg-slate-50 disabled:opacity-60"
+          :disabled="listLoading"
+          @click="loadConversations()"
+        >
+          <RefreshCw
+            class="h-4 w-4 text-brand-gray"
+            :class="listLoading ? 'animate-spin' : ''"
+            aria-hidden="true"
+          />
+          Atualizar
+        </button>
+      </template>
+    </AppPageHeader>
 
     <p
       v-if="transferNotice"
@@ -258,7 +261,7 @@ function onTransferred(): void {
     </p>
 
     <div
-      class="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[minmax(280px,360px)_1fr] xl:grid-cols-[minmax(280px,360px)_1fr_auto]"
+      class="grid min-h-0 flex-1 grid-cols-1 bg-white lg:grid-cols-[minmax(280px,360px)_1fr] xl:grid-cols-[minmax(280px,360px)_1fr_auto]"
     >
       <!-- Lista -->
       <section

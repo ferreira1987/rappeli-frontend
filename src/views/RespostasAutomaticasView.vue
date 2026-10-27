@@ -17,7 +17,10 @@ import FormSwitch from '@/components/auto-replies/FormSwitch.vue'
 import MessageFieldMeta from '@/components/auto-replies/MessageFieldMeta.vue'
 import KeywordRuleDeleteDialog from '@/components/auto-replies/KeywordRuleDeleteDialog.vue'
 import KeywordRuleFormModal from '@/components/auto-replies/KeywordRuleFormModal.vue'
+import AppPageHeader from '@/components/app/AppPageHeader.vue'
+import AppPageTabs from '@/components/app/AppPageTabs.vue'
 import AppPageFooter from '@/components/layout/AppPageFooter.vue'
+import { panelBreadcrumbs } from '@/constants/panelBreadcrumbs'
 import type {
   BusinessHourSlot,
   KeywordRule,
@@ -362,38 +365,28 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="min-h-full px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
-    <nav class="text-sm text-brand-gray">
-      <span>Painel</span>
-      <span class="mx-1">/</span>
-      <span class="text-brand-ink">Respostas automáticas</span>
-    </nav>
-
-    <header class="mt-4 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-      <div class="min-w-0">
+  <div class="flex min-h-full flex-col bg-brand-mist">
+    <AppPageHeader
+      title="Respostas automáticas"
+      subtitle="Defina textos enviados automaticamente pelo WhatsApp da empresa. As mensagens respeitam o limite da API e podem usar formatação simples (*negrito*, _itálico_)."
+      :breadcrumbs="panelBreadcrumbs({ label: 'Respostas automáticas' })"
+    >
+      <template #badges>
         <span
           class="inline-flex items-center gap-1 rounded-full bg-brand-mist px-2.5 py-1 text-xs font-medium text-brand-indigo"
         >
           <MessageSquareReply class="h-3.5 w-3.5" aria-hidden="true" />
           Atendimento automático
         </span>
-        <h1 class="mt-2 font-display text-2xl font-semibold text-brand-ink">Respostas automáticas</h1>
-        <p class="mt-1 max-w-2xl text-sm text-brand-gray">
-          Defina textos enviados automaticamente pelo WhatsApp da empresa. As mensagens respeitam o limite
-          da API e podem usar formatação simples (*negrito*, _itálico_).
-        </p>
-      </div>
-    </header>
+      </template>
+    </AppPageHeader>
 
-    <nav
-      class="scrollbar-none -mx-4 mt-6 flex gap-2 overflow-x-auto border-b border-slate-200 px-4 text-sm font-medium sm:mx-0 sm:gap-4 sm:px-0"
-      aria-label="Seções de respostas automáticas"
-    >
+    <AppPageTabs>
       <button
         v-for="tab in tabs"
         :key="tab.id"
         type="button"
-        class="-mb-px inline-flex shrink-0 items-center gap-2 whitespace-nowrap border-b-2 px-1 pb-3 transition"
+        class="inline-flex shrink-0 items-center gap-2 whitespace-nowrap border-b-2 py-3 text-sm font-semibold transition"
         :class="
           activeTab === tab.id
             ? 'border-brand-indigo text-brand-indigo'
@@ -404,9 +397,9 @@ onMounted(() => {
         <component :is="tab.icon" class="h-4 w-4" aria-hidden="true" />
         {{ tabNavLabel(tab) }}
       </button>
-    </nav>
+    </AppPageTabs>
 
-    <div class="mt-6 space-y-6">
+    <div class="flex-1 space-y-6 px-4 py-6 sm:px-6 lg:px-8">
       <section v-show="activeTab === 'welcome'" class="rounded-2xl border border-slate-200/80 bg-white shadow-sm">
         <div class="border-b border-slate-100 px-5 py-5 sm:px-6">
           <h2 class="font-display text-lg font-semibold text-brand-ink">Boas-vindas</h2>

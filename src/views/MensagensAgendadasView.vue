@@ -3,6 +3,8 @@ import { Filter } from '@lucide/vue'
 import { computed, ref } from 'vue'
 
 import AppPageHeader from '@/components/app/AppPageHeader.vue'
+import AppPageTabs from '@/components/app/AppPageTabs.vue'
+import { panelBreadcrumbs } from '@/constants/panelBreadcrumbs'
 import AppPageFooter from '@/components/layout/AppPageFooter.vue'
 import ScheduleMessageModal from '@/components/scheduled-messages/ScheduleMessageModal.vue'
 import type { ScheduledMessageStatus } from '@/mocks/scheduledMessages'
@@ -36,7 +38,7 @@ function onScheduled(): void {
   <div class="flex min-h-full flex-col bg-brand-mist">
     <AppPageHeader
       title="Mensagens agendadas"
-      :breadcrumbs="[{ label: 'Painel', to: '/painel' }, { label: 'Mensagens agendadas' }]"
+      :breadcrumbs="panelBreadcrumbs({ label: 'Mensagens agendadas' })"
       show-example-badge
     >
       <template #actions>
@@ -57,31 +59,31 @@ function onScheduled(): void {
       </template>
     </AppPageHeader>
 
+    <AppPageTabs>
+      <button
+        v-for="item in tabLabels"
+        :key="item.key"
+        type="button"
+        class="flex items-center gap-2 border-b-2 py-3 text-sm font-semibold transition"
+        :class="
+          tab === item.key
+            ? 'border-brand-indigo text-brand-indigo'
+            : 'border-transparent text-brand-gray hover:text-brand-ink'
+        "
+        @click="tab = item.key"
+      >
+        {{ item.label }}
+        <span
+          v-if="countFor(item.key) > 0"
+          class="rounded-full bg-indigo-100 px-2 py-0.5 text-[11px] font-bold text-brand-indigo"
+        >
+          {{ countFor(item.key) }}
+        </span>
+      </button>
+    </AppPageTabs>
+
     <div class="flex-1 px-4 py-6 sm:px-6 lg:px-8">
       <p v-if="toast" class="mb-4 text-sm text-brand-indigo" role="status">{{ toast }}</p>
-
-      <div class="mb-4 flex gap-4 border-b border-slate-200">
-        <button
-          v-for="item in tabLabels"
-          :key="item.key"
-          type="button"
-          class="flex items-center gap-2 border-b-2 pb-3 text-sm font-medium transition"
-          :class="
-            tab === item.key
-              ? 'border-brand-indigo text-brand-indigo'
-              : 'border-transparent text-brand-gray hover:text-brand-ink'
-          "
-          @click="tab = item.key"
-        >
-          {{ item.label }}
-          <span
-            v-if="countFor(item.key) > 0"
-            class="rounded-full bg-indigo-100 px-2 py-0.5 text-[11px] font-bold text-brand-indigo"
-          >
-            {{ countFor(item.key) }}
-          </span>
-        </button>
-      </div>
 
       <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xs">
         <table class="w-full text-left text-sm">
