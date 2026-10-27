@@ -1,9 +1,22 @@
 <script setup lang="ts">
-import { ArrowLeft, Loader2, MessageSquare, RefreshCw, Search, Send, User } from '@lucide/vue'
+import {
+  ArrowLeft,
+  ArrowRightLeft,
+  CheckCircle2,
+  Loader2,
+  MessageSquare,
+  MoreVertical,
+  RefreshCw,
+  Search,
+  Send,
+  User,
+} from '@lucide/vue'
 import { computed, nextTick, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
+import ExampleDataBadge from '@/components/app/ExampleDataBadge.vue'
 import ContactDetailPanel from '@/components/conversations/ContactDetailPanel.vue'
+import TransferConversationModal from '@/components/conversations/TransferConversationModal.vue'
 import ConversationFilterTabs from '@/components/conversations/ConversationFilterTabs.vue'
 import ConversationListItem from '@/components/conversations/ConversationListItem.vue'
 import MessageStatusIcon from '@/components/conversations/MessageStatusIcon.vue'
@@ -63,6 +76,16 @@ const {
 const SCROLL_NEAR_BOTTOM_PX = 80
 
 const draft = ref('')
+const transferOpen = ref(false)
+const transferNotice = ref<string | null>(null)
+
+const transferContactName = computed(() => {
+  const conversation = selectedConversation.value
+  if (!conversation) {
+    return 'Contato'
+  }
+  return inboxContactPrimaryLabel(conversation.contact)
+})
 const mobileShowThread = ref(false)
 const threadScrollEl = ref<HTMLElement | null>(null)
 const filterCounts = computed(() => filterCountsFromApi(listCounts.value))
@@ -191,6 +214,17 @@ function onComposerKeydown(event: KeyboardEvent): void {
     void onSend()
   }
 }
+
+function openTransferModal(): void {
+  transferOpen.value = true
+}
+
+function onTransferred(): void {
+  transferNotice.value = 'Transferência registrada (exemplo). A API de roteamento será conectada em breve.'
+  window.setTimeout(() => {
+    transferNotice.value = null
+  }, 5000)
+}
 </script>
 
 <template>
@@ -199,11 +233,7 @@ function onComposerKeydown(event: KeyboardEvent): void {
       class="flex shrink-0 flex-wrap items-center gap-2 border-b border-slate-100 px-4 py-3 shadow-xs sm:gap-3 sm:px-5"
     >
       <h1 class="font-display text-lg font-bold text-brand-ink">Conversas</h1>
-      <span
-        class="rounded-lg bg-slate-100 px-3 py-1 text-xs font-semibold text-brand-indigo"
-      >
-        Caixa de entrada
-      </span>
+      <ExampleDataBadge />
       <button
         type="button"
         class="ml-auto inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-brand-gray transition hover:bg-slate-50 hover:text-brand-ink"
@@ -218,6 +248,14 @@ function onComposerKeydown(event: KeyboardEvent): void {
         Atualizar
       </button>
     </header>
+
+    <p
+      v-if="transferNotice"
+      class="shrink-0 border-b border-indigo-100 bg-indigo-50 px-4 py-2 text-xs text-brand-indigo"
+      role="status"
+    >
+      {{ transferNotice }}
+    </p>
 
     <div
       class="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[minmax(280px,360px)_1fr] xl:grid-cols-[minmax(280px,360px)_1fr_auto]"
@@ -350,6 +388,30 @@ function onComposerKeydown(event: KeyboardEvent): void {
               >
                 {{ inboxContactSecondaryPhone(selectedConversation.contact) }}
               </p>
+            </div>
+            <div class="hidden items-center gap-2 sm:flex">
+              <button
+                type="button"
+                class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-brand-ink hover:bg-slate-50"
+                @click="openTransferModal"
+              >
+                <ArrowRightLeft class="h-3.5 w-3.5 text-brand-indigo" />
+                Transferir
+              </button>
+              <button
+                type="button"
+                class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-brand-ink hover:bg-slate-50"
+              >
+                <CheckCircle2 class="h-3.5 w-3.5 text-emerald-600" />
+                Resolver
+              </button>
+              <button
+                type="button"
+                class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-brand-gray hover:bg-slate-50"
+                aria-label="Mais opções"
+              >
+                <MoreVertical class="h-4 w-4" />
+              </button>
             </div>
           </div>
 
@@ -491,5 +553,12 @@ function onComposerKeydown(event: KeyboardEvent): void {
 
       <ContactDetailPanel :conversation="selectedConversation" />
     </div>
+
+    <TransferConversationModal
+      :open="transferOpen"
+      :contact-name="transferContactName"
+      @close="transferOpen = false"
+      @transferred="onTransferred"
+    />
   </div>
 </template>
