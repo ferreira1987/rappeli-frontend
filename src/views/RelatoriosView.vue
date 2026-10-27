@@ -236,7 +236,12 @@ async function exportCsv(): Promise<void> {
               <p class="text-xs text-brand-gray">Dados do período selecionado</p>
             </div>
             <p class="text-xs text-brand-gray">
-              {{ pluralizePt(report.agents.length, 'colaborador') }} listados
+              {{
+                pluralizePt(report.agents.length, 'colaborador', {
+                  one: 'colaborador listado',
+                  other: 'colaboradores listados',
+                })
+              }}
             </p>
           </div>
           <div class="mt-4 overflow-x-auto">

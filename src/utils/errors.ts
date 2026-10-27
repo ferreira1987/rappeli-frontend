@@ -21,20 +21,32 @@ export function getValidationErrors(error: unknown): Record<string, string> | nu
   return Object.keys(mapped).length > 0 ? mapped : null
 }
 
+const GENERIC_SERVER_MESSAGES = [/^server error$/i, /^internal server error$/i]
+
 export function getErrorMessage(error: unknown): string {
   if (axios.isAxiosError(error)) {
+    const status = error.response?.status
     const data = error.response?.data as { message?: string; errors?: Record<string, string[]> }
+
+    if (status === 500) {
+      return 'Ocorreu um erro no servidor. Tente novamente em instantes.'
+    }
+
     if (data?.message) {
+      const message = data.message
+      if (GENERIC_SERVER_MESSAGES.some((pattern) => pattern.test(message.trim()))) {
+        return 'Ocorreu um erro no servidor. Tente novamente em instantes.'
+      }
       return data.message
     }
     const firstFieldError = data?.errors && Object.values(data.errors)[0]?.[0]
     if (firstFieldError) {
       return firstFieldError
     }
-    if (error.response?.status === 422) {
+    if (status === 422) {
       return 'Verifique os dados informados e tente novamente.'
     }
-    if (error.response?.status === 401) {
+    if (status === 401) {
       return 'E-mail ou senha inválidos.'
     }
   }

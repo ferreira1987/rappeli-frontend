@@ -6,6 +6,7 @@ import { RouterLink } from 'vue-router'
 import { fetchCampaigns, sendCampaignNow } from '@/api/campaigns'
 import { fetchMessageTemplates } from '@/api/messageTemplates'
 import { fetchSequences } from '@/api/sequences'
+import AppConfirmModal from '@/components/app/AppConfirmModal.vue'
 import AppPageHeader from '@/components/app/AppPageHeader.vue'
 import AppPageTabs from '@/components/app/AppPageTabs.vue'
 import { panelBreadcrumbs } from '@/constants/panelBreadcrumbs'
@@ -25,6 +26,13 @@ const sequences = ref<Sequence[]>([])
 const templates = ref<MessageTemplate[]>([])
 const sendingId = ref<number | null>(null)
 const actionMessage = ref<string | null>(null)
+const sendConfirmOpen = ref(false)
+const campaignPendingSend = ref<Campaign | null>(null)
+
+const sendConfirmMessage = computed(() => {
+  if (!campaignPendingSend.value) return ''
+  return `Enviar a campanha "${campaignPendingSend.value.name}" agora?`
+})
 
 const filteredCampaigns = computed(() => {
   let list = campaigns.value
@@ -81,10 +89,14 @@ onMounted(() => {
   void loadAll()
 })
 
-async function onSendNow(campaign: Campaign): Promise<void> {
-  if (!window.confirm(`Enviar a campanha "${campaign.name}" agora?`)) {
-    return
-  }
+function requestSendNow(campaign: Campaign): void {
+  campaignPendingSend.value = campaign
+  sendConfirmOpen.value = true
+}
+
+async function confirmSendNow(): Promise<void> {
+  const campaign = campaignPendingSend.value
+  if (!campaign) return
   sendingId.value = campaign.id
   actionMessage.value = null
   try {
@@ -93,6 +105,8 @@ async function onSendNow(campaign: Campaign): Promise<void> {
       ? `Campanha enfileirada para envio (status: ${result.status}).`
       : `Campanha atualizada (status: ${result.status}).`
     await loadAll()
+    sendConfirmOpen.value = false
+    campaignPendingSend.value = null
   } catch (err) {
     actionMessage.value = getErrorMessage(err)
   } finally {
@@ -212,7 +226,7 @@ function canSendNow(campaign: Campaign): boolean {
                   type="button"
                   class="rounded-lg border border-brand-indigo bg-white px-3 py-1.5 text-xs font-semibold text-brand-indigo hover:bg-brand-mist disabled:opacity-60"
                   :disabled="sendingId === campaign.id"
-                  @click="onSendNow(campaign)"
+                  @click="requestSendNow(campaign)"
                 >
                   {{ sendingId === campaign.id ? 'Enviando…' : 'Enviar agora' }}
                 </button>
@@ -229,7 +243,12 @@ function canSendNow(campaign: Campaign): boolean {
 
         <div v-if="mainTab === 'sequencias'" class="rounded-xl border border-slate-200 bg-white p-4 shadow-xs">
           <p class="text-sm text-brand-gray">
-            {{ pluralizePt(sequences.length, 'sequência') }} cadastradas.
+            {{
+              pluralizePt(sequences.length, 'sequência', {
+                one: 'sequência cadastrada',
+                other: 'sequências cadastradas',
+              })
+            }}.
           </p>
           <ul class="mt-4 divide-y divide-slate-100">
             <li v-for="seq in sequences" :key="seq.id" class="py-3">
@@ -258,5 +277,16 @@ function canSendNow(campaign: Campaign): boolean {
 
       <AppPageFooter />
     </div>
+
+    <AppConfirmModal
+      :open="sendConfirmOpen"
+      title="Enviar campanha"
+      :message="sendConfirmMessage"
+      confirm-label="Enviar agora"
+      variant="primary"
+      :loading="sendingId != null"
+      @close="sendConfirmOpen = false"
+      @confirm="confirmSendNow"
+    />
   </div>
 </template>

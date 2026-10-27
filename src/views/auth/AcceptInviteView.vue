@@ -9,6 +9,7 @@ import AuthMarketingPanel from '@/components/auth/AuthMarketingPanel.vue'
 import AuthPageChrome from '@/components/auth/AuthPageChrome.vue'
 import type { TeamAgentRole, TeamInvitationPreview } from '@/types/team'
 import { getErrorMessage, getValidationErrors } from '@/utils/errors'
+import { inviteInvalidDisplayMessage } from '@/utils/inviteMessage'
 import { roleLabels } from '@/utils/teamLabels'
 
 const route = useRoute()
@@ -47,9 +48,11 @@ const missingToken = computed(() => token.value.trim() === '')
 const previewReady = computed(() => preview.value?.valid === true && !previewLoading.value)
 
 const invalidPreviewMessage = computed(() => {
-  if (previewLoadError.value) return previewLoadError.value
+  if (previewLoadError.value) {
+    return inviteInvalidDisplayMessage(previewLoadError.value, INVITE_INVALID_MESSAGE)
+  }
   if (preview.value && !preview.value.valid) {
-    return preview.value.message ?? INVITE_INVALID_MESSAGE
+    return inviteInvalidDisplayMessage(preview.value.message, INVITE_INVALID_MESSAGE)
   }
   return INVITE_INVALID_MESSAGE
 })

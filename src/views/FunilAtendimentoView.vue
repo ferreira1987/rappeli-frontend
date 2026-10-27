@@ -4,6 +4,7 @@ import { computed, onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 
 import { createFunnelCard, createFunnelStage, deleteFunnelCard, fetchFunnelBoard } from '@/api/funnel'
+import AppConfirmModal from '@/components/app/AppConfirmModal.vue'
 import ExampleFiltersModal from '@/components/app/ExampleFiltersModal.vue'
 import AppPageHeader from '@/components/app/AppPageHeader.vue'
 import AppPageFooter from '@/components/layout/AppPageFooter.vue'
@@ -30,6 +31,17 @@ const addCardName = ref('')
 const addCardPhone = ref('')
 const addCardSubmitting = ref(false)
 const addCardErrors = ref<Record<string, string>>({})
+
+const deleteCardConfirmOpen = ref(false)
+const cardPendingDelete = ref<FunnelCard | null>(null)
+const deleteCardSubmitting = ref(false)
+
+const deleteCardMessage = computed(() => {
+  if (!cardPendingDelete.value) return ''
+  const label =
+    cardPendingDelete.value.contact_name || cardPendingDelete.value.phone || `card #${cardPendingDelete.value.id}`
+  return `Excluir o card "${label}" do funil? Esta ação não pode ser desfeita.`
+})
 
 const cardsByStage = computed(() => {
   const q = search.value.trim().toLowerCase()
@@ -103,17 +115,24 @@ function openAddCard(stageId: number): void {
   addCardOpen.value = true
 }
 
-async function confirmDeleteCard(card: FunnelCard): Promise<void> {
-  const label = card.contact_name || card.phone || `card #${card.id}`
-  if (!window.confirm(`Excluir o card "${label}" do funil? Esta ação não pode ser desfeita.`)) {
-    return
-  }
+function requestDeleteCard(card: FunnelCard): void {
+  cardPendingDelete.value = card
+  deleteCardConfirmOpen.value = true
+}
+
+async function confirmDeleteCard(): Promise<void> {
+  if (!cardPendingDelete.value) return
+  deleteCardSubmitting.value = true
   try {
-    await deleteFunnelCard(card.id)
+    await deleteFunnelCard(cardPendingDelete.value.id)
     await loadBoard()
     statusMessage.value = 'Card removido do funil.'
+    deleteCardConfirmOpen.value = false
+    cardPendingDelete.value = null
   } catch (err) {
     statusMessage.value = getErrorMessage(err)
+  } finally {
+    deleteCardSubmitting.value = false
   }
 }
 
@@ -281,7 +300,7 @@ useEscapeKey(
                   type="button"
                   class="rounded p-1 text-brand-gray hover:bg-red-50 hover:text-red-600"
                   aria-label="Excluir card"
-                  @click="confirmDeleteCard(card)"
+                  @click="requestDeleteCard(card)"
                 >
                   <Trash2 class="h-3.5 w-3.5" />
                 </button>
@@ -363,5 +382,15 @@ useEscapeKey(
         </form>
       </div>
     </Teleport>
+
+    <AppConfirmModal
+      :open="deleteCardConfirmOpen"
+      title="Excluir card"
+      :message="deleteCardMessage"
+      confirm-label="Excluir"
+      :loading="deleteCardSubmitting"
+      @close="deleteCardConfirmOpen = false"
+      @confirm="confirmDeleteCard"
+    />
   </div>
 </template>

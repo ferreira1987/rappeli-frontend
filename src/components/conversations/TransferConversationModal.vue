@@ -32,18 +32,23 @@ const fieldErrors = ref<Record<string, string>>({})
 
 const selectedAgent = computed(() => agents.value.find((a) => a.id === assigneeUserId.value) ?? null)
 
+function agentNameForNotify(agent: TeamAgent): string {
+  return formatAgentDisplayName(agent, agents.value)
+}
+
 const notifyPreview = computed(() => {
   if (targetMode.value === 'agent') {
-    const name = selectedAgent.value?.name
-    if (name) {
-      return `Estamos transferindo você para o atendimento de ${name}.`
+    const agent = selectedAgent.value
+    if (agent) {
+      return `Estamos transferindo você para o atendimento de ${agentNameForNotify(agent)}.`
     }
     return 'Estamos transferindo você para outro atendente.'
   }
   const sector = sectors.value.find((s) => s.id === sectorId.value)
   if (sector?.name) {
-    if (selectedAgent.value?.name) {
-      return `Estamos transferindo você para o setor ${sector.name} (${selectedAgent.value.name}).`
+    const agent = selectedAgent.value
+    if (agent) {
+      return `Estamos transferindo você para o setor ${sector.name} (${agentNameForNotify(agent)}).`
     }
     return `Estamos transferindo você para o setor ${sector.name}.`
   }
