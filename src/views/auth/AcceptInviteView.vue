@@ -1,13 +1,15 @@
 <script setup lang="ts">
-import { CheckCircle2, Eye, EyeOff, Lock } from '@lucide/vue'
+import { CheckCircle2, Eye, EyeOff, Loader2, Lock } from '@lucide/vue'
 import axios from 'axios'
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 
-import { acceptTeamInvitation } from '@/api/team'
+import { acceptTeamInvitation, fetchTeamInvitationPreview } from '@/api/team'
 import AuthMarketingPanel from '@/components/auth/AuthMarketingPanel.vue'
 import AuthPageChrome from '@/components/auth/AuthPageChrome.vue'
+import type { TeamAgentRole, TeamInvitationPreview } from '@/types/team'
 import { getErrorMessage, getValidationErrors } from '@/utils/errors'
+import { roleLabels } from '@/utils/teamLabels'
 
 const route = useRoute()
 
@@ -26,6 +28,10 @@ const fieldErrors = ref<Record<string, string>>({})
 const inviteInvalid = ref(false)
 const success = ref<{ name: string; email: string } | null>(null)
 
+const previewLoading = ref(false)
+const preview = ref<TeamInvitationPreview | null>(null)
+const previewLoadError = ref<string | null>(null)
+
 const INVITE_INVALID_MESSAGE = 'Convite inválido ou expirado'
 
 function isInviteTokenError(status: number | undefined, validation: Record<string, string> | null): boolean {
@@ -38,11 +44,58 @@ const privacyUrl = 'https://rappeli.com.br/privacidade'
 
 const missingToken = computed(() => token.value.trim() === '')
 
+const previewReady = computed(() => preview.value?.valid === true && !previewLoading.value)
+
+const invalidPreviewMessage = computed(() => {
+  if (previewLoadError.value) return previewLoadError.value
+  if (preview.value && !preview.value.valid) {
+    return preview.value.message ?? INVITE_INVALID_MESSAGE
+  }
+  return INVITE_INVALID_MESSAGE
+})
+
+function roleLabel(role: string | null): string {
+  if (!role) return '—'
+  return roleLabels[role as TeamAgentRole] ?? role
+}
+
+async function loadPreview(): Promise<void> {
+  if (missingToken.value) {
+    preview.value = null
+    previewLoadError.value = null
+    inviteInvalid.value = false
+    return
+  }
+  previewLoading.value = true
+  previewLoadError.value = null
+  preview.value = null
+  inviteInvalid.value = false
+  try {
+    preview.value = await fetchTeamInvitationPreview(token.value)
+    if (!preview.value.valid) {
+      inviteInvalid.value = true
+    }
+  } catch (error) {
+    previewLoadError.value = getErrorMessage(error)
+    inviteInvalid.value = true
+  } finally {
+    previewLoading.value = false
+  }
+}
+
+onMounted(() => {
+  void loadPreview()
+})
+
+watch(token, () => {
+  void loadPreview()
+})
+
 async function onSubmit(): Promise<void> {
   formError.value = null
   fieldErrors.value = {}
 
-  if (missingToken.value) {
+  if (missingToken.value || !previewReady.value) {
     formError.value = 'Link de convite inválido. Verifique o token na URL.'
     return
   }
@@ -97,114 +150,138 @@ async function onSubmit(): Promise<void> {
           <h1 class="font-display text-2xl font-bold text-brand-ink">Aceitar convite</h1>
           <p class="mt-2 text-sm text-slate-500">Crie sua senha para entrar na equipe.</p>
 
-      <div v-if="missingToken && !success" class="mt-8 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900" role="alert">
-        Este link está incompleto. Abra o convite enviado por e-mail ou peça um novo link ao administrador.
-      </div>
-
-      <div
-        v-else-if="success"
-        class="mt-8 space-y-4 text-center"
-        role="status"
-      >
-        <CheckCircle2 class="mx-auto h-12 w-12 text-emerald-600" aria-hidden="true" />
-        <h2 class="font-display text-xl font-bold text-brand-ink">Conta ativada</h2>
-        <p class="text-sm text-brand-gray">
-          {{ success.name }}, sua conta <strong class="text-brand-ink">{{ success.email }}</strong> está pronta.
-        </p>
-        <RouterLink
-          :to="{ name: 'login' }"
-          class="inline-flex w-full items-center justify-center rounded-lg bg-brand-indigo px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-indigo-hover"
-        >
-          Ir para o login
-        </RouterLink>
-      </div>
-
-      <form v-else class="mt-8 space-y-4" novalidate @submit.prevent="onSubmit">
-        <div
-          v-if="inviteInvalid"
-          class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
-          role="alert"
-        >
-          <p class="font-medium">{{ INVITE_INVALID_MESSAGE }}</p>
-          <p v-if="fieldErrors.token" class="mt-1 text-red-700">{{ fieldErrors.token }}</p>
-        </div>
-        <p
-          v-else-if="formError"
-          class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
-          role="alert"
-        >
-          {{ formError }}
-        </p>
-        <ul
-          v-if="Object.keys(fieldErrors).length && !inviteInvalid"
-          class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
-          role="alert"
-        >
-          <li v-for="(message, key) in fieldErrors" :key="key">{{ message }}</li>
-        </ul>
-
-        <div>
-          <label class="mb-1 block text-sm font-medium text-brand-ink" for="invite-password">Senha *</label>
-          <div class="relative">
-            <Lock class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-gray" />
-            <input
-              id="invite-password"
-              v-model="password"
-              :type="showPassword ? 'text' : 'password'"
-              autocomplete="new-password"
-              class="w-full rounded-lg border border-slate-200 py-2 pl-9 pr-10 text-sm"
-            />
-            <button
-              type="button"
-              class="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-brand-gray hover:text-brand-ink"
-              :aria-label="showPassword ? 'Ocultar senha' : 'Mostrar senha'"
-              @click="showPassword = !showPassword"
-            >
-              <EyeOff v-if="showPassword" class="h-4 w-4" />
-              <Eye v-else class="h-4 w-4" />
-            </button>
+          <div
+            v-if="missingToken && !success"
+            class="mt-8 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"
+            role="alert"
+          >
+            Este link está incompleto. Abra o convite enviado por e-mail ou peça um novo link ao administrador.
           </div>
-          <p v-if="fieldErrors.password" class="mt-1 text-xs text-red-600">{{ fieldErrors.password }}</p>
-        </div>
 
-        <div>
-          <label class="mb-1 block text-sm font-medium text-brand-ink" for="invite-password-confirm">Confirmar senha *</label>
-          <input
-            id="invite-password-confirm"
-            v-model="passwordConfirmation"
-            type="password"
-            autocomplete="new-password"
-            class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
-          />
-          <p v-if="fieldErrors.password_confirmation" class="mt-1 text-xs text-red-600">
-            {{ fieldErrors.password_confirmation }}
-          </p>
-        </div>
+          <div v-else-if="previewLoading && !success" class="mt-12 flex flex-col items-center gap-3 text-sm text-brand-gray">
+            <Loader2 class="h-8 w-8 animate-spin text-brand-indigo" aria-label="Validando convite" />
+            Validando convite…
+          </div>
 
-        <label class="flex items-start gap-2 text-sm text-brand-gray">
-          <input v-model="acceptedTerms" type="checkbox" class="mt-1 rounded text-brand-indigo" />
-          <span>
-            Aceito os
-            <a :href="termsUrl" class="font-medium text-brand-indigo hover:underline" target="_blank" rel="noopener">Termos de Uso</a>
-            e a
-            <a :href="privacyUrl" class="font-medium text-brand-indigo hover:underline" target="_blank" rel="noopener">Política de Privacidade</a>.
-          </span>
-        </label>
-        <p v-if="fieldErrors.terms_accepted" class="text-xs text-red-600">{{ fieldErrors.terms_accepted }}</p>
+          <div
+            v-else-if="(inviteInvalid || previewLoadError) && !success && !missingToken"
+            class="mt-8 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+            role="alert"
+          >
+            <p class="font-medium">{{ invalidPreviewMessage }}</p>
+          </div>
 
-        <button
-          type="submit"
-          class="w-full rounded-lg bg-brand-indigo py-2.5 text-sm font-semibold text-white hover:bg-brand-indigo-hover disabled:opacity-60"
-          :disabled="submitting"
-        >
-          {{ submitting ? 'Ativando…' : 'Ativar conta' }}
-        </button>
+          <div v-else-if="success" class="mt-8 space-y-4 text-center" role="status">
+            <CheckCircle2 class="mx-auto h-12 w-12 text-emerald-600" aria-hidden="true" />
+            <h2 class="font-display text-xl font-bold text-brand-ink">Conta ativada</h2>
+            <p class="text-sm text-brand-gray">
+              {{ success.name }}, sua conta <strong class="text-brand-ink">{{ success.email }}</strong> está pronta.
+            </p>
+            <RouterLink
+              :to="{ name: 'login' }"
+              class="inline-flex w-full items-center justify-center rounded-lg bg-brand-indigo px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-indigo-hover"
+            >
+              Ir para o login
+            </RouterLink>
+          </div>
 
-        <p class="text-center text-sm text-brand-gray">
-          Já tem conta?
-          <RouterLink :to="{ name: 'login' }" class="font-semibold text-brand-indigo hover:underline">Entrar</RouterLink>
-        </p>
-      </form>
+          <form v-else-if="previewReady" class="mt-8 space-y-4" novalidate @submit.prevent="onSubmit">
+            <div class="rounded-lg border border-slate-200 bg-brand-mist/40 px-4 py-3 text-sm">
+              <p class="font-medium text-brand-ink">{{ preview?.name || 'Novo membro' }}</p>
+              <p class="text-brand-gray">{{ preview?.email }}</p>
+              <p v-if="preview?.company_name" class="mt-1 text-xs text-brand-gray">
+                Empresa: <span class="font-medium text-brand-ink">{{ preview.company_name }}</span>
+              </p>
+              <p v-if="preview?.role" class="mt-1 text-xs text-brand-gray">
+                Papel: {{ roleLabel(preview.role) }}
+              </p>
+            </div>
+
+            <div
+              v-if="inviteInvalid"
+              class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+              role="alert"
+            >
+              <p class="font-medium">{{ INVITE_INVALID_MESSAGE }}</p>
+              <p v-if="fieldErrors.token" class="mt-1 text-red-700">{{ fieldErrors.token }}</p>
+            </div>
+            <p
+              v-else-if="formError"
+              class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+              role="alert"
+            >
+              {{ formError }}
+            </p>
+            <ul
+              v-if="Object.keys(fieldErrors).length && !inviteInvalid"
+              class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+              role="alert"
+            >
+              <li v-for="(message, key) in fieldErrors" :key="key">{{ message }}</li>
+            </ul>
+
+            <div>
+              <label class="mb-1 block text-sm font-medium text-brand-ink" for="invite-password">Senha *</label>
+              <div class="relative">
+                <Lock class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-gray" />
+                <input
+                  id="invite-password"
+                  v-model="password"
+                  :type="showPassword ? 'text' : 'password'"
+                  autocomplete="new-password"
+                  class="w-full rounded-lg border border-slate-200 py-2 pl-9 pr-10 text-sm"
+                />
+                <button
+                  type="button"
+                  class="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-brand-gray hover:text-brand-ink"
+                  :aria-label="showPassword ? 'Ocultar senha' : 'Mostrar senha'"
+                  @click="showPassword = !showPassword"
+                >
+                  <EyeOff v-if="showPassword" class="h-4 w-4" />
+                  <Eye v-else class="h-4 w-4" />
+                </button>
+              </div>
+              <p v-if="fieldErrors.password" class="mt-1 text-xs text-red-600">{{ fieldErrors.password }}</p>
+            </div>
+
+            <div>
+              <label class="mb-1 block text-sm font-medium text-brand-ink" for="invite-password-confirm">Confirmar senha *</label>
+              <input
+                id="invite-password-confirm"
+                v-model="passwordConfirmation"
+                type="password"
+                autocomplete="new-password"
+                class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+              />
+              <p v-if="fieldErrors.password_confirmation" class="mt-1 text-xs text-red-600">
+                {{ fieldErrors.password_confirmation }}
+              </p>
+            </div>
+
+            <label class="flex items-start gap-2 text-sm text-brand-gray">
+              <input v-model="acceptedTerms" type="checkbox" class="mt-1 rounded text-brand-indigo" />
+              <span>
+                Aceito os
+                <a :href="termsUrl" class="font-medium text-brand-indigo hover:underline" target="_blank" rel="noopener">Termos de Uso</a>
+                e a
+                <a :href="privacyUrl" class="font-medium text-brand-indigo hover:underline" target="_blank" rel="noopener">Política de Privacidade</a>.
+              </span>
+            </label>
+            <p v-if="fieldErrors.terms_accepted" class="text-xs text-red-600">{{ fieldErrors.terms_accepted }}</p>
+
+            <button
+              type="submit"
+              class="w-full rounded-lg bg-brand-indigo py-2.5 text-sm font-semibold text-white hover:bg-brand-indigo-hover disabled:opacity-60"
+              :disabled="submitting"
+            >
+              {{ submitting ? 'Ativando…' : 'Ativar conta' }}
+            </button>
+
+            <p class="text-center text-sm text-brand-gray">
+              Já tem conta?
+              <RouterLink :to="{ name: 'login' }" class="font-semibold text-brand-indigo hover:underline">Entrar</RouterLink>
+            </p>
+          </form>
         </div>
       </AuthPageChrome>
     </section>

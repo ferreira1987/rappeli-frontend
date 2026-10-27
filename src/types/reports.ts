@@ -4,6 +4,7 @@ export interface ReportKpis {
   conversations_handled: number
   conversations_resolved: number
   conversations_open: number
+  conversations_open_unassigned: number
   average_response_time_seconds: number | null
   average_first_response_time_seconds: number | null
   new_contacts: number

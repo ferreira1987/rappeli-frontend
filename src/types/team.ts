@@ -6,6 +6,17 @@ export interface Sector {
   description: string | null
   is_default: boolean
   position: number
+  agents?: TeamAgent[]
+}
+
+export interface TeamInvitationPreview {
+  valid: boolean
+  message: string | null
+  email: string | null
+  name: string | null
+  role: TeamAgentRole | string | null
+  company_name: string | null
+  expires_at: string | null
 }
 
 export interface TeamAgent {

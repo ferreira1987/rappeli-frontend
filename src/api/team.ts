@@ -8,31 +8,43 @@ import type {
   TeamAgent,
   TeamDistributionSettings,
   TeamInvitationPayload,
+  TeamInvitationPreview,
 } from '@/types/team'
 
 export async function fetchSectors(): Promise<Sector[]> {
-  const { data } = await http.get<unknown>('/api/team/sectors')
+  const { data } = await http.get<unknown>('/api/sectors')
   return parseResourceCollection<Sector>(data)
+}
+
+export async function fetchSector(id: number): Promise<Sector> {
+  const { data } = await http.get<unknown>(`/api/sectors/${id}`)
+  return unwrapData<Sector>(data)
 }
 
 export async function createSector(payload: {
   name: string
   description?: string | null
+  position?: number
 }): Promise<Sector> {
-  const { data } = await http.post<unknown>('/api/team/sectors', payload)
+  const { data } = await http.post<unknown>('/api/sectors', payload)
   return unwrapData<Sector>(data)
 }
 
 export async function updateSector(
   id: number,
-  payload: Partial<{ name: string; description: string | null }>,
+  payload: Partial<{ name: string; description: string | null; position: number }>,
 ): Promise<Sector> {
-  const { data } = await http.patch<unknown>(`/api/team/sectors/${id}`, payload)
+  const { data } = await http.patch<unknown>(`/api/sectors/${id}`, payload)
   return unwrapData<Sector>(data)
 }
 
 export async function deleteSector(id: number): Promise<void> {
-  await http.delete(`/api/team/sectors/${id}`)
+  await http.delete(`/api/sectors/${id}`)
+}
+
+export async function fetchTeamInvitationPreview(token: string): Promise<TeamInvitationPreview> {
+  const { data } = await http.get<unknown>(`/api/team/invitations/${encodeURIComponent(token)}`)
+  return unwrapData<TeamInvitationPreview>(data)
 }
 
 export async function fetchTeamAgents(): Promise<TeamAgent[]> {

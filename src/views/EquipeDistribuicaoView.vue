@@ -1,16 +1,20 @@
 <script setup lang="ts">
-import { Download, Loader2, Pencil, UserPlus } from '@lucide/vue'
+import { Download, Loader2, Pencil, Plus, Trash2, UserPlus } from '@lucide/vue'
 import { computed, onMounted, ref } from 'vue'
 
 import {
   downloadTeamAgentsCsv,
   fetchDistributionSettings,
+  createSector,
+  deleteSector,
   fetchSectors,
   fetchTeamAgents,
   inviteTeamMember,
   updateDistributionSettings,
+  updateSector,
 } from '@/api/team'
 import InviteTeamMemberModal from '@/components/team/InviteTeamMemberModal.vue'
+import SectorFormModal from '@/components/team/SectorFormModal.vue'
 import AppPageHeader from '@/components/app/AppPageHeader.vue'
 import AppPageFooter from '@/components/layout/AppPageFooter.vue'
 import { initialsFromName } from '@/composables/useInitials'
@@ -31,6 +35,10 @@ const settings = ref<TeamDistributionSettings | null>(null)
 const settingsSaving = ref(false)
 
 const inviteOpen = ref(false)
+
+const sectorModalOpen = ref(false)
+const editingSector = ref<Sector | null>(null)
+const sectorSaving = ref(false)
 
 const routingMethod = ref<TeamDistributionSettings['routing_method']>('round_robin')
 const respectLimit = ref(true)
@@ -63,6 +71,58 @@ function roleHasPermission(role: (typeof permissionRoles)[number], row: string):
 function sectorNameById(id: number | null): string {
   if (id == null) return '—'
   return sectors.value.find((s) => s.id === id)?.name ?? String(id)
+}
+
+function agentsInSector(sector: Sector): TeamAgent[] {
+  if (sector.agents?.length) return sector.agents
+  return agents.value.filter((agent) => agent.sector_id === sector.id)
+}
+
+function openCreateSector(): void {
+  editingSector.value = null
+  sectorModalOpen.value = true
+}
+
+function openEditSector(sector: Sector): void {
+  editingSector.value = sector
+  sectorModalOpen.value = true
+}
+
+async function onSectorSave(payload: { name: string; description: string | null }): Promise<void> {
+  sectorSaving.value = true
+  statusMessage.value = null
+  try {
+    if (editingSector.value) {
+      await updateSector(editingSector.value.id, payload)
+      statusMessage.value = 'Setor atualizado.'
+    } else {
+      await createSector(payload)
+      statusMessage.value = 'Setor criado.'
+    }
+    sectorModalOpen.value = false
+    await loadAll()
+  } catch (err) {
+    statusMessage.value = getErrorMessage(err)
+  } finally {
+    sectorSaving.value = false
+  }
+}
+
+async function onDeleteSector(sector: Sector): Promise<void> {
+  if (sector.is_default) {
+    statusMessage.value = 'O setor padrão não pode ser excluído.'
+    return
+  }
+  if (!window.confirm(`Excluir o setor "${sector.name}"? Atendentes vinculados precisarão ser realocados.`)) {
+    return
+  }
+  try {
+    await deleteSector(sector.id)
+    statusMessage.value = 'Setor removido.'
+    await loadAll()
+  } catch (err) {
+    statusMessage.value = getErrorMessage(err)
+  }
 }
 
 const filteredAgents = computed(() => {
@@ -141,7 +201,7 @@ async function onInvited(payload: {
   name: string
   email: string
   role: TeamAgent['role']
-  sectorId: number
+  sectorId: number | null
 }): Promise<void> {
   try {
     await inviteTeamMember({
@@ -306,24 +366,64 @@ async function saveDistribution(): Promise<void> {
         </section>
 
         <section v-if="tab === 'setores'" class="rounded-xl border border-slate-200 bg-white p-4 shadow-xs">
-          <div class="flex items-center justify-between">
-            <h2 class="font-display font-bold text-brand-ink">Setores de atendimento</h2>
-            <span class="text-xs text-brand-gray">CRUD de setores via API: use o painel ou Em breve na UI.</span>
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h2 class="font-display font-bold text-brand-ink">Setores de atendimento</h2>
+              <p class="text-xs text-brand-gray">Organize a equipe e a fila por setor.</p>
+            </div>
+            <button
+              type="button"
+              class="inline-flex items-center gap-1.5 rounded-lg bg-brand-indigo px-3 py-2 text-sm font-semibold text-white"
+              @click="openCreateSector"
+            >
+              <Plus class="h-4 w-4" />
+              Novo setor
+            </button>
           </div>
           <ul class="mt-4 space-y-3">
             <li
               v-for="sector in sectors"
               :key="sector.id"
-              class="flex items-start justify-between rounded-lg border border-slate-100 p-3"
+              class="rounded-lg border border-slate-100 p-4"
             >
-              <div>
-                <p class="text-sm font-semibold text-brand-ink">
-                  {{ sector.name }}
-                  <span v-if="sector.is_default" class="text-xs font-normal text-brand-gray">(Padrão)</span>
-                </p>
-                <p class="mt-1 text-xs text-brand-gray">{{ sector.description || '—' }}</p>
+              <div class="flex items-start justify-between gap-3">
+                <div>
+                  <p class="text-sm font-semibold text-brand-ink">
+                    {{ sector.name }}
+                    <span v-if="sector.is_default" class="text-xs font-normal text-brand-gray">(Padrão)</span>
+                  </p>
+                  <p class="mt-1 text-xs text-brand-gray">{{ sector.description || 'Sem descrição' }}</p>
+                </div>
+                <div class="flex shrink-0 gap-1">
+                  <button
+                    type="button"
+                    class="rounded-lg p-2 text-brand-gray hover:bg-slate-100 hover:text-brand-indigo"
+                    aria-label="Editar setor"
+                    @click="openEditSector(sector)"
+                  >
+                    <Pencil class="h-4 w-4" />
+                  </button>
+                  <button
+                    v-if="!sector.is_default"
+                    type="button"
+                    class="rounded-lg p-2 text-brand-gray hover:bg-red-50 hover:text-red-600"
+                    aria-label="Excluir setor"
+                    @click="onDeleteSector(sector)"
+                  >
+                    <Trash2 class="h-4 w-4" />
+                  </button>
+                </div>
               </div>
-              <Pencil class="h-4 w-4 text-slate-300" aria-hidden="true" />
+              <div class="mt-3 border-t border-slate-100 pt-3">
+                <p class="text-[11px] font-bold uppercase tracking-wide text-brand-gray">Atendentes</p>
+                <ul v-if="agentsInSector(sector).length" class="mt-2 space-y-1 text-sm text-brand-ink">
+                  <li v-for="agent in agentsInSector(sector)" :key="agent.id">
+                    {{ formatAgentDisplayName(agent, agents) }}
+                    <span class="text-xs text-brand-gray">· {{ roleLabels[agent.role] }}</span>
+                  </li>
+                </ul>
+                <p v-else class="mt-2 text-xs text-brand-gray">Nenhum atendente neste setor.</p>
+              </div>
             </li>
             <li v-if="!sectors.length" class="py-6 text-center text-sm text-brand-gray">Nenhum setor cadastrado.</li>
           </ul>
@@ -421,6 +521,14 @@ async function saveDistribution(): Promise<void> {
       :sectors="sectors"
       @close="inviteOpen = false"
       @invited="onInvited"
+    />
+
+    <SectorFormModal
+      :open="sectorModalOpen"
+      :sector="editingSector"
+      :submitting="sectorSaving"
+      @close="sectorModalOpen = false"
+      @save="onSectorSave"
     />
   </div>
 </template>

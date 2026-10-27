@@ -34,10 +34,43 @@ export async function deleteSequence(id: number): Promise<void> {
 
 export async function createSequenceStep(
   sequenceId: number,
-  payload: Record<string, unknown>,
+  payload: {
+    position?: number
+    kind: 'message' | 'wait' | 'condition'
+    label?: string | null
+    message_template_id?: number | null
+    preview?: string | null
+    wait_minutes?: number | null
+    condition_config?: Record<string, unknown> | null
+  },
 ): Promise<SequenceStep> {
   const { data } = await http.post<unknown>(`/api/sequences/${sequenceId}/steps`, payload)
   return unwrapData<SequenceStep>(data)
+}
+
+export async function updateSequenceStep(
+  sequenceId: number,
+  stepId: number,
+  payload: Partial<{
+    position: number
+    kind: 'message' | 'wait' | 'condition'
+    label: string | null
+    message_template_id: number | null
+    preview: string | null
+    wait_minutes: number | null
+    condition_config: Record<string, unknown> | null
+  }>,
+): Promise<SequenceStep> {
+  const { data } = await http.patch<unknown>(`/api/sequences/${sequenceId}/steps/${stepId}`, payload)
+  return unwrapData<SequenceStep>(data)
+}
+
+export async function deleteSequenceStep(sequenceId: number, stepId: number): Promise<void> {
+  await http.delete(`/api/sequences/${sequenceId}/steps/${stepId}`)
+}
+
+export async function reorderSequenceSteps(sequenceId: number, stepIds: number[]): Promise<void> {
+  await http.patch(`/api/sequences/${sequenceId}/steps/reorder`, { step_ids: stepIds })
 }
 
 export async function enrollSequence(sequenceId: number, contactIds: number[]): Promise<number> {
