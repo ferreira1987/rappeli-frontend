@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import {
   applyTemplateBodyParameters,
   extractTemplateVariableIndexes,
+  formatMetaTemplateVariable,
   isMessageTemplateApproved,
   resolveTemplateVariableIndexes,
 } from '@/utils/messageTemplatePreview'
@@ -25,6 +26,11 @@ describe('messageTemplatePreview', () => {
 
   it('keeps placeholder when parameter is empty', () => {
     expect(applyTemplateBodyParameters('Oi {{1}}', [''])).toBe('Oi {{1}}')
+  })
+
+  it('formats Meta variable labels for UI', () => {
+    expect(formatMetaTemplateVariable(1)).toBe('{{1}}')
+    expect(formatMetaTemplateVariable(12)).toBe('{{12}}')
   })
 
   it('detects approved templates by flag or status', () => {

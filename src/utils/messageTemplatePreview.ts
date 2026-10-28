@@ -1,5 +1,12 @@
 const VARIABLE_PATTERN = /\{\{(\d+)\}\}/g
 
+/** Rótulo Meta `{{n}}` para exibir em templates Vue sem conflito com mustache. */
+export function formatMetaTemplateVariable(index: number): string {
+  return `{{${index}}}`
+}
+
+export const META_TEMPLATE_VARIABLE_EXAMPLES = ['{{1}}', '{{2}}'] as const
+
 export function extractTemplateVariableIndexes(body: string | null | undefined): number[] {
   if (!body) {
     return []

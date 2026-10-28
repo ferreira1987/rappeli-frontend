@@ -4,6 +4,7 @@ import { computed, ref, watch } from 'vue'
 
 import type { CreateMessageTemplatePayload, MessageTemplateCategory } from '@/types/messageTemplates'
 import { useEscapeKey } from '@/composables/useEscapeKey'
+import { META_TEMPLATE_VARIABLE_EXAMPLES } from '@/utils/messageTemplatePreview'
 
 const props = defineProps<{
   open: boolean
@@ -165,8 +166,9 @@ function onSubmit(): void {
             class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
           />
           <p class="mt-1 text-xs text-brand-gray">
-            Variáveis dinâmicas no formato <code class="text-brand-ink">{{ '{{1}}' }}</code>,
-            <code class="text-brand-ink">{{ '{{2}}' }}</code>…
+            Variáveis dinâmicas no formato
+            <code class="text-brand-ink">{{ META_TEMPLATE_VARIABLE_EXAMPLES[0] }}</code>,
+            <code class="text-brand-ink">{{ META_TEMPLATE_VARIABLE_EXAMPLES[1] }}</code>…
           </p>
           <p v-if="displayFieldErrors.body" class="mt-1 text-xs text-red-600">{{ displayFieldErrors.body }}</p>
         </div>
