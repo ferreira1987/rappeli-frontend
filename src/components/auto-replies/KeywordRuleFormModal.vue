@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, reactive, watch } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 
 import MessageFieldMeta from '@/components/auto-replies/MessageFieldMeta.vue'
 import { useEscapeKey } from '@/composables/useEscapeKey'
@@ -41,11 +41,18 @@ watch(
   { immediate: true },
 )
 
-const fieldError = (field: string): string | null => {
-  return props.serverErrors?.[field] ?? localErrors.value[field] ?? null
-}
+const showValidation = ref(false)
 
-const localErrors = computed(() => {
+watch(
+  () => props.open,
+  (open) => {
+    if (open) {
+      showValidation.value = false
+    }
+  },
+)
+
+function buildLocalErrors(): Record<string, string> {
   const errors: Record<string, string> = {}
   if (!form.keyword.trim()) {
     errors.keyword = 'Informe a palavra ou frase-chave.'
@@ -57,7 +64,13 @@ const localErrors = computed(() => {
     errors.priority = 'Prioridade inválida.'
   }
   return errors
-})
+}
+
+const localErrors = computed(() => (showValidation.value ? buildLocalErrors() : {}))
+
+const fieldError = (field: string): string | null => {
+  return props.serverErrors?.[field] ?? localErrors.value[field] ?? null
+}
 
 useEscapeKey(
   () => props.open,
@@ -65,7 +78,9 @@ useEscapeKey(
 )
 
 function onSubmit(): void {
-  if (Object.keys(localErrors.value).length > 0) {
+  showValidation.value = true
+  const errors = buildLocalErrors()
+  if (Object.keys(errors).length > 0) {
     return
   }
   emit('submit', {
@@ -110,6 +125,7 @@ function onSubmit(): void {
               autocomplete="off"
               class="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-brand-ink focus:border-brand-indigo focus:outline-none focus:ring-2 focus:ring-brand-indigo/20"
               placeholder="Ex.: horário, endereço, cardápio"
+              @input="showValidation = false"
             />
             <p v-if="fieldError('keyword')" class="mt-1 text-xs text-red-600">{{ fieldError('keyword') }}</p>
           </div>

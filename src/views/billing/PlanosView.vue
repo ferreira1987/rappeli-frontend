@@ -88,22 +88,44 @@ watch([modality, cycle], () => {
 })
 
 onMounted(async () => {
+  loading.value = true
+  error.value = null
   try {
     catalog.value = await fetchBillingPlans()
     if (!plansByTier.value.has(selectedTier.value)) {
       selectedTier.value = 'profissional'
-    }
-    const subscription = await fetchCurrentSubscription()
-    if (subscription?.status === 'ACTIVE') {
-      activeSubscriptionTier.value = subscription.tier
-      selectedTier.value = subscription.tier
     }
   } catch (err) {
     error.value = getErrorMessage(err)
   } finally {
     loading.value = false
   }
+
+  try {
+    const subscription = await fetchCurrentSubscription()
+    if (subscription?.status === 'ACTIVE') {
+      activeSubscriptionTier.value = subscription.tier
+      selectedTier.value = subscription.tier
+    }
+  } catch {
+    // Assinatura atual é opcional na escolha de plano; não bloqueia a tela.
+  }
 })
+
+async function retryLoadPlans(): Promise<void> {
+  loading.value = true
+  error.value = null
+  try {
+    catalog.value = await fetchBillingPlans()
+    if (!plansByTier.value.has(selectedTier.value)) {
+      selectedTier.value = 'profissional'
+    }
+  } catch (err) {
+    error.value = getErrorMessage(err)
+  } finally {
+    loading.value = false
+  }
+}
 
 function isActivePlanTier(tier: string): boolean {
   return activeSubscriptionTier.value != null && activeSubscriptionTier.value === tier
@@ -165,12 +187,19 @@ function goBack(): void {
     </div>
 
     <p v-if="loading" class="mt-10 text-center text-sm text-brand-gray">Carregando planos…</p>
-    <p
+    <div
       v-else-if="error"
-      class="mt-10 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-center text-sm text-red-800"
+      class="mx-auto mt-10 max-w-md rounded-xl border border-red-200 bg-red-50 px-4 py-6 text-center"
     >
-      {{ error }}
-    </p>
+      <p class="text-sm text-red-800">{{ error }}</p>
+      <button
+        type="button"
+        class="mt-4 rounded-lg bg-brand-indigo px-4 py-2 text-sm font-semibold text-white hover:bg-brand-indigo-hover"
+        @click="retryLoadPlans"
+      >
+        Tentar novamente
+      </button>
+    </div>
 
     <template v-else-if="catalog">
       <div class="mt-8 flex flex-col items-center justify-center gap-4 md:flex-row md:gap-8">
@@ -323,10 +352,11 @@ function goBack(): void {
         <div class="flex items-start gap-3 rounded-xl border border-slate-200 bg-brand-mist/30 p-4 text-xs leading-relaxed text-brand-gray">
           <Info class="mt-0.5 h-5 w-5 shrink-0 text-brand-indigo" aria-hidden="true" />
           <p>
-            <strong class="text-brand-ink">Excedente:</strong> R$ 0,05 por lembrete e R$ 0,39 por mensagem de
-            marketing. Na modalidade <em>Pague a Meta direto</em> (Essencial R$ 197, Profissional R$ 397, Escala
-            R$ 797/mês; anual R$ 1.970, R$ 3.970, R$ 7.970) as mensagens são cobradas pela Meta diretamente no
-            seu cartão.
+            <strong class="text-brand-ink">Excedente:</strong> R$ 0,05 por mensagem além da franquia do plano.
+            Mensagens de marketing são cobradas à parte (tabela Meta). Na modalidade
+            <em>Pague a Meta direto</em>, você paga a assinatura Rappeli aqui e as conversas WhatsApp
+            são cobradas pela Meta diretamente no cartão cadastrado na Meta (Essencial R$ 197,
+            Profissional R$ 397, Escala R$ 797/mês; anual R$ 1.970, R$ 3.970, R$ 7.970).
           </p>
         </div>
         <div

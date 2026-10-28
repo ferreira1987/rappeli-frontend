@@ -6,7 +6,7 @@ import RappeliLogo from '@/components/brand/RappeliLogo.vue'
 
 <template>
   <section
-    class="relative hidden flex-col justify-between overflow-hidden bg-gradient-to-br from-brand-ink via-[#14123a] to-brand-indigo px-10 py-10 text-white lg:flex lg:w-[42%] xl:w-[40%]"
+    class="relative hidden flex-col justify-between overflow-hidden bg-brand-indigo px-10 py-10 text-white lg:flex lg:w-[42%] xl:w-[40%]"
   >
     <div>
       <div class="flex items-center gap-3">

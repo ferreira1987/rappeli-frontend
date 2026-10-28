@@ -20,7 +20,7 @@ import { panelBreadcrumbs } from '@/constants/panelBreadcrumbs'
           class="inline-flex items-center gap-1 rounded-full bg-brand-mist px-2.5 py-1 text-xs font-medium text-brand-indigo"
         >
           <Bot class="h-3.5 w-3.5" aria-hidden="true" />
-          Em breve
+          Novo em breve
         </span>
       </template>
     </AppPageHeader>

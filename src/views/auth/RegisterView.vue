@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { ArrowRight, Bell, Eye, EyeOff, Group, Share2, ShieldCheck } from '@lucide/vue'
+import { Bell, Eye, EyeOff, Group, Share2, ShieldCheck } from '@lucide/vue'
 import { ref } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 
+import OnboardingActionBar from '@/components/onboarding/OnboardingActionBar.vue'
 import OnboardingShell from '@/components/onboarding/OnboardingShell.vue'
 import { useAuthStore } from '@/stores/auth'
 import { useCheckoutFlowStore } from '@/stores/checkoutFlow'
@@ -31,6 +32,10 @@ function inputClass(field: string): string {
   return fieldErrors.value[field]
     ? 'border-red-300 focus:border-red-400 focus:ring-red-200'
     : 'border-slate-200 focus:border-brand-indigo focus:ring-brand-indigo'
+}
+
+function clearFieldError(field: string): void {
+  delete fieldErrors.value[field]
 }
 
 function onWhatsappInput(event: Event): void {
@@ -94,7 +99,7 @@ async function onSubmit(): Promise<void> {
           </p>
         </div>
 
-        <form class="space-y-4" novalidate @submit.prevent="onSubmit">
+        <form id="register-form" class="space-y-4" novalidate @submit.prevent="onSubmit">
           <p
             v-if="formError"
             class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
@@ -118,6 +123,7 @@ async function onSubmit(): Promise<void> {
               placeholder="Seu nome completo"
               class="mt-1 h-[42px] w-full rounded-lg border px-3 text-sm outline-none ring-0 focus:ring-2"
               :class="inputClass('name')"
+              @input="clearFieldError('name')"
             />
             <p v-if="fieldErrors.name" class="mt-1 text-xs text-red-600">{{ fieldErrors.name }}</p>
           </div>
@@ -137,6 +143,7 @@ async function onSubmit(): Promise<void> {
               placeholder="nome@empresa.com.br"
               class="mt-1 h-[42px] w-full rounded-lg border px-3 text-sm outline-none ring-0 focus:ring-2"
               :class="inputClass('email')"
+              @input="clearFieldError('email')"
             />
             <p v-if="fieldErrors.email" class="mt-1 text-xs text-red-600">
               {{ fieldErrors.email }}
@@ -156,7 +163,7 @@ async function onSubmit(): Promise<void> {
               type="tel"
               autocomplete="tel"
               placeholder="(00) 00000-0000"
-              class="mt-1 h-[42px] w-full rounded-lg border px-3 text-sm outline-none ring-0"
+              class="mt-1 h-[42px] w-full rounded-lg border border-slate-200 px-3 text-sm outline-none ring-0 focus:border-brand-indigo focus:ring-2 focus:ring-brand-indigo/20"
               @input="onWhatsappInput"
             />
           </div>
@@ -197,6 +204,7 @@ async function onSubmit(): Promise<void> {
                 placeholder="Mínimo de 8 caracteres"
                 class="mt-0 h-[42px] w-full rounded-lg border px-3 pr-10 text-sm outline-none ring-0 focus:ring-2"
                 :class="inputClass('password')"
+                @input="clearFieldError('password')"
               />
               <button
                 type="button"
@@ -218,6 +226,7 @@ async function onSubmit(): Promise<void> {
               v-model="acceptedTerms"
               type="checkbox"
               class="mt-1 h-4 w-4 rounded border-slate-300 text-brand-indigo"
+              @change="clearFieldError('terms_accepted')"
             />
             <span>
               Li e concordo com os
@@ -244,30 +253,20 @@ async function onSubmit(): Promise<void> {
             {{ fieldErrors.terms_accepted }}
           </p>
 
-          <div class="mt-6 flex items-center justify-between border-t border-slate-200 pt-6">
-            <p class="text-sm text-brand-gray">
-              Já tem conta?
-              <RouterLink
-                :to="{ name: 'login' }"
-                class="font-semibold text-brand-indigo hover:underline"
-              >
-                Entrar
-              </RouterLink>
-            </p>
-            <button
-              type="submit"
-              :disabled="auth.loading"
-              class="inline-flex h-[42px] items-center gap-2 rounded-lg bg-brand-indigo px-6 text-sm font-semibold text-white shadow-sm hover:bg-brand-indigo-hover disabled:opacity-60"
+          <p class="border-t border-slate-200 pt-6 text-sm text-brand-gray">
+            Já tem conta?
+            <RouterLink
+              :to="{ name: 'login' }"
+              class="font-semibold text-brand-indigo hover:underline"
             >
-              {{ auth.loading ? 'Aguarde…' : 'Continuar' }}
-              <ArrowRight class="h-4 w-4" aria-hidden="true" />
-            </button>
-          </div>
+              Entrar
+            </RouterLink>
+          </p>
         </form>
       </section>
 
       <section
-        class="flex flex-col justify-between rounded-xl border border-brand-indigo/30 bg-gradient-to-br from-brand-indigo to-[#312e81] p-6 text-white shadow-sm lg:col-span-5 md:p-8"
+        class="flex flex-col justify-between rounded-xl border border-brand-indigo/30 bg-brand-indigo p-6 text-white shadow-sm lg:col-span-5 md:p-8"
       >
         <div>
           <p class="text-[11px] font-semibold uppercase tracking-wider text-indigo-200">
@@ -324,5 +323,14 @@ async function onSubmit(): Promise<void> {
         </p>
       </section>
     </div>
+
+    <template #action-bar>
+      <OnboardingActionBar
+        :show-back="false"
+        primary-label="Continuar"
+        :primary-loading="auth.loading"
+        @primary="onSubmit"
+      />
+    </template>
   </OnboardingShell>
 </template>

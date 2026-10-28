@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { Bell, CircleHelp } from '@lucide/vue'
 import { computed, onMounted, ref } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 
@@ -77,24 +76,6 @@ onMounted(() => {
       subtitle="Gerencie sua conta, equipe, dados fiscais e cobrança."
       :breadcrumbs="panelBreadcrumbs({ label: 'Configurações' })"
     >
-      <template #actions>
-        <button
-          type="button"
-          class="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-brand-ink hover:bg-slate-50"
-          disabled
-        >
-          <CircleHelp class="h-4 w-4 text-brand-gray" />
-          Suporte
-        </button>
-        <button
-          type="button"
-          class="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white p-2 text-brand-gray hover:bg-slate-50"
-          disabled
-          aria-label="Notificações"
-        >
-          <Bell class="h-4 w-4" />
-        </button>
-      </template>
     </AppPageHeader>
 
     <AppPageTabs>

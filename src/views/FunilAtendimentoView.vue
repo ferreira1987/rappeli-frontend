@@ -290,10 +290,13 @@ useEscapeKey(
       <div
         v-if="addStageOpen"
         class="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/50 p-4"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="funnel-add-stage-title"
         @click.self="addStageOpen = false"
       >
         <form class="w-full max-w-sm rounded-xl bg-white p-6 shadow-2xl" @submit.prevent="submitAddStage">
-          <h3 class="font-display font-bold text-brand-ink">Nova etapa</h3>
+          <h3 id="funnel-add-stage-title" class="font-display font-bold text-brand-ink">Nova etapa</h3>
           <input
             v-model="newStageTitle"
             type="text"
@@ -312,10 +315,13 @@ useEscapeKey(
       <div
         v-if="addCardOpen"
         class="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/50 p-4"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="funnel-add-card-title"
         @click.self="addCardOpen = false"
       >
         <form class="w-full max-w-sm rounded-xl bg-white p-6 shadow-2xl" @submit.prevent="submitAddCard">
-          <h3 class="font-display font-bold text-brand-ink">Novo card</h3>
+          <h3 id="funnel-add-card-title" class="font-display font-bold text-brand-ink">Novo card</h3>
           <div class="mt-3 space-y-2">
             <input v-model="addCardName" type="text" placeholder="Nome do contato" class="w-full rounded-lg border px-3 py-2 text-sm" />
             <input v-model="addCardPhone" type="tel" placeholder="Telefone" class="w-full rounded-lg border px-3 py-2 text-sm" />

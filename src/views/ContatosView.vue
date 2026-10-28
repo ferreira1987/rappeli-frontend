@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { Loader2, Plus, Search, Upload, Users } from '@lucide/vue'
+import { Loader2, Pencil, Plus, Search, Trash2, Upload, Users } from '@lucide/vue'
 import { computed, onMounted, ref, watch } from 'vue'
 
-import { createContact, fetchContacts, importContactsCsv } from '@/api/contacts'
+import { createContact, deleteContact, fetchContacts, importContactsCsv, updateContact } from '@/api/contacts'
+import AppConfirmModal from '@/components/app/AppConfirmModal.vue'
 import AppPageHeader from '@/components/app/AppPageHeader.vue'
 import EmptyState from '@/components/app/EmptyState.vue'
 import AppPageFooter from '@/components/layout/AppPageFooter.vue'
@@ -30,6 +31,28 @@ const createFieldErrors = ref<Record<string, string>>({})
 const importInput = ref<HTMLInputElement | null>(null)
 const importMessage = ref<string | null>(null)
 const importSubmitting = ref(false)
+
+const editOpen = ref(false)
+const editContactId = ref<number | null>(null)
+const editName = ref('')
+const editPhone = ref('')
+const editOptIn = ref(false)
+const editSubmitting = ref(false)
+const editError = ref<string | null>(null)
+const editFieldErrors = ref<Record<string, string>>({})
+
+const deleteConfirmOpen = ref(false)
+const contactPendingDelete = ref<Contact | null>(null)
+const deleteSubmitting = ref(false)
+
+const deleteConfirmMessage = computed(() => {
+  if (!contactPendingDelete.value) return ''
+  const label =
+    contactPendingDelete.value.display_name ||
+    formatBrazilPhone(contactPendingDelete.value.phone) ||
+    contactPendingDelete.value.phone
+  return `Excluir o contato "${label}"? Esta ação não pode ser desfeita.`
+})
 
 let searchTimer: ReturnType<typeof setTimeout> | undefined
 
@@ -108,6 +131,69 @@ async function submitCreate(): Promise<void> {
   }
 }
 
+function openEdit(contact: Contact): void {
+  editContactId.value = contact.id
+  editName.value = contact.display_name ?? ''
+  editPhone.value = formatBrazilPhone(contact.phone) || contact.phone
+  editOptIn.value = contact.marketing_opt_in
+  editError.value = null
+  editFieldErrors.value = {}
+  editOpen.value = true
+}
+
+useEscapeKey(
+  () => editOpen.value,
+  () => {
+    editOpen.value = false
+  },
+)
+
+async function submitEdit(): Promise<void> {
+  if (editContactId.value == null) return
+  editSubmitting.value = true
+  editError.value = null
+  editFieldErrors.value = {}
+  const phoneDigits = editPhone.value.replace(/\D/g, '')
+  try {
+    await updateContact(editContactId.value, {
+      phone: phoneDigits,
+      display_name: editName.value.trim() || null,
+      marketing_opt_in: editOptIn.value,
+    })
+    editOpen.value = false
+    await loadContacts()
+  } catch (err) {
+    const validation = getValidationErrors(err)
+    if (validation) {
+      editFieldErrors.value = validation
+    } else {
+      editError.value = getErrorMessage(err)
+    }
+  } finally {
+    editSubmitting.value = false
+  }
+}
+
+function requestDelete(contact: Contact): void {
+  contactPendingDelete.value = contact
+  deleteConfirmOpen.value = true
+}
+
+async function confirmDeleteContact(): Promise<void> {
+  if (!contactPendingDelete.value) return
+  deleteSubmitting.value = true
+  try {
+    await deleteContact(contactPendingDelete.value.id)
+    deleteConfirmOpen.value = false
+    contactPendingDelete.value = null
+    await loadContacts()
+  } catch (err) {
+    editError.value = getErrorMessage(err)
+  } finally {
+    deleteSubmitting.value = false
+  }
+}
+
 function triggerImport(): void {
   importInput.value?.click()
 }
@@ -138,7 +224,7 @@ async function onImportFile(event: Event): Promise<void> {
   <div class="flex min-h-full flex-col bg-brand-mist">
     <AppPageHeader
       title="Contatos"
-      subtitle="Organize clientes, tags e importações em um só lugar."
+      subtitle="Organize clientes e importações em um só lugar."
       :breadcrumbs="panelBreadcrumbs({ label: 'Contatos' })"
     >
       <template #actions>
@@ -238,10 +324,16 @@ async function onImportFile(event: Event): Promise<void> {
               <th class="px-4 py-3">Nome</th>
               <th class="px-4 py-3">Telefone</th>
               <th class="px-4 py-3">Opt-in marketing</th>
+              <th class="px-4 py-3 text-right">Ações</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100">
-            <tr v-for="contact in contacts" :key="contact.id" class="hover:bg-slate-50/80">
+            <tr
+              v-for="contact in contacts"
+              :key="contact.id"
+              class="cursor-pointer hover:bg-slate-50/80"
+              @click="openEdit(contact)"
+            >
               <td class="px-4 py-3 font-medium text-brand-ink">
                 {{ contact.display_name || '—' }}
               </td>
@@ -250,6 +342,26 @@ async function onImportFile(event: Event): Promise<void> {
               </td>
               <td class="px-4 py-3 text-brand-gray">
                 {{ contact.marketing_opt_in ? 'Sim' : 'Não' }}
+              </td>
+              <td class="px-4 py-3 text-right" @click.stop>
+                <div class="inline-flex gap-1">
+                  <button
+                    type="button"
+                    class="rounded-lg border border-slate-200 p-1.5 text-brand-gray hover:bg-white hover:text-brand-indigo"
+                    aria-label="Editar contato"
+                    @click="openEdit(contact)"
+                  >
+                    <Pencil class="h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
+                    class="rounded-lg border border-slate-200 p-1.5 text-brand-gray hover:bg-white hover:text-red-600"
+                    aria-label="Excluir contato"
+                    @click="requestDelete(contact)"
+                  >
+                    <Trash2 class="h-4 w-4" />
+                  </button>
+                </div>
               </td>
             </tr>
           </tbody>
@@ -314,5 +426,74 @@ async function onImportFile(event: Event): Promise<void> {
         </form>
       </div>
     </Teleport>
+
+    <Teleport to="body">
+      <div
+        v-if="editOpen"
+        class="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/50 p-4"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="edit-contact-title"
+        @click.self="editOpen = false"
+      >
+        <form class="w-full max-w-md rounded-xl border border-slate-200 bg-white p-6 shadow-2xl" @submit.prevent="submitEdit">
+          <h2 id="edit-contact-title" class="font-display text-lg font-bold text-brand-ink">Editar contato</h2>
+          <p v-if="editError" class="mt-2 text-sm text-red-600" role="alert">{{ editError }}</p>
+          <div class="mt-4 space-y-3">
+            <div>
+              <label class="text-xs font-semibold text-brand-ink" for="edit-contact-phone">Telefone *</label>
+              <input
+                id="edit-contact-phone"
+                v-model="editPhone"
+                type="tel"
+                class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                @input="delete editFieldErrors.phone"
+              />
+              <p v-if="editFieldErrors.phone" class="mt-1 text-xs text-red-600">{{ editFieldErrors.phone }}</p>
+            </div>
+            <div>
+              <label class="text-xs font-semibold text-brand-ink" for="edit-contact-name">Nome</label>
+              <input
+                id="edit-contact-name"
+                v-model="editName"
+                type="text"
+                class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                @input="delete editFieldErrors.display_name"
+              />
+              <p v-if="editFieldErrors.display_name" class="mt-1 text-xs text-red-600">
+                {{ editFieldErrors.display_name }}
+              </p>
+            </div>
+            <label class="flex items-center gap-2 text-sm">
+              <input v-model="editOptIn" type="checkbox" class="rounded text-brand-indigo" />
+              Opt-in para campanhas de marketing
+            </label>
+          </div>
+          <div class="mt-6 flex justify-end gap-2">
+            <button type="button" class="rounded-lg border border-slate-200 px-4 py-2 text-sm" @click="editOpen = false">
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              class="rounded-lg bg-brand-indigo px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+              :disabled="editSubmitting"
+            >
+              Salvar
+            </button>
+          </div>
+        </form>
+      </div>
+    </Teleport>
+
+    <AppConfirmModal
+      :open="deleteConfirmOpen"
+      title="Excluir contato"
+      :message="deleteConfirmMessage"
+      confirm-label="Excluir"
+      variant="danger"
+      :loading="deleteSubmitting"
+      @close="deleteConfirmOpen = false"
+      @confirm="confirmDeleteContact"
+    />
   </div>
 </template>

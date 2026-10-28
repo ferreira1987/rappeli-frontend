@@ -286,7 +286,7 @@ async function exportCsv(): Promise<void> {
 
         <section v-if="tab === 'campaign'" class="rounded-xl border border-slate-200 bg-white p-4 shadow-xs">
           <h2 class="font-display text-base font-bold text-brand-ink">Desempenho por campanha</h2>
-          <p class="text-xs text-brand-gray">Contagens registradas no sistema (disparo automático: Em breve)</p>
+          <p class="text-xs text-brand-gray">Contagens registradas no sistema.</p>
           <table class="mt-4 w-full text-sm">
             <thead class="border-b border-slate-100 text-left text-[11px] font-bold uppercase text-brand-gray">
               <tr>

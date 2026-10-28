@@ -21,7 +21,7 @@ const emit = defineEmits<{
   scheduled: []
 }>()
 
-const messageType = ref<'free' | 'template'>('free')
+const messageType = ref<'free'>('free')
 const scheduleDate = ref(new Date().toISOString().slice(0, 10))
 const scheduleTime = ref('14:30')
 
@@ -55,7 +55,6 @@ watch(
   () => props.open,
   (isOpen) => {
     if (!isOpen) return
-    messageType.value = 'free'
     messageBody.value = defaultMessageBody()
     selectedContact.value = null
     contactSearch.value = ''
@@ -112,12 +111,12 @@ function onClose(): void {
 }
 
 async function onSubmit(): Promise<void> {
-  if (messageType.value === 'template') {
-    formError.value = 'Templates oficiais da Meta para agendamento: Em breve. Use texto livre.'
-    return
-  }
   if (!selectedContact.value) {
     fieldErrors.value = { contact_id: 'Selecione um contato.' }
+    return
+  }
+  if (!messageBody.value.trim()) {
+    fieldErrors.value = { body: 'Informe a mensagem.' }
     return
   }
   submitting.value = true
@@ -201,31 +200,13 @@ async function onSubmit(): Promise<void> {
         </div>
 
         <div>
-          <p class="mb-2 text-[11px] font-semibold uppercase tracking-wide text-brand-gray">Tipo de mensagem</p>
-          <div class="flex rounded-lg bg-slate-100 p-1">
-            <button
-              type="button"
-              class="flex-1 rounded-md py-2 text-xs font-semibold"
-              :class="messageType === 'free' ? 'bg-brand-indigo text-white' : 'text-brand-gray'"
-              @click="messageType = 'free'"
-            >
-              Texto livre
-            </button>
-            <button
-              type="button"
-              class="flex-1 rounded-md py-2 text-xs font-medium text-brand-gray"
-              title="Em breve"
-              @click="messageType = 'template'"
-            >
-              Template aprovado (Em breve)
-            </button>
-          </div>
-        </div>
-
-        <div>
           <div class="mb-1 flex items-center justify-between">
             <p class="text-[11px] font-semibold uppercase tracking-wide text-brand-gray">Mensagem</p>
-            <button type="button" class="text-xs font-semibold text-brand-indigo hover:underline">
+            <button
+              type="button"
+              class="text-xs font-semibold text-brand-indigo hover:underline"
+              @click="insertVariable('{{nome}}')"
+            >
               + Inserir variável
             </button>
           </div>
@@ -233,6 +214,7 @@ async function onSubmit(): Promise<void> {
             v-model="messageBody"
             rows="4"
             class="w-full resize-none rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-brand-indigo focus:outline-none focus:ring-2 focus:ring-brand-indigo/20"
+            @input="delete fieldErrors.body"
           />
           <div class="mt-2 flex flex-wrap gap-1.5">
             <button
@@ -245,6 +227,13 @@ async function onSubmit(): Promise<void> {
               {{ variable }}
             </button>
           </div>
+          <p class="mt-1 text-xs text-brand-gray">
+            Use variáveis como
+            <code v-pre>{{nome}}</code>,
+            <code v-pre>{{data}}</code> e
+            <code v-pre>{{horario}}</code> — substituídas na prévia e no envio.
+          </p>
+          <p v-if="fieldErrors.body" class="mt-1 text-xs text-red-600">{{ fieldErrors.body }}</p>
           <p class="mt-1 text-right text-[11px] text-brand-gray">{{ charCount }} / 1024 caracteres</p>
         </div>
 

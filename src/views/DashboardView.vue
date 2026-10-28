@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { BarChart3, Bell, MessageSquare, MessageSquareReply, Send, Timer, Users } from '@lucide/vue'
+import { BarChart3, MessageSquare, MessageSquareReply, Send, Timer, Users } from '@lucide/vue'
 import { computed, onMounted, ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 
@@ -145,14 +145,6 @@ onMounted(() => {
         >
           {{ whatsappBadgeLabel }}
         </span>
-        <button
-          type="button"
-          class="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white p-2 text-brand-gray hover:bg-slate-50"
-          disabled
-          aria-label="Notificações"
-        >
-          <Bell class="h-5 w-5" />
-        </button>
         <span class="hidden text-sm font-medium text-brand-ink sm:inline">{{ auth.user?.name ?? 'Conta' }}</span>
       </template>
     </AppPageHeader>
