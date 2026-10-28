@@ -1,9 +1,9 @@
 import { fetchCsrfCookie } from '@/api/auth'
 import { http } from '@/api/http'
 import { parseResourceCollection, unwrapData } from '@/api/resource'
+import type { User } from '@/types/auth'
 import type {
   AcceptTeamInvitationPayload,
-  AcceptTeamInvitationResult,
   Sector,
   TeamAgent,
   TeamDistributionSettings,
@@ -91,17 +91,15 @@ export async function inviteTeamMember(payload: TeamInvitationPayload): Promise<
   return unwrapData<TeamInvitationCreated>(data)
 }
 
-export async function acceptTeamInvitation(
-  payload: AcceptTeamInvitationPayload,
-): Promise<AcceptTeamInvitationResult> {
+export async function acceptTeamInvitation(payload: AcceptTeamInvitationPayload): Promise<User> {
   await fetchCsrfCookie()
-  const { data } = await http.post<unknown>('/api/team/invitations/accept', {
+  const { data } = await http.post<{ user: User }>('/api/team/invitations/accept', {
     token: payload.token,
     password: payload.password,
     password_confirmation: payload.password_confirmation,
     terms_accepted: payload.terms_accepted,
   })
-  return unwrapData<AcceptTeamInvitationResult>(data)
+  return data.user
 }
 
 export async function fetchDistributionSettings(): Promise<TeamDistributionSettings> {

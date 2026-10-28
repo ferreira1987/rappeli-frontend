@@ -1,18 +1,21 @@
 <script setup lang="ts">
-import { CheckCircle2, Eye, EyeOff, Loader2, Lock } from '@lucide/vue'
+import { Eye, EyeOff, Loader2, Lock } from '@lucide/vue'
 import axios from 'axios'
 import { computed, onMounted, ref, watch } from 'vue'
-import { RouterLink, useRoute } from 'vue-router'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
 
 import { acceptTeamInvitation, fetchTeamInvitationPreview } from '@/api/team'
 import AuthMarketingPanel from '@/components/auth/AuthMarketingPanel.vue'
 import AuthPageChrome from '@/components/auth/AuthPageChrome.vue'
+import { useAuthStore } from '@/stores/auth'
 import type { TeamAgentRole, TeamInvitationPreview } from '@/types/team'
 import { getErrorMessage, getValidationErrors } from '@/utils/errors'
 import { inviteInvalidDisplayMessage } from '@/utils/inviteMessage'
 import { roleLabels } from '@/utils/teamLabels'
 
 const route = useRoute()
+const router = useRouter()
+const auth = useAuthStore()
 
 const token = computed(() => {
   const value = route.query.token
@@ -27,7 +30,6 @@ const submitting = ref(false)
 const formError = ref<string | null>(null)
 const fieldErrors = ref<Record<string, string>>({})
 const inviteInvalid = ref(false)
-const success = ref<{ name: string; email: string } | null>(null)
 
 const previewLoading = ref(false)
 const preview = ref<TeamInvitationPreview | null>(null)
@@ -118,7 +120,9 @@ async function onSubmit(): Promise<void> {
       password_confirmation: passwordConfirmation.value,
       terms_accepted: true,
     })
-    success.value = { name: user.name, email: user.email }
+    auth.user = user
+    auth.bootstrapped = true
+    await router.replace('/painel')
   } catch (error) {
     const validation = getValidationErrors(error)
     const status = axios.isAxiosError(error) ? error.response?.status : undefined
@@ -154,38 +158,24 @@ async function onSubmit(): Promise<void> {
           <p class="mt-2 text-sm text-slate-500">Crie sua senha para entrar na equipe.</p>
 
           <div
-            v-if="missingToken && !success"
+            v-if="missingToken"
             class="mt-8 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"
             role="alert"
           >
             Este link está incompleto. Abra o convite enviado por e-mail ou peça um novo link ao administrador.
           </div>
 
-          <div v-else-if="previewLoading && !success" class="mt-12 flex flex-col items-center gap-3 text-sm text-brand-gray">
+          <div v-else-if="previewLoading" class="mt-12 flex flex-col items-center gap-3 text-sm text-brand-gray">
             <Loader2 class="h-8 w-8 animate-spin text-brand-indigo" aria-label="Validando convite" />
             Validando convite…
           </div>
 
           <div
-            v-else-if="(inviteInvalid || previewLoadError) && !success && !missingToken"
+            v-else-if="(inviteInvalid || previewLoadError) && !missingToken"
             class="mt-8 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
             role="alert"
           >
             <p class="font-medium">{{ invalidPreviewMessage }}</p>
-          </div>
-
-          <div v-else-if="success" class="mt-8 space-y-4 text-center" role="status">
-            <CheckCircle2 class="mx-auto h-12 w-12 text-emerald-600" aria-hidden="true" />
-            <h2 class="font-display text-xl font-bold text-brand-ink">Conta ativada</h2>
-            <p class="text-sm text-brand-gray">
-              {{ success.name }}, sua conta <strong class="text-brand-ink">{{ success.email }}</strong> está pronta.
-            </p>
-            <RouterLink
-              :to="{ name: 'login' }"
-              class="inline-flex w-full items-center justify-center rounded-lg bg-brand-indigo px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-indigo-hover"
-            >
-              Ir para o login
-            </RouterLink>
           </div>
 
           <form v-else-if="previewReady" class="mt-8 space-y-4" novalidate @submit.prevent="onSubmit">
