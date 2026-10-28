@@ -33,3 +33,69 @@ export function formatBrazilPhone(raw: string | null | undefined): string {
   const fallback = national
   return country ? `${country} ${fallback}` : fallback
 }
+
+export const BRAZIL_PHONE_DIGITS_MIN = 10
+export const BRAZIL_PHONE_DIGITS_MAX = 13
+
+export function extractPhoneDigits(raw: string): string {
+  return raw.replace(/\D/g, '')
+}
+
+/** Normaliza para E.164 BR (somente dígitos), alinhado ao backend `BrazilPhoneNumber::normalize`. */
+export function normalizeBrazilPhoneDigits(digits: string): string {
+  if (!digits) {
+    return ''
+  }
+  return digits.startsWith('55') ? digits : `55${digits}`
+}
+
+export function isValidBrazilPhoneDigitCount(digits: string): boolean {
+  const length = digits.length
+  if (length < BRAZIL_PHONE_DIGITS_MIN || length > BRAZIL_PHONE_DIGITS_MAX) {
+    return false
+  }
+  if (length >= 12) {
+    return digits.startsWith('55')
+  }
+  return length === 10 || length === 11
+}
+
+export type BrazilPhoneFieldValidation =
+  | { ok: true; digits: string; normalized: string }
+  | { ok: false; error: string; field: 'phone' }
+
+/**
+ * Valida telefone BR antes do envio à API.
+ * - Campo vazio → "Informe o telefone." (se required)
+ * - Texto sem dígitos (ex.: "abc") → "Telefone inválido." (não envia string vazia)
+ */
+export function validateBrazilPhoneField(
+  raw: string,
+  options: { required?: boolean } = {},
+): BrazilPhoneFieldValidation {
+  const required = options.required ?? true
+  const trimmed = raw.trim()
+  const digits = extractPhoneDigits(raw)
+
+  if (!trimmed) {
+    if (required) {
+      return { ok: false, error: 'Informe o telefone.', field: 'phone' }
+    }
+    return { ok: true, digits: '', normalized: '' }
+  }
+
+  if (!digits) {
+    return { ok: false, error: 'Telefone inválido.', field: 'phone' }
+  }
+
+  if (!isValidBrazilPhoneDigitCount(digits)) {
+    return { ok: false, error: 'Telefone inválido.', field: 'phone' }
+  }
+
+  const normalized = normalizeBrazilPhoneDigits(digits)
+  if (normalized.length < 12 || normalized.length > 13) {
+    return { ok: false, error: 'Telefone inválido.', field: 'phone' }
+  }
+
+  return { ok: true, digits, normalized }
+}
