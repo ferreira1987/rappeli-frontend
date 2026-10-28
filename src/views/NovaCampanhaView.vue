@@ -1,21 +1,42 @@
 <script setup lang="ts">
 import { Loader2 } from '@lucide/vue'
 import { computed, onMounted, ref } from 'vue'
-import { RouterLink, useRouter } from 'vue-router'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
 
-import { createCampaign, fetchCampaignSegmentPreview } from '@/api/campaigns'
+import {
+  createCampaign,
+  fetchCampaign,
+  fetchCampaignSegmentPreview,
+  updateCampaign,
+} from '@/api/campaigns'
 import { fetchMessageTemplates } from '@/api/messageTemplates'
 import AppPageHeader from '@/components/app/AppPageHeader.vue'
+import CampaignSendRateSelect from '@/components/campaigns/CampaignSendRateSelect.vue'
 import AppPageFooter from '@/components/layout/AppPageFooter.vue'
 import { panelBreadcrumbs } from '@/constants/panelBreadcrumbs'
-import type { MessageTemplate } from '@/types/campaigns'
+import type { CampaignStatus, MessageTemplate } from '@/types/campaigns'
+import {
+  campaignSendRatePayloadValue,
+  normalizeCampaignSendRateForForm,
+} from '@/utils/campaignSendRate'
 import { getErrorMessage, getValidationErrors } from '@/utils/errors'
 
 const router = useRouter()
+const route = useRoute()
+
+const campaignId = computed(() => {
+  const raw = route.params.id
+  if (raw == null || raw === '') return null
+  const id = Number(raw)
+  return Number.isFinite(id) ? id : null
+})
+
+const isEditMode = computed(() => campaignId.value != null)
 
 const campaignName = ref('')
 const optInOnly = ref(true)
 const selectedTemplateId = ref<number | null>(null)
+const sendRate = ref('default')
 const scheduleMode = ref<'draft' | 'scheduled'>('draft')
 const scheduleDate = ref('')
 const scheduleTime = ref('14:30')
@@ -27,6 +48,15 @@ const formError = ref<string | null>(null)
 const fieldErrors = ref<Record<string, string>>({})
 const statusMessage = ref<string | null>(null)
 const previewCount = ref<number | null>(null)
+
+const pageTitle = computed(() => (isEditMode.value ? 'Editar campanha' : 'Nova campanha'))
+
+const breadcrumbs = computed(() =>
+  panelBreadcrumbs(
+    { label: 'Campanhas', to: { name: 'campanhas' } },
+    { label: pageTitle.value },
+  ),
+)
 
 const selectedTemplate = computed(() =>
   templates.value.find((t) => t.id === selectedTemplateId.value),
@@ -40,12 +70,54 @@ const previewBody = computed(() => {
     .replace(/\{\{profissional\}\}/gi, 'Dra. Fernanda Lins')
 })
 
+function applyCampaignToForm(campaign: {
+  name: string
+  opt_in_only: boolean
+  segment_tags: string[] | null
+  message_template_id: number | null
+  send_rate: string | null
+  scheduled_at: string | null
+  status: CampaignStatus
+}): void {
+  campaignName.value = campaign.name
+  optInOnly.value = campaign.opt_in_only
+  segmentTags.value = campaign.segment_tags?.join(', ') ?? ''
+  selectedTemplateId.value = campaign.message_template_id
+  sendRate.value = normalizeCampaignSendRateForForm(campaign.send_rate)
+
+  if (campaign.scheduled_at) {
+    scheduleMode.value = 'scheduled'
+    const date = new Date(campaign.scheduled_at)
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    scheduleDate.value = `${date.getFullYear()}-${month}-${day}`
+    scheduleTime.value = `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
+  } else {
+    scheduleMode.value = campaign.status === 'agendada' ? 'scheduled' : 'draft'
+  }
+}
+
 async function loadTemplates(): Promise<void> {
   loading.value = true
+  formError.value = null
   try {
-    templates.value = await fetchMessageTemplates()
-    if (templates.value[0]) {
-      selectedTemplateId.value = templates.value[0].id
+    const [loadedTemplates, existingCampaign] = await Promise.all([
+      fetchMessageTemplates(),
+      isEditMode.value && campaignId.value != null
+        ? fetchCampaign(campaignId.value)
+        : Promise.resolve(null),
+    ])
+
+    templates.value = loadedTemplates
+
+    if (existingCampaign) {
+      if (existingCampaign.status === 'enviando' || existingCampaign.status === 'concluida') {
+        formError.value = 'Esta campanha não pode mais ser editada.'
+      } else {
+        applyCampaignToForm(existingCampaign)
+      }
+    } else if (loadedTemplates[0]) {
+      selectedTemplateId.value = loadedTemplates[0].id
     }
   } catch (err) {
     formError.value = getErrorMessage(err)
@@ -61,6 +133,23 @@ onMounted(() => {
 function scheduledAtIso(): string | null {
   if (scheduleMode.value !== 'scheduled' || !scheduleDate.value) return null
   return new Date(`${scheduleDate.value}T${scheduleTime.value}:00`).toISOString()
+}
+
+function buildPayload(status: 'rascunho' | 'agendada') {
+  const tags = segmentTags.value
+    .split(',')
+    .map((t) => t.trim())
+    .filter(Boolean)
+
+  return {
+    name: campaignName.value.trim(),
+    opt_in_only: optInOnly.value,
+    segment_tags: tags.length ? tags : null,
+    message_template_id: selectedTemplateId.value,
+    status,
+    scheduled_at: scheduledAtIso(),
+    send_rate: campaignSendRatePayloadValue(sendRate.value),
+  }
 }
 
 async function saveDraft(): Promise<void> {
@@ -82,25 +171,27 @@ async function submit(status: 'rascunho' | 'agendada'): Promise<void> {
     fieldErrors.value = { name: 'Informe o nome da campanha.' }
     return
   }
+  if (formError.value?.includes('não pode mais ser editada')) {
+    return
+  }
+
   submitting.value = true
   formError.value = null
   fieldErrors.value = {}
-  const tags = segmentTags.value
-    .split(',')
-    .map((t) => t.trim())
-    .filter(Boolean)
+
   try {
-    const campaign = await createCampaign({
-      name: campaignName.value.trim(),
-      opt_in_only: optInOnly.value,
-      segment_tags: tags.length ? tags : null,
-      message_template_id: selectedTemplateId.value,
-      status,
-      scheduled_at: scheduledAtIso(),
-    })
-    const preview = await fetchCampaignSegmentPreview(campaign.id)
-    previewCount.value = preview.count
-    statusMessage.value = `Campanha criada. ${preview.count} contatos no segmento.`
+    const payload = buildPayload(status)
+
+    if (isEditMode.value && campaignId.value != null) {
+      await updateCampaign(campaignId.value, payload)
+      statusMessage.value = 'Campanha atualizada.'
+    } else {
+      const campaign = await createCampaign(payload)
+      const preview = await fetchCampaignSegmentPreview(campaign.id)
+      previewCount.value = preview.count
+      statusMessage.value = `Campanha criada. ${preview.count} contatos no segmento.`
+    }
+
     await router.push({ name: 'campanhas' })
   } catch (err) {
     const validation = getValidationErrors(err)
@@ -117,12 +208,7 @@ async function submit(status: 'rascunho' | 'agendada'): Promise<void> {
 
 <template>
   <div class="flex min-h-full flex-col bg-brand-mist">
-    <AppPageHeader
-      title="Nova campanha"
-      :breadcrumbs="
-        panelBreadcrumbs({ label: 'Campanhas', to: { name: 'campanhas' } }, { label: 'Nova campanha' })
-      "
-    >
+    <AppPageHeader :title="pageTitle" :breadcrumbs="breadcrumbs">
       <template #actions>
         <button
           type="button"
@@ -138,7 +224,7 @@ async function submit(status: 'rascunho' | 'agendada'): Promise<void> {
           :disabled="submitting"
           @click="scheduleCampaign"
         >
-          {{ scheduleMode === 'scheduled' ? 'Agendar campanha' : 'Criar campanha' }}
+          {{ scheduleMode === 'scheduled' ? 'Agendar campanha' : isEditMode ? 'Salvar campanha' : 'Criar campanha' }}
         </button>
       </template>
     </AppPageHeader>
@@ -197,7 +283,14 @@ async function submit(status: 'rascunho' | 'agendada'): Promise<void> {
         </section>
 
         <section class="rounded-xl border border-slate-200 bg-white p-5 shadow-xs">
-          <h2 class="text-sm font-bold text-brand-ink">4. Agendamento</h2>
+          <h2 class="text-sm font-bold text-brand-ink">4. Velocidade de envio</h2>
+          <div class="mt-4">
+            <CampaignSendRateSelect v-model="sendRate" :error="fieldErrors.send_rate" />
+          </div>
+        </section>
+
+        <section class="rounded-xl border border-slate-200 bg-white p-5 shadow-xs">
+          <h2 class="text-sm font-bold text-brand-ink">5. Agendamento</h2>
           <div class="mt-3 flex gap-4 text-sm">
             <label class="flex items-center gap-2">
               <input v-model="scheduleMode" type="radio" value="draft" />
