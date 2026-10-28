@@ -18,6 +18,7 @@ import type { CampaignStatus } from '@/types/campaigns'
 import type { MessageTemplate } from '@/types/messageTemplates'
 import {
   applyTemplateBodyParameters,
+  formatMetaTemplateVariable,
   isMessageTemplateApproved,
   resolveTemplateVariableIndexes,
 } from '@/utils/messageTemplatePreview'
@@ -331,7 +332,7 @@ async function submit(status: 'rascunho' | 'agendada'): Promise<void> {
               :key="variableIndex"
             >
               <label class="block text-xs font-medium text-brand-ink">
-                Valor para <code>{{ '{{' + variableIndex + '}}' }}</code>
+                Valor para <code>{{ formatMetaTemplateVariable(variableIndex) }}</code>
               </label>
               <input
                 v-model="templateBodyParameters[parameterIndex]"
