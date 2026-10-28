@@ -22,6 +22,7 @@ export async function createCampaign(payload: {
   segment_tags?: string[] | null
   opt_in_only?: boolean
   message_template_id?: number | null
+  template_body_parameters?: string[] | null
   status?: CampaignStatus
   scheduled_at?: string | null
   send_rate?: string | null
@@ -38,6 +39,7 @@ export async function updateCampaign(
     segment_tags: string[] | null
     opt_in_only: boolean
     message_template_id: number | null
+    template_body_parameters?: string[] | null
     status: CampaignStatus
     scheduled_at: string | null
     send_rate: string | null

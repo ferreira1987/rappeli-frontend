@@ -1,5 +1,13 @@
 import axios from 'axios'
 
+export function getApiErrorCode(error: unknown): string | null {
+  if (!axios.isAxiosError(error)) {
+    return null
+  }
+  const code = (error.response?.data as { code?: string })?.code
+  return typeof code === 'string' ? code : null
+}
+
 export function getValidationErrors(error: unknown): Record<string, string> | null {
   if (!axios.isAxiosError(error) || error.response?.status !== 422) {
     return null
