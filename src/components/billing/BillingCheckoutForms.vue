@@ -10,7 +10,7 @@ import {
   detectCardBrand,
   maskCardNumber,
 } from '@/utils/creditCard'
-import { formatStoredCardExpiry, parseCardExpiryDigits } from '@/utils/creditCardExpiry'
+import { parseCardExpiryDigits } from '@/utils/creditCardExpiry'
 
 const props = defineProps<{
   holder: CheckoutHolderPayload
@@ -27,14 +27,16 @@ const emit = defineEmits<{
 
 const cardBrand = computed(() => detectCardBrand(props.creditCard.number))
 
+/** Texto do input; não derivar do payload enquanto o ano está incompleto. */
 const expiryDisplay = ref('')
 
 watch(
   () => [props.creditCard.expiry_month, props.creditCard.expiry_year] as const,
   ([month, year]) => {
-    expiryDisplay.value = formatStoredCardExpiry(month, year)
+    if (!month && !year) {
+      expiryDisplay.value = ''
+    }
   },
-  { immediate: true },
 )
 
 function inputClass(field: string): string {
