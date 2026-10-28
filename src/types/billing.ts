@@ -18,6 +18,10 @@ export type BillingPlanItem = {
   name: string
   cycle: BillingCycle
   amount: number
+  included_messages_per_month?: number | null
+  agents_limit?: number | null
+  marketing_billed_separately?: boolean
+  overage_price_per_message?: number | null
 }
 
 export type BillingModeCatalog = {
@@ -30,6 +34,9 @@ export type BillingPlansResponse = {
   shared_benefits: string[]
   free_trial: boolean
   setup_fee: boolean
+  overage_price_per_message?: number | null
+  marketing_billed_separately?: boolean
+  agents_limit?: number | null
 }
 
 export type SubscriptionPaymentMethod = {

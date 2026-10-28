@@ -34,7 +34,7 @@ export async function createContact(payload: StoreContactPayload): Promise<Conta
 }
 
 export async function updateContact(id: number, payload: UpdateContactPayload): Promise<Contact> {
-  const { data } = await http.put<unknown>(`/api/contacts/${id}`, payload)
+  const { data } = await http.patch<unknown>(`/api/contacts/${id}`, payload)
   return unwrapData<Contact>(data)
 }
 

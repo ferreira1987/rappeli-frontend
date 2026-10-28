@@ -11,8 +11,14 @@ const FALLBACK_LABELS: Record<string, string> = {
   note: 'Anotação',
 }
 
-/** Rótulo em PT-BR: usa o valor da API se já estiver legível; senão mapa local. */
-export function formatConversationActivityLabel(type: string | null | undefined): string {
+/** Rótulo em PT-BR: prioriza `label` da API; senão mapa local por `type`. */
+export function formatConversationActivityLabel(
+  type: string | null | undefined,
+  apiLabel?: string | null,
+): string {
+  if (apiLabel?.trim()) {
+    return apiLabel.trim()
+  }
   if (!type?.trim()) {
     return 'Atividade'
   }

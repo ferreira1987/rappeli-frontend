@@ -183,6 +183,14 @@ function validateScheduleFields(): boolean {
   if (!scheduleTime.value.trim()) {
     errors.scheduled_time = 'Informe o horário do agendamento.'
   }
+  if (scheduleDate.value.trim() && scheduleTime.value.trim()) {
+    const scheduled = new Date(`${scheduleDate.value}T${scheduleTime.value}:00`)
+    if (Number.isNaN(scheduled.getTime())) {
+      errors.scheduled_date = 'Data ou horário inválidos.'
+    } else if (scheduled.getTime() <= Date.now()) {
+      errors.scheduled_at = 'A data de agendamento deve ser no futuro.'
+    }
+  }
   if (Object.keys(errors).length) {
     fieldErrors.value = errors
     return false
@@ -418,6 +426,9 @@ async function submit(status: 'rascunho' | 'agendada'): Promise<void> {
               />
               <p v-if="fieldErrors.scheduled_time" class="mt-1 text-xs text-red-600">
                 {{ fieldErrors.scheduled_time }}
+              </p>
+              <p v-if="fieldErrors.scheduled_at" class="mt-1 text-xs text-red-600">
+                {{ fieldErrors.scheduled_at }}
               </p>
             </div>
           </div>

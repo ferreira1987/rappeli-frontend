@@ -92,6 +92,7 @@ export async function markInboxConversationRead(conversationId: number): Promise
 export interface ConversationActivity {
   id: number
   type: string
+  label?: string | null
   payload: Record<string, unknown> | null
   actor_user_id: number | null
   created_at: string | null

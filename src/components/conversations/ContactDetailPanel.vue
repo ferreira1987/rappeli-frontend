@@ -123,7 +123,9 @@ async function copyPhone(): Promise<void> {
             <p v-else-if="activitiesError" class="text-xs text-red-600">{{ activitiesError }}</p>
             <ul v-else-if="activities?.length" class="space-y-2 text-xs text-brand-gray">
               <li v-for="item in activities" :key="item.id" class="rounded-lg border border-slate-100 px-2 py-1.5">
-                <span class="font-semibold text-brand-ink">{{ formatConversationActivityLabel(item.type) }}</span>
+                <span class="font-semibold text-brand-ink">{{
+                  formatConversationActivityLabel(item.type, item.label)
+                }}</span>
                 <span class="block text-[11px]">{{ formatDateTime(item.created_at) }}</span>
               </li>
             </ul>

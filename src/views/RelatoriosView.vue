@@ -47,11 +47,16 @@ const kpiCards = computed(() => {
   const kpis = report.value?.kpis
   const days = kpis?.period_days ?? 7
   const periodHint = days === 1 ? 'Último dia' : `Últimos ${days} dias`
+  const firstResponseAggregation = report.value?.meta?.first_response_time_aggregation
+  const firstResponseHint =
+    firstResponseAggregation === 'average'
+      ? `Média no período (mesma regra da aba Por atendente) · ${periodHint}`
+      : `Até a primeira mensagem do atendente · ${periodHint}`
   return [
     {
       label: 'Tempo médio de 1ª resposta',
       value: formatAverageResponseTime(kpis?.average_first_response_time_seconds ?? null),
-      hint: 'Até a primeira mensagem do atendente · ' + periodHint,
+      hint: firstResponseHint,
       icon: null,
     },
     {

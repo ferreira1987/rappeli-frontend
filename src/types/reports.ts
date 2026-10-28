@@ -35,6 +35,9 @@ export interface ReportCampaignRow {
 
 export interface ReportPayload {
   period: string
+  meta?: {
+    first_response_time_aggregation?: string | null
+  }
   kpis: ReportKpis
   agents: ReportAgentRow[]
   campaigns: ReportCampaignRow[]

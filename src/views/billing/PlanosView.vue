@@ -78,6 +78,17 @@ const selectedSummary = computed(() => {
   return `${selectedPlan.value.name} (${cycleLabel} ${amount})`
 })
 
+const overagePriceLabel = computed(() => {
+  const price = catalog.value?.overage_price_per_message ?? 0.05
+  return price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+})
+
+const marketingSeparateCopy = computed(() =>
+  catalog.value?.marketing_billed_separately !== false
+    ? 'Mensagens de marketing são cobradas à parte (tabela Meta).'
+    : '',
+)
+
 watch([modality, cycle], () => {
   if (!plansByTier.value.has(selectedTier.value)) {
     const first = tierOrder.find((tier) => plansByTier.value.has(tier))
@@ -352,11 +363,15 @@ function goBack(): void {
         <div class="flex items-start gap-3 rounded-xl border border-slate-200 bg-brand-mist/30 p-4 text-xs leading-relaxed text-brand-gray">
           <Info class="mt-0.5 h-5 w-5 shrink-0 text-brand-indigo" aria-hidden="true" />
           <p>
-            <strong class="text-brand-ink">Excedente:</strong> R$ 0,05 por mensagem além da franquia do plano.
-            Mensagens de marketing são cobradas à parte (tabela Meta). Na modalidade
+            <strong class="text-brand-ink">Excedente:</strong> {{ overagePriceLabel }} por mensagem além da franquia do plano.
+            <template v-if="marketingSeparateCopy"> {{ marketingSeparateCopy }}</template>
+            Na modalidade
             <em>Pague a Meta direto</em>, você paga a assinatura Rappeli aqui e as conversas WhatsApp
             são cobradas pela Meta diretamente no cartão cadastrado na Meta (Essencial R$ 197,
             Profissional R$ 397, Escala R$ 797/mês; anual R$ 1.970, R$ 3.970, R$ 7.970).
+            <template v-if="catalog?.agents_limit == null">
+              Todos os planos incluem usuários ilimitados (sem limite de atendentes).
+            </template>
           </p>
         </div>
         <div
