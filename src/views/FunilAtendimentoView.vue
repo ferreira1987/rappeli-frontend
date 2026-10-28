@@ -13,6 +13,7 @@ import { useEscapeKey } from '@/composables/useEscapeKey'
 import type { FunnelCard, FunnelStage } from '@/types/funnel'
 import { getErrorMessage, getValidationErrors } from '@/utils/errors'
 import { stagesFromApi } from '@/utils/funnelBoardMove'
+import { validateBrazilPhoneField } from '@/utils/phone'
 
 const stages = ref<FunnelStage[]>([])
 const loading = ref(true)
@@ -136,11 +137,19 @@ async function submitAddCard(): Promise<void> {
   if (addCardStageId.value == null) return
   addCardSubmitting.value = true
   addCardErrors.value = {}
+
+  const phoneValidation = validateBrazilPhoneField(addCardPhone.value)
+  if (!phoneValidation.ok) {
+    addCardErrors.value = { phone: phoneValidation.error }
+    addCardSubmitting.value = false
+    return
+  }
+
   try {
     await createFunnelCard({
       funnel_stage_id: addCardStageId.value,
       contact_name: addCardName.value.trim() || null,
-      phone: addCardPhone.value.replace(/\D/g, '') || null,
+      phone: phoneValidation.normalized,
     })
     addCardOpen.value = false
     await loadBoard()

@@ -10,7 +10,7 @@ import AppPageFooter from '@/components/layout/AppPageFooter.vue'
 import { useEscapeKey } from '@/composables/useEscapeKey'
 import { panelBreadcrumbs } from '@/constants/panelBreadcrumbs'
 import type { Contact } from '@/types/contacts'
-import { formatBrazilPhone } from '@/utils/phone'
+import { formatBrazilPhone, validateBrazilPhoneField } from '@/utils/phone'
 import { getErrorMessage, getValidationErrors } from '@/utils/errors'
 import { pluralizePt } from '@/utils/pluralize'
 
@@ -110,10 +110,17 @@ async function submitCreate(): Promise<void> {
   createSubmitting.value = true
   createError.value = null
   createFieldErrors.value = {}
-  const phoneDigits = createPhone.value.replace(/\D/g, '')
+
+  const phoneValidation = validateBrazilPhoneField(createPhone.value)
+  if (!phoneValidation.ok) {
+    createFieldErrors.value = { phone: phoneValidation.error }
+    createSubmitting.value = false
+    return
+  }
+
   try {
     await createContact({
-      phone: phoneDigits,
+      phone: phoneValidation.normalized,
       display_name: createName.value.trim() || null,
       marketing_opt_in: createOptIn.value,
     })
@@ -153,10 +160,17 @@ async function submitEdit(): Promise<void> {
   editSubmitting.value = true
   editError.value = null
   editFieldErrors.value = {}
-  const phoneDigits = editPhone.value.replace(/\D/g, '')
+
+  const phoneValidation = validateBrazilPhoneField(editPhone.value)
+  if (!phoneValidation.ok) {
+    editFieldErrors.value = { phone: phoneValidation.error }
+    editSubmitting.value = false
+    return
+  }
+
   try {
     await updateContact(editContactId.value, {
-      phone: phoneDigits,
+      phone: phoneValidation.normalized,
       display_name: editName.value.trim() || null,
       marketing_opt_in: editOptIn.value,
     })
@@ -401,6 +415,7 @@ async function onImportFile(event: Event): Promise<void> {
                 v-model="createName"
                 type="text"
                 class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                @input="delete createFieldErrors.phone"
               />
               <p v-if="createFieldErrors.display_name" class="mt-1 text-xs text-red-600">
                 {{ createFieldErrors.display_name }}
