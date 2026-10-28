@@ -3,8 +3,8 @@ import { Loader2 } from '@lucide/vue'
 import { computed, onMounted, ref } from 'vue'
 
 import { fetchCompany, updateCompany } from '@/api/company'
-import { fetchTeamAgents } from '@/api/team'
 import { useAuthStore } from '@/stores/auth'
+import { isCompanyAdministrator } from '@/utils/authRole'
 import { isValidBrazilianDocument, maskCpfCnpj } from '@/utils/brazilianDocument'
 import { maskPhoneBr } from '@/utils/billingFormat'
 import { getErrorMessage, getValidationErrors } from '@/utils/errors'
@@ -13,7 +13,6 @@ const auth = useAuthStore()
 
 const loading = ref(true)
 const saving = ref(false)
-const canEdit = ref(false)
 const loadError = ref<string | null>(null)
 const successMessage = ref<string | null>(null)
 const submitError = ref<string | null>(null)
@@ -26,33 +25,26 @@ const logoUrl = ref<string | null>(null)
 const logoFile = ref<File | null>(null)
 const logoPreview = ref<string | null>(null)
 
+const canEdit = computed(() => isCompanyAdministrator(auth.user))
+
 const readOnlyClass = computed(() =>
   canEdit.value ? '' : 'cursor-not-allowed bg-slate-50 text-brand-gray',
 )
 
 onMounted(() => {
-  void load()
+  void (async () => {
+    if (!auth.bootstrapped) {
+      await auth.bootstrap()
+    }
+    await load()
+  })()
 })
-
-async function resolveCanEdit(): Promise<void> {
-  if (!auth.user?.email) {
-    canEdit.value = false
-    return
-  }
-  try {
-    const agents = await fetchTeamAgents()
-    const me = agents.find((agent) => agent.email === auth.user?.email)
-    canEdit.value = me?.role === 'administrador'
-  } catch {
-    canEdit.value = false
-  }
-}
 
 async function load(): Promise<void> {
   loading.value = true
   loadError.value = null
   try {
-    const [company] = await Promise.all([fetchCompany(), resolveCanEdit()])
+    const company = await fetchCompany()
     name.value = company.name
     cnpj.value = company.cnpj ? maskCpfCnpj(company.cnpj) : ''
     phone.value = company.phone ? maskPhoneBr(company.phone) : ''

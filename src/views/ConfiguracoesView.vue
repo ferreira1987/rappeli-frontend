@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Bell, CircleHelp } from '@lucide/vue'
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 
 import { fetchPendingTeamInvitations, fetchTeamAgents } from '@/api/team'
@@ -12,12 +12,18 @@ import AppPageFooter from '@/components/layout/AppPageFooter.vue'
 import { panelBreadcrumbs } from '@/constants/panelBreadcrumbs'
 import { pluralizePt } from '@/utils/pluralize'
 import { getErrorMessage } from '@/utils/errors'
+import {
+  SETTINGS_TAB_KEYS,
+  settingsTabFromQuery,
+  settingsTabLabel,
+  settingsTabQueryValue,
+  type SettingsTabKey,
+} from '@/utils/settingsTab'
 
 const route = useRoute()
 const router = useRouter()
 
-const tabs = ['Empresa', 'Equipe', 'Plano e cobrança', 'WhatsApp'] as const
-const activeTab = ref<(typeof tabs)[number]>('Empresa')
+const activeTab = computed(() => settingsTabFromQuery(route.query.tab))
 
 const teamSummaryLoading = ref(false)
 const teamSummaryError = ref<string | null>(null)
@@ -36,40 +42,8 @@ const teamSummaryLine = computed(() => {
   return `${agents} · ${pluralizePt(pending, 'convite')}`
 })
 
-watch(
-  () => route.query.tab,
-  (tab) => {
-    if (tab === 'whatsapp' || tab === 'WhatsApp') {
-      activeTab.value = 'WhatsApp'
-    } else if (tab === 'equipe' || tab === 'Equipe') {
-      activeTab.value = 'Equipe'
-    } else if (tab === 'plano' || tab === 'Plano') {
-      activeTab.value = 'Plano e cobrança'
-    } else if (tab === 'empresa' || tab === 'Empresa') {
-      activeTab.value = 'Empresa'
-    }
-  },
-  { immediate: true },
-)
-
-function tabQueryValue(tab: (typeof tabs)[number]): string | null {
-  if (tab === 'WhatsApp') return 'whatsapp'
-  if (tab === 'Equipe') return 'equipe'
-  if (tab === 'Plano e cobrança') return 'plano'
-  if (tab === 'Empresa') return 'empresa'
-  return null
-}
-
-function selectTab(tab: (typeof tabs)[number]): void {
-  activeTab.value = tab
-  const queryValue = tabQueryValue(tab)
-  if (queryValue) {
-    void router.replace({ query: { ...route.query, tab: queryValue } })
-  } else {
-    const query = { ...route.query }
-    delete query.tab
-    void router.replace({ query })
-  }
+function selectTab(tab: SettingsTabKey): void {
+  void router.replace({ query: { ...route.query, tab: settingsTabQueryValue(tab) } })
 }
 
 async function loadTeamSummary(): Promise<void> {
@@ -125,7 +99,7 @@ onMounted(() => {
 
     <AppPageTabs>
       <button
-        v-for="tab in tabs"
+        v-for="tab in SETTINGS_TAB_KEYS"
         :key="tab"
         type="button"
         class="shrink-0 whitespace-nowrap border-b-2 py-3 text-sm font-semibold transition"
@@ -136,12 +110,12 @@ onMounted(() => {
         "
         @click="selectTab(tab)"
       >
-        {{ tab }}
+        {{ settingsTabLabel(tab) }}
       </button>
     </AppPageTabs>
 
     <div class="flex-1 space-y-6 px-4 py-6 sm:px-6 lg:px-8">
-      <template v-if="activeTab === 'Plano e cobrança'">
+      <template v-if="activeTab === 'plano'">
         <section class="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
           <p class="text-xs font-semibold uppercase tracking-wide text-brand-gray">Assinatura</p>
           <h2 class="mt-2 font-display text-xl font-semibold text-brand-ink">Plano e pagamentos</h2>
@@ -165,15 +139,11 @@ onMounted(() => {
         </section>
       </template>
 
-      <template v-else-if="activeTab === 'WhatsApp'">
-        <WhatsAppBusinessSettings />
-      </template>
+      <WhatsAppBusinessSettings v-else-if="activeTab === 'whatsapp'" />
 
-      <template v-else-if="activeTab === 'Empresa'">
-        <CompanySettingsForm />
-      </template>
+      <CompanySettingsForm v-else-if="activeTab === 'empresa'" :key="'empresa-settings'" />
 
-      <template v-else-if="activeTab === 'Equipe'">
+      <template v-else-if="activeTab === 'equipe'">
         <section class="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
           <h2 class="font-display text-lg font-semibold text-brand-ink">Equipe</h2>
           <p class="mt-2 text-sm text-brand-gray">

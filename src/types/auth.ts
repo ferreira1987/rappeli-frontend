@@ -1,3 +1,5 @@
+import type { TeamAgentRole } from '@/types/team'
+
 export interface User {
   id: number
   name: string
@@ -5,6 +7,8 @@ export interface User {
   email_verified_at?: string | null
   /** Present when the backend exposes the tenant for broadcasting. */
   company_id?: number | null
+  /** From GET /api/me — used for permissões de configuração. */
+  role?: TeamAgentRole | null
 }
 
 export interface LoginCredentials {
