@@ -76,9 +76,3 @@ export interface AcceptTeamInvitationPayload {
   password_confirmation: string
   terms_accepted: boolean
 }
-
-export interface AcceptTeamInvitationResult {
-  id: number
-  email: string
-  name: string
-}
