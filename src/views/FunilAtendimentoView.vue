@@ -1,17 +1,18 @@
 <script setup lang="ts">
-import { Calendar, Filter, Loader2, MessageSquare, Plus, Search, Trash2 } from '@lucide/vue'
+import { Calendar, Filter, Loader2, Plus, Search } from '@lucide/vue'
 import { computed, onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 
 import { createFunnelCard, createFunnelStage, deleteFunnelCard, fetchFunnelBoard } from '@/api/funnel'
 import AppConfirmModal from '@/components/app/AppConfirmModal.vue'
+import FunnelKanbanBoard from '@/components/funnel/FunnelKanbanBoard.vue'
 import ExampleFiltersModal from '@/components/app/ExampleFiltersModal.vue'
 import AppPageHeader from '@/components/app/AppPageHeader.vue'
 import AppPageFooter from '@/components/layout/AppPageFooter.vue'
 import { useEscapeKey } from '@/composables/useEscapeKey'
 import type { FunnelCard, FunnelStage } from '@/types/funnel'
-import { formatBrazilPhone } from '@/utils/phone'
 import { getErrorMessage, getValidationErrors } from '@/utils/errors'
+import { stagesFromApi } from '@/utils/funnelBoardMove'
 
 const stages = ref<FunnelStage[]>([])
 const loading = ref(true)
@@ -58,19 +59,14 @@ const cardsByStage = computed(() => {
   return map
 })
 
-function stageDotClass(stage: FunnelStage): string {
-  if (stage.color?.includes('emerald')) return 'bg-emerald-500'
-  if (stage.color?.includes('amber')) return 'bg-amber-500'
-  if (stage.color?.includes('violet')) return 'bg-violet-500'
-  return 'bg-brand-indigo'
-}
+const dragDisabled = computed(() => search.value.trim().length > 0)
 
 async function loadBoard(): Promise<void> {
   loading.value = true
   error.value = null
   try {
     const board = await fetchFunnelBoard()
-    stages.value = board.stages ?? []
+    stages.value = stagesFromApi(board.stages ?? [])
   } catch (err) {
     error.value = getErrorMessage(err)
     stages.value = []
@@ -267,72 +263,24 @@ useEscapeKey(
     </div>
 
     <div v-else class="flex-1 overflow-x-auto p-4 sm:p-6 lg:p-8">
-      <div class="flex min-h-[420px] gap-4">
-        <div
-          v-for="stage in stages"
-          :key="stage.id"
-          class="flex w-[min(100%,280px)] shrink-0 flex-col rounded-xl border border-slate-200/80 bg-white/80"
-        >
-          <div class="flex items-center gap-2 border-b border-slate-100 px-3 py-3">
-            <span class="h-2 w-2 rounded-full" :class="stageDotClass(stage)" />
-            <h2 class="text-sm font-semibold text-brand-ink">{{ stage.title }}</h2>
-            <span class="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-bold text-brand-gray">
-              {{ cardsByStage.get(stage.id)?.length ?? 0 }}
-            </span>
-            <button
-              type="button"
-              class="ml-auto rounded p-1 text-brand-gray hover:bg-slate-100"
-              aria-label="Adicionar card"
-              @click="openAddCard(stage.id)"
-            >
-              <Plus class="h-4 w-4" />
-            </button>
-          </div>
-          <div class="flex flex-1 flex-col gap-2 overflow-y-auto p-2">
-            <article
-              v-for="card in cardsByStage.get(stage.id)"
-              :key="card.id"
-              class="rounded-xl border border-slate-200 bg-white p-3 shadow-xs"
-            >
-              <div class="flex items-start justify-between gap-2">
-                <p class="text-sm font-semibold text-brand-ink">{{ card.contact_name || 'Contato' }}</p>
-                <button
-                  type="button"
-                  class="rounded p-1 text-brand-gray hover:bg-red-50 hover:text-red-600"
-                  aria-label="Excluir card"
-                  @click="requestDeleteCard(card)"
-                >
-                  <Trash2 class="h-3.5 w-3.5" />
-                </button>
-              </div>
-              <p v-if="card.phone" class="mt-0.5 flex items-center gap-1 text-[11px] text-brand-gray">
-                <MessageSquare class="h-3 w-3" />
-                {{ formatBrazilPhone(card.phone) || card.phone }}
-              </p>
-              <p v-if="card.last_message" class="mt-2 line-clamp-2 text-xs text-brand-gray">{{ card.last_message }}</p>
-              <div v-if="card.tags?.length" class="mt-2 flex flex-wrap gap-1">
-                <span
-                  v-for="tag in card.tags"
-                  :key="tag"
-                  class="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-semibold text-slate-600"
-                >
-                  {{ tag }}
-                </span>
-              </div>
-              <div class="mt-3 flex justify-end border-t border-slate-100 pt-2">
-                <RouterLink
-                  v-if="card.conversation_id"
-                  :to="{ name: 'conversas', query: { conversation: card.conversation_id } }"
-                  class="inline-flex items-center gap-1 text-[11px] font-semibold text-brand-indigo hover:underline"
-                >
-                  <MessageSquare class="h-3 w-3" />
-                  Abrir conversa
-                </RouterLink>
-              </div>
-            </article>
-          </div>
-        </div>
-      </div>
+      <FunnelKanbanBoard
+        v-model:stages="stages"
+        :cards-by-stage="cardsByStage"
+        :drag-disabled="dragDisabled"
+        @delete-card="requestDeleteCard"
+        @status="statusMessage = $event"
+      >
+        <template #stage-actions="{ stage }">
+          <button
+            type="button"
+            class="ml-auto rounded p-1 text-brand-gray hover:bg-slate-100"
+            aria-label="Adicionar card"
+            @click="openAddCard(stage.id)"
+          >
+            <Plus class="h-4 w-4" />
+          </button>
+        </template>
+      </FunnelKanbanBoard>
       <div class="mt-6">
         <AppPageFooter />
       </div>
