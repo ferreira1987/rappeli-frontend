@@ -29,10 +29,8 @@ const {
   dropPreview,
   keyboardGrab,
   moving,
-  onDragStart,
-  onDragOver,
-  onDrop,
-  onDragEnd,
+  pointerGhost,
+  liveAnnouncement,
   startPointerDrag,
   onGripKeydown,
   isDragging,
@@ -53,6 +51,8 @@ function stageDotClass(stage: FunnelStage): string {
 
 <template>
   <div>
+    <p class="sr-only" aria-live="polite" aria-atomic="true">{{ liveAnnouncement }}</p>
+
     <div class="flex min-h-[420px] gap-4">
       <div
         v-for="stage in stages"
@@ -63,8 +63,6 @@ function stageDotClass(stage: FunnelStage): string {
         }"
         data-funnel-column
         :data-funnel-column-id="stage.id"
-        @dragover="onDragOver(stage.id, $event)"
-        @drop="onDrop(stage.id, $event)"
       >
         <div class="flex items-center gap-2 border-b border-slate-100 px-3 py-3">
           <span class="h-2 w-2 rounded-full" :class="stageDotClass(stage)" />
@@ -88,8 +86,6 @@ function stageDotClass(stage: FunnelStage): string {
               :keyboard-grabbed="keyboardGrab?.cardId === card.id"
               :drag-disabled="dragDisabled ?? false"
               @delete="emit('deleteCard', $event)"
-              @drag-start="onDragStart"
-              @drag-end="onDragEnd"
               @grip-pointer-down="startPointerDrag"
               @grip-keydown="onGripKeydown"
             />
@@ -105,6 +101,20 @@ function stageDotClass(stage: FunnelStage): string {
         </div>
       </div>
     </div>
+
+    <div
+      v-if="pointerGhost"
+      class="pointer-events-none fixed z-[70] rounded-xl border border-brand-indigo/40 bg-white/95 px-3 py-2 text-sm font-semibold text-brand-ink shadow-lg"
+      :style="{
+        left: `${pointerGhost.left}px`,
+        top: `${pointerGhost.top}px`,
+        width: `${pointerGhost.width}px`,
+      }"
+      aria-hidden="true"
+    >
+      {{ pointerGhost.label }}
+    </div>
+
     <p v-if="moving" class="mt-2 text-xs text-brand-gray" role="status">Salvando posição…</p>
     <p v-if="dragDisabled" class="mt-2 text-xs text-brand-gray">
       Limpe a busca para reorganizar cards por arrastar e soltar.

@@ -5,7 +5,7 @@ import { RouterLink } from 'vue-router'
 import type { FunnelCard } from '@/types/funnel'
 import { formatBrazilPhone } from '@/utils/phone'
 
-const props = defineProps<{
+defineProps<{
   card: FunnelCard
   stageId: number
   dragging: boolean
@@ -15,20 +15,9 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   delete: [card: FunnelCard]
-  dragStart: [card: FunnelCard, event: DragEvent]
-  dragEnd: []
   gripPointerDown: [card: FunnelCard, event: PointerEvent]
   gripKeydown: [card: FunnelCard, stageId: number, event: KeyboardEvent]
 }>()
-
-function onDragStart(event: DragEvent): void {
-  const target = event.target as HTMLElement | null
-  if (!target?.closest('[data-funnel-grip]')) {
-    event.preventDefault()
-    return
-  }
-  emit('dragStart', props.card, event)
-}
 </script>
 
 <template>
@@ -40,9 +29,6 @@ function onDragStart(event: DragEvent): void {
       'opacity-60 ring-2 ring-brand-indigo/40': dragging,
       'ring-2 ring-brand-indigo': keyboardGrabbed,
     }"
-    :draggable="!dragDisabled"
-    @dragstart="onDragStart"
-    @dragend="emit('dragEnd')"
   >
     <div class="flex items-start gap-1.5">
       <button
@@ -50,7 +36,7 @@ function onDragStart(event: DragEvent): void {
         class="mt-0.5 shrink-0 cursor-grab touch-none rounded p-0.5 text-brand-gray hover:bg-slate-100 active:cursor-grabbing"
         :class="{ 'cursor-grabbing': dragging }"
         :aria-grabbed="keyboardGrabbed || dragging ? 'true' : 'false'"
-        :aria-label="`Mover card de ${card.contact_name || 'contato'}. Espaço para pegar; setas para posicionar; Enter para soltar; Esc para cancelar.`"
+        :aria-label="`Mover card de ${card.contact_name || 'contato'}. Arraste com o mouse ou toque na alça; Espaço e setas no teclado; Enter para soltar.`"
         data-funnel-grip
         :disabled="dragDisabled"
         @pointerdown="emit('gripPointerDown', card, $event)"
