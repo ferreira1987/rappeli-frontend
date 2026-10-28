@@ -7,6 +7,15 @@ export async function fetchCampaigns(): Promise<Campaign[]> {
   return parseResourceCollection<Campaign>(data)
 }
 
+export async function fetchCampaign(id: number): Promise<Campaign> {
+  const campaigns = await fetchCampaigns()
+  const campaign = campaigns.find((item) => item.id === id)
+  if (!campaign) {
+    throw new Error('Campanha não encontrada.')
+  }
+  return campaign
+}
+
 export async function createCampaign(payload: {
   name: string
   description?: string | null

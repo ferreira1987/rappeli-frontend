@@ -126,6 +126,12 @@ const router = createRouter({
           meta: { title: 'Nova campanha', activeNav: 'campanhas' },
         },
         {
+          path: 'campanhas/:id/editar',
+          name: 'campanhas-editar',
+          component: () => import('@/views/NovaCampanhaView.vue'),
+          meta: { title: 'Editar campanha', activeNav: 'campanhas' },
+        },
+        {
           path: 'campanhas/sequencias',
           name: 'campanhas-sequencias',
           component: () => import('@/views/SequenciasListView.vue'),

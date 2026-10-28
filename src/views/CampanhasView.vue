@@ -118,6 +118,10 @@ async function confirmSendNow(): Promise<void> {
 function canSendNow(campaign: Campaign): boolean {
   return campaign.status === 'rascunho' || campaign.status === 'agendada'
 }
+
+function canEditCampaign(campaign: Campaign): boolean {
+  return campaign.status === 'rascunho' || campaign.status === 'agendada'
+}
 </script>
 
 <template>
@@ -223,6 +227,13 @@ function canSendNow(campaign: Campaign): boolean {
                 </p>
               </div>
               <div class="flex flex-wrap items-center gap-2">
+                <RouterLink
+                  v-if="canEditCampaign(campaign)"
+                  :to="{ name: 'campanhas-editar', params: { id: campaign.id } }"
+                  class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-brand-ink hover:bg-brand-mist"
+                >
+                  Editar
+                </RouterLink>
                 <button
                   v-if="canSendNow(campaign)"
                   type="button"
