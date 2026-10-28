@@ -1,6 +1,7 @@
 import type { CheckoutCreditCardPayload, CheckoutHolderPayload } from '@/types/billing'
 import { isValidBrazilianDocument } from '@/utils/brazilianDocument'
 import { normalizeCardNumber } from '@/utils/creditCard'
+import { isCreditCardExpiryExpired, isValidCardExpiryMonth } from '@/utils/creditCardExpiry'
 
 export function emptyCheckoutForms(): {
   holder: CheckoutHolderPayload
@@ -66,13 +67,12 @@ export function validateCheckoutForms(
     errors['credit_card.holder_name'] = 'Informe o nome impresso no cartão.'
   }
 
-  const month = Number(creditCard.expiry_month)
-  if (!creditCard.expiry_month || month < 1 || month > 12) {
-    errors['credit_card.expiry_month'] = 'Informe a validade do cartão.'
-  }
-
-  if (!creditCard.expiry_year || creditCard.expiry_year.length !== 4) {
-    errors['credit_card.expiry_year'] = 'Informe a validade do cartão.'
+  if (!isValidCardExpiryMonth(creditCard.expiry_month)) {
+    errors['credit_card.expiry_month'] = 'Informe a validade do cartão (MM/AA).'
+  } else if (!creditCard.expiry_year || creditCard.expiry_year.length !== 4) {
+    errors['credit_card.expiry_year'] = 'Informe a validade do cartão (MM/AA).'
+  } else if (isCreditCardExpiryExpired(creditCard.expiry_month, creditCard.expiry_year)) {
+    errors['credit_card.expiry_month'] = 'Cartão expirado. Use uma validade futura.'
   }
 
   const cvvDigits = creditCard.cvv.replace(/\D/g, '')

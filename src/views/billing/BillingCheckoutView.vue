@@ -17,7 +17,9 @@ import {
   maskPostalCode,
 } from '@/utils/billingFormat'
 import { emptyCheckoutForms, validateCheckoutForms } from '@/utils/billingCheckoutValidation'
-import { getErrorMessage, getValidationErrors } from '@/utils/errors'
+import {
+  resolveCheckoutSubmitError,
+} from '@/utils/billingCheckoutSubmitError'
 
 const router = useRouter()
 const auth = useAuthStore()
@@ -88,15 +90,14 @@ async function onSubmit(): Promise<void> {
     clearCardState()
     void router.push({ name: 'assinatura-ativacao' })
   } catch (error) {
-    const validation = getValidationErrors(error)
-    if (validation) {
-      fieldErrors.value = validation
+    const resolved = resolveCheckoutSubmitError(error)
+    if (resolved.kind === 'validation') {
+      fieldErrors.value = resolved.fieldErrors
       return
     }
-    formError.value = getErrorMessage(error)
+    formError.value = resolved.message
   } finally {
     submitting.value = false
-    clearCardState()
   }
 }
 
