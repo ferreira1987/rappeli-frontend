@@ -3,7 +3,8 @@ import { GitBranch, Loader2, Plus, Search } from '@lucide/vue'
 import { computed, onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 
-import { fetchCampaigns, sendCampaignNow } from '@/api/campaigns'
+import { fetchCampaigns, deleteCampaign, sendCampaignNow } from '@/api/campaigns'
+import { fetchMessageTemplatesList } from '@/api/messageTemplates'
 import { fetchSequences } from '@/api/sequences'
 import AppConfirmModal from '@/components/app/AppConfirmModal.vue'
 import MessageTemplatesPanel from '@/components/message-templates/MessageTemplatesPanel.vue'
@@ -29,6 +30,14 @@ const sendingId = ref<number | null>(null)
 const actionMessage = ref<string | null>(null)
 const sendConfirmOpen = ref(false)
 const campaignPendingSend = ref<Campaign | null>(null)
+const deleteConfirmOpen = ref(false)
+const campaignPendingDelete = ref<Campaign | null>(null)
+const deleteSubmitting = ref(false)
+
+const deleteConfirmMessage = computed(() => {
+  if (!campaignPendingDelete.value) return ''
+  return `Excluir a campanha "${campaignPendingDelete.value.name}"? Esta ação não pode ser desfeita.`
+})
 
 const sendConfirmMessage = computed(() => {
   if (!campaignPendingSend.value) return ''
@@ -85,8 +94,18 @@ async function loadAll(): Promise<void> {
   }
 }
 
+async function loadTemplatesCount(): Promise<void> {
+  try {
+    const result = await fetchMessageTemplatesList()
+    templatesCount.value = result.templates.length
+  } catch {
+    // Contador da aba Modelos é informativo; falha silenciosa.
+  }
+}
+
 onMounted(() => {
   void loadAll()
+  void loadTemplatesCount()
 })
 
 function requestSendNow(campaign: Campaign): void {
@@ -120,6 +139,33 @@ function canSendNow(campaign: Campaign): boolean {
 
 function canEditCampaign(campaign: Campaign): boolean {
   return campaign.status === 'rascunho' || campaign.status === 'agendada'
+}
+
+function canDeleteCampaign(campaign: Campaign): boolean {
+  return campaign.status === 'rascunho' || campaign.status === 'agendada'
+}
+
+function requestDeleteCampaign(campaign: Campaign): void {
+  campaignPendingDelete.value = campaign
+  deleteConfirmOpen.value = true
+}
+
+async function confirmDeleteCampaign(): Promise<void> {
+  const campaign = campaignPendingDelete.value
+  if (!campaign) return
+  deleteSubmitting.value = true
+  actionMessage.value = null
+  try {
+    await deleteCampaign(campaign.id)
+    actionMessage.value = 'Campanha excluída.'
+    deleteConfirmOpen.value = false
+    campaignPendingDelete.value = null
+    await loadAll()
+  } catch (err) {
+    actionMessage.value = getErrorMessage(err)
+  } finally {
+    deleteSubmitting.value = false
+  }
 }
 </script>
 
@@ -242,6 +288,15 @@ function canEditCampaign(campaign: Campaign): boolean {
                 >
                   {{ sendingId === campaign.id ? 'Enviando…' : 'Enviar agora' }}
                 </button>
+                <button
+                  v-if="canDeleteCampaign(campaign)"
+                  type="button"
+                  class="rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-50 disabled:opacity-60"
+                  :disabled="deleteSubmitting"
+                  @click="requestDeleteCampaign(campaign)"
+                >
+                  Excluir
+                </button>
                 <span class="rounded-full border px-2 py-0.5 text-[11px] font-semibold" :class="statusClass(campaign.status)">
                   {{ statusLabel(campaign.status) }}
                 </span>
@@ -291,6 +346,16 @@ function canEditCampaign(campaign: Campaign): boolean {
       :loading="sendingId != null"
       @close="sendConfirmOpen = false"
       @confirm="confirmSendNow"
+    />
+    <AppConfirmModal
+      :open="deleteConfirmOpen"
+      title="Excluir campanha"
+      :message="deleteConfirmMessage"
+      confirm-label="Excluir"
+      variant="danger"
+      :loading="deleteSubmitting"
+      @close="deleteConfirmOpen = false"
+      @confirm="confirmDeleteCampaign"
     />
   </div>
 </template>

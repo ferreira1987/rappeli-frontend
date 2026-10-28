@@ -22,7 +22,7 @@ import { panelBreadcrumbs } from '@/constants/panelBreadcrumbs'
         <span
           class="inline-flex items-center gap-1 rounded-full bg-brand-mist px-2.5 py-1 text-xs font-medium text-brand-indigo"
         >
-          Em breve
+          Novo em breve
         </span>
       </template>
     </AppPageHeader>
@@ -30,7 +30,7 @@ import { panelBreadcrumbs } from '@/constants/panelBreadcrumbs'
     <div class="flex-1 space-y-6 px-4 py-6 sm:px-6 lg:px-8">
       <EmptyState
         :icon="Bot"
-        title="Em breve"
+        title="Editor de fluxos"
         description="Você poderá montar fluxos arrastando blocos. Por enquanto, configure respostas automáticas pelo menu lateral."
       >
         <template #actions>

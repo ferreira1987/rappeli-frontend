@@ -63,7 +63,7 @@ const navItems: NavItem[] = [
     to: '/mensagens-agendadas',
     icon: CalendarClock,
   },
-  { name: 'automacoes', label: 'Automações', to: '/automacoes', icon: Bot, soon: true },
+  { name: 'automacoes', label: 'Automações', to: '/automacoes', icon: Bot },
   {
     name: 'respostas-automaticas',
     label: 'Respostas automáticas',
@@ -194,9 +194,8 @@ function closeAndFocusMenu(): void {
         </span>
       </RouterLink>
       <a
-        href="#"
+        href="mailto:contato@rappeli.com.br"
         class="flex items-center gap-2 px-2 py-1.5 text-sm text-brand-gray transition hover:text-brand-ink"
-        @click.prevent
       >
         <CircleHelp class="h-4 w-4" aria-hidden="true" />
         Ajuda e suporte

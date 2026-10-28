@@ -17,8 +17,8 @@ export const PLAN_TIER_FEATURES: Record<PlanTierId, PlanFeature[]> = {
     { html: 'Usuários ilimitados' },
     { html: '<strong>2.000</strong> contatos' },
     { html: '<strong>5</strong> fluxos' },
-    { html: '<strong>1.500</strong> lembretes/mês' },
-    { html: '<strong>150</strong> mensagens de marketing/mês' },
+    { html: '<strong>1.500</strong> mensagens/mês' },
+    { html: 'Marketing cobrado à parte' },
     { html: 'Suporte humano em português' },
   ],
   profissional: [
@@ -26,8 +26,8 @@ export const PLAN_TIER_FEATURES: Record<PlanTierId, PlanFeature[]> = {
     { html: 'Usuários ilimitados' },
     { html: '<strong>10.000</strong> contatos' },
     { html: '<strong class="text-brand-indigo">Fluxos ilimitados</strong>', highlight: true },
-    { html: '<strong>4.000</strong> lembretes/mês' },
-    { html: '<strong>400</strong> marketing/mês' },
+    { html: '<strong>2.500</strong> mensagens/mês' },
+    { html: 'Marketing cobrado à parte' },
     { html: 'Suporte humano em português' },
   ],
   escala: [
@@ -35,8 +35,8 @@ export const PLAN_TIER_FEATURES: Record<PlanTierId, PlanFeature[]> = {
     { html: 'Usuários ilimitados' },
     { html: '<strong>50.000</strong> contatos' },
     { html: '<strong>Fluxos ilimitados</strong>' },
-    { html: '<strong>10.000</strong> lembretes/mês' },
-    { html: '<strong>1.000</strong> marketing/mês' },
+    { html: '<strong>5.000</strong> mensagens/mês' },
+    { html: 'Marketing cobrado à parte' },
     { html: 'Suporte humano em português' },
   ],
 }

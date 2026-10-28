@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import {
-  ArrowRight,
   Bell,
   Calendar,
   Check,
@@ -12,6 +11,7 @@ import {
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 
+import OnboardingActionBar from '@/components/onboarding/OnboardingActionBar.vue'
 import OnboardingMetaConnect from '@/components/onboarding/OnboardingMetaConnect.vue'
 import OnboardingShell from '@/components/onboarding/OnboardingShell.vue'
 import { useCheckoutFlowStore } from '@/stores/checkoutFlow'
@@ -31,6 +31,10 @@ const clinicFlows = [
 
 function goToPanel(): void {
   void router.push({ name: 'painel' })
+}
+
+function goBack(): void {
+  void router.push({ name: 'assinatura-checkout' })
 }
 </script>
 
@@ -123,16 +127,10 @@ function goToPanel(): void {
         </div>
       </section>
 
-      <div class="flex justify-end pt-2">
-        <button
-          type="button"
-          class="inline-flex h-11 items-center gap-2 rounded-lg bg-brand-indigo px-6 text-sm font-semibold text-white shadow-sm hover:bg-brand-indigo-hover"
-          @click="goToPanel"
-        >
-          Ir para o painel
-          <ArrowRight class="h-4 w-4" aria-hidden="true" />
-        </button>
-      </div>
     </div>
+
+    <template #action-bar>
+      <OnboardingActionBar primary-label="Ir para o painel" @back="goBack" @primary="goToPanel" />
+    </template>
   </OnboardingShell>
 </template>

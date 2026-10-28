@@ -30,6 +30,7 @@ import type {
 } from '@/types/autoReplies'
 import { AutoRepliesParseError } from '@/api/autoRepliesParsing'
 import { getErrorMessage, getValidationErrors } from '@/utils/errors'
+import { BRAZIL_TIMEZONE_IDS, formatTimezoneLabel } from '@/utils/timezoneLabels'
 
 function formatLoadError(error: unknown): string {
   if (error instanceof AutoRepliesParseError) {
@@ -93,16 +94,7 @@ const deleteDialogOpen = ref(false)
 const deleteTarget = ref<KeywordRule | null>(null)
 const deleteLoading = ref(false)
 
-const timezoneOptions = [
-  'America/Sao_Paulo',
-  'America/Manaus',
-  'America/Fortaleza',
-  'America/Recife',
-  'America/Cuiaba',
-  'America/Belem',
-  'America/Rio_Branco',
-  'America/Noronha',
-]
+const timezoneOptions = BRAZIL_TIMEZONE_IDS
 
 const weekdayLabels = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado']
 
@@ -529,7 +521,7 @@ onMounted(() => {
                 v-model="outOfHours.timezone"
                 class="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-brand-ink focus:border-brand-indigo focus:outline-none focus:ring-2 focus:ring-brand-indigo/20"
               >
-                <option v-for="tz in timezoneOptions" :key="tz" :value="tz">{{ tz }}</option>
+                <option v-for="tz in timezoneOptions" :key="tz" :value="tz">{{ formatTimezoneLabel(tz) }}</option>
               </select>
               <p v-if="outOfHoursFieldErrors.timezone" class="mt-1 text-xs text-red-600">
                 {{ outOfHoursFieldErrors.timezone }}

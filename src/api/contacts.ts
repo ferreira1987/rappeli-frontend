@@ -4,6 +4,7 @@ import type {
   Contact,
   ContactImportResult,
   StoreContactPayload,
+  UpdateContactPayload,
 } from '@/types/contacts'
 import type { PaginationMeta } from '@/types/conversations'
 
@@ -30,6 +31,15 @@ export async function fetchContacts(
 export async function createContact(payload: StoreContactPayload): Promise<Contact> {
   const { data } = await http.post<unknown>('/api/contacts', payload)
   return unwrapData<Contact>(data)
+}
+
+export async function updateContact(id: number, payload: UpdateContactPayload): Promise<Contact> {
+  const { data } = await http.patch<unknown>(`/api/contacts/${id}`, payload)
+  return unwrapData<Contact>(data)
+}
+
+export async function deleteContact(id: number): Promise<void> {
+  await http.delete(`/api/contacts/${id}`)
 }
 
 export async function importContactsCsv(file: File): Promise<ContactImportResult> {

@@ -47,11 +47,16 @@ const kpiCards = computed(() => {
   const kpis = report.value?.kpis
   const days = kpis?.period_days ?? 7
   const periodHint = days === 1 ? 'Último dia' : `Últimos ${days} dias`
+  const firstResponseAggregation = report.value?.meta?.first_response_time_aggregation
+  const firstResponseHint =
+    firstResponseAggregation === 'average'
+      ? `Média no período (mesma regra da aba Por atendente) · ${periodHint}`
+      : `Até a primeira mensagem do atendente · ${periodHint}`
   return [
     {
       label: 'Tempo médio de 1ª resposta',
       value: formatAverageResponseTime(kpis?.average_first_response_time_seconds ?? null),
-      hint: 'Até a primeira mensagem do atendente · ' + periodHint,
+      hint: firstResponseHint,
       icon: null,
     },
     {
@@ -286,7 +291,7 @@ async function exportCsv(): Promise<void> {
 
         <section v-if="tab === 'campaign'" class="rounded-xl border border-slate-200 bg-white p-4 shadow-xs">
           <h2 class="font-display text-base font-bold text-brand-ink">Desempenho por campanha</h2>
-          <p class="text-xs text-brand-gray">Contagens registradas no sistema (disparo automático: Em breve)</p>
+          <p class="text-xs text-brand-gray">Contagens registradas no sistema.</p>
           <table class="mt-4 w-full text-sm">
             <thead class="border-b border-slate-100 text-left text-[11px] font-bold uppercase text-brand-gray">
               <tr>

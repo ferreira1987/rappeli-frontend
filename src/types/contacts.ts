@@ -17,3 +17,9 @@ export interface StoreContactPayload {
   display_name?: string | null
   marketing_opt_in?: boolean
 }
+
+export interface UpdateContactPayload {
+  phone?: string
+  display_name?: string | null
+  marketing_opt_in?: boolean
+}

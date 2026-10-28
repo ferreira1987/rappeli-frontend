@@ -167,8 +167,35 @@ watch(selectedTemplateId, () => {
 })
 
 function scheduledAtIso(): string | null {
-  if (scheduleMode.value !== 'scheduled' || !scheduleDate.value) return null
+  if (scheduleMode.value !== 'scheduled' || !scheduleDate.value || !scheduleTime.value) return null
   return new Date(`${scheduleDate.value}T${scheduleTime.value}:00`).toISOString()
+}
+
+function validateScheduleFields(): boolean {
+  fieldErrors.value = {}
+  if (scheduleMode.value !== 'scheduled') {
+    return true
+  }
+  const errors: Record<string, string> = {}
+  if (!scheduleDate.value.trim()) {
+    errors.scheduled_date = 'Informe a data do agendamento.'
+  }
+  if (!scheduleTime.value.trim()) {
+    errors.scheduled_time = 'Informe o horário do agendamento.'
+  }
+  if (scheduleDate.value.trim() && scheduleTime.value.trim()) {
+    const scheduled = new Date(`${scheduleDate.value}T${scheduleTime.value}:00`)
+    if (Number.isNaN(scheduled.getTime())) {
+      errors.scheduled_date = 'Data ou horário inválidos.'
+    } else if (scheduled.getTime() <= Date.now()) {
+      errors.scheduled_at = 'A data de agendamento deve ser no futuro.'
+    }
+  }
+  if (Object.keys(errors).length) {
+    fieldErrors.value = errors
+    return false
+  }
+  return true
 }
 
 function buildPayload(status: 'rascunho' | 'agendada') {
@@ -199,8 +226,9 @@ async function saveDraft(): Promise<void> {
 
 async function scheduleCampaign(): Promise<void> {
   if (scheduleMode.value === 'scheduled') {
-    statusMessage.value =
-      'Campanha salva como agendada no sistema. Disparo automático via WhatsApp: Em breve.'
+    if (!validateScheduleFields()) {
+      return
+    }
     await submit('agendada')
     return
   }
@@ -208,8 +236,12 @@ async function scheduleCampaign(): Promise<void> {
 }
 
 async function submit(status: 'rascunho' | 'agendada'): Promise<void> {
+  fieldErrors.value = {}
   if (!campaignName.value.trim()) {
     fieldErrors.value = { name: 'Informe o nome da campanha.' }
+    return
+  }
+  if (status === 'agendada' && !validateScheduleFields()) {
     return
   }
   if (formError.value?.includes('não pode mais ser editada')) {
@@ -287,6 +319,7 @@ async function submit(status: 'rascunho' | 'agendada'): Promise<void> {
             type="text"
             placeholder="Ex.: Lembrete de retorno — pacientes 6 meses"
             class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+            @input="delete fieldErrors.name"
           />
           <p v-if="fieldErrors.name" class="mt-1 text-xs text-red-600">{{ fieldErrors.name }}</p>
         </section>
@@ -373,8 +406,31 @@ async function submit(status: 'rascunho' | 'agendada'): Promise<void> {
             </label>
           </div>
           <div v-if="scheduleMode === 'scheduled'" class="mt-3 grid grid-cols-2 gap-3">
-            <input v-model="scheduleDate" type="date" class="rounded-lg border px-3 py-2 text-sm" />
-            <input v-model="scheduleTime" type="time" class="rounded-lg border px-3 py-2 text-sm" />
+            <div>
+              <input
+                v-model="scheduleDate"
+                type="date"
+                class="w-full rounded-lg border px-3 py-2 text-sm"
+                @input="delete fieldErrors.scheduled_date"
+              />
+              <p v-if="fieldErrors.scheduled_date" class="mt-1 text-xs text-red-600">
+                {{ fieldErrors.scheduled_date }}
+              </p>
+            </div>
+            <div>
+              <input
+                v-model="scheduleTime"
+                type="time"
+                class="w-full rounded-lg border px-3 py-2 text-sm"
+                @input="delete fieldErrors.scheduled_time"
+              />
+              <p v-if="fieldErrors.scheduled_time" class="mt-1 text-xs text-red-600">
+                {{ fieldErrors.scheduled_time }}
+              </p>
+              <p v-if="fieldErrors.scheduled_at" class="mt-1 text-xs text-red-600">
+                {{ fieldErrors.scheduled_at }}
+              </p>
+            </div>
           </div>
         </section>
       </div>
@@ -383,9 +439,6 @@ async function submit(status: 'rascunho' | 'agendada'): Promise<void> {
         <div class="sticky top-4 rounded-xl border border-slate-200 bg-white p-4 shadow-xs">
           <p class="text-xs font-semibold uppercase text-brand-gray">Pré-visualização</p>
           <div class="mt-3 rounded-lg bg-[#e5ddd5] p-3 text-sm">{{ previewBody || 'Selecione um template.' }}</div>
-          <p class="mt-4 text-xs text-amber-800">
-            Disparo real para a lista segmentada: Em breve (não simulamos envio).
-          </p>
           <RouterLink :to="{ name: 'campanhas' }" class="mt-4 inline-block text-sm font-semibold text-brand-indigo">
             Voltar para campanhas
           </RouterLink>

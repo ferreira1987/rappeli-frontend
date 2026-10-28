@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 
 import { AUTO_REPLY_MESSAGE_MAX_LENGTH } from '@/constants/messaging'
+import { pluralWordPt } from '@/utils/pluralize'
 
 const model = defineModel<string>({ required: true })
 
@@ -31,7 +32,9 @@ const nearLimit = computed(() => length.value > AUTO_REPLY_MESSAGE_MAX_LENGTH * 
     <div class="mt-1.5 flex flex-wrap items-center justify-between gap-2 text-xs text-brand-gray">
       <p>Use *negrito* e _itálico_ conforme a formatação do WhatsApp.</p>
       <p :class="nearLimit ? 'font-medium text-amber-700' : ''">
-        {{ length }} / {{ AUTO_REPLY_MESSAGE_MAX_LENGTH }}
+        {{ length }} /
+        {{ AUTO_REPLY_MESSAGE_MAX_LENGTH }}
+        {{ pluralWordPt(AUTO_REPLY_MESSAGE_MAX_LENGTH, 'caractere') }}
       </p>
     </div>
     <p v-if="error" class="mt-1 text-xs text-red-600">{{ error }}</p>
