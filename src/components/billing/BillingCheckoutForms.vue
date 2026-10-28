@@ -10,6 +10,7 @@ import {
   detectCardBrand,
   maskCardNumber,
 } from '@/utils/creditCard'
+import { formatStoredCardExpiry, parseCardExpiryDigits } from '@/utils/creditCardExpiry'
 
 const props = defineProps<{
   holder: CheckoutHolderPayload
@@ -31,13 +32,7 @@ const expiryDisplay = ref('')
 watch(
   () => [props.creditCard.expiry_month, props.creditCard.expiry_year] as const,
   ([month, year]) => {
-    if (!month && !year) {
-      expiryDisplay.value = ''
-      return
-    }
-    const mm = month || ''
-    const yy = year ? year.slice(-2) : ''
-    expiryDisplay.value = yy ? `${mm}/${yy}` : mm
+    expiryDisplay.value = formatStoredCardExpiry(month, year)
   },
   { immediate: true },
 )
@@ -77,12 +72,9 @@ function onCardNumberInput(event: Event): void {
 }
 
 function onExpiryInput(event: Event): void {
-  const raw = (event.target as HTMLInputElement).value.replace(/\D/g, '').slice(0, 6)
-  expiryDisplay.value = raw.length <= 2 ? raw : `${raw.slice(0, 2)}/${raw.slice(2, 4)}`
-  const month = raw.slice(0, 2)
-  const yearPart = raw.slice(2, 4)
-  const year = yearPart ? `20${yearPart}` : ''
-  updateCard({ expiry_month: month, expiry_year: year })
+  const parsed = parseCardExpiryDigits((event.target as HTMLInputElement).value)
+  expiryDisplay.value = parsed.display
+  updateCard({ expiry_month: parsed.expiryMonth, expiry_year: parsed.expiryYear })
 }
 </script>
 
