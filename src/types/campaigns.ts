@@ -25,6 +25,7 @@ export interface Campaign {
   sent_count: number
   delivered_count: number
   read_count: number
+  failed_count?: number
 }
 
 export interface CampaignSegmentPreview {

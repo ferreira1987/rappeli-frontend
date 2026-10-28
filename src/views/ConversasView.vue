@@ -583,7 +583,11 @@ async function onResolve(): Promise<void> {
                       <MessageStatusIcon
                         v-if="item.message.direction === 'outbound'"
                         :status="item.message.status"
-                        class="text-indigo-100"
+                        :delivered-at="item.message.delivered_at"
+                        :read-at="item.message.read_at"
+                        :failed-at="item.message.failed_at"
+                        :failure-reason="item.message.failure_reason"
+                        on-brand-bubble
                       />
                     </div>
                   </div>

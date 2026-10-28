@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest'
 
-import { InboxParseError, parseInboxConversationsResponse } from '@/api/inboxParsing'
+import {
+  InboxParseError,
+  parseConversationMessage,
+  parseInboxConversationsResponse,
+} from '@/api/inboxParsing'
 
 describe('parseInboxConversationsResponse', () => {
   const conversation = {
@@ -41,5 +45,41 @@ describe('parseInboxConversationsResponse', () => {
   it('throws on invalid data shape', () => {
     expect(() => parseInboxConversationsResponse({ data: null })).toThrow(InboxParseError)
     expect(() => parseInboxConversationsResponse(null)).toThrow(InboxParseError)
+  })
+})
+
+describe('parseConversationMessage', () => {
+  it('parses delivery status fields', () => {
+    const message = parseConversationMessage({
+      id: 5,
+      conversation_id: 2,
+      direction: 'outbound',
+      message_type: 'text',
+      body: 'Teste',
+      wa_message_id: 'wamid.x',
+      status: 'delivered',
+      delivered_at: '2026-01-02T12:00:00Z',
+      read_at: null,
+      failed_at: null,
+      failure_reason: null,
+      wa_timestamp: null,
+      created_at: '2026-01-02T11:59:00Z',
+    })
+
+    expect(message.status).toBe('delivered')
+    expect(message.delivered_at).toBe('2026-01-02T12:00:00Z')
+  })
+
+  it('throws when status is invalid', () => {
+    expect(() =>
+      parseConversationMessage({
+        id: 1,
+        conversation_id: 1,
+        direction: 'outbound',
+        message_type: 'text',
+        body: 'x',
+        status: 'unknown',
+      }),
+    ).toThrow(InboxParseError)
   })
 })

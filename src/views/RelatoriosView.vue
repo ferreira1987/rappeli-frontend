@@ -294,6 +294,8 @@ async function exportCsv(): Promise<void> {
                 <th class="px-2 py-2">Status</th>
                 <th class="px-2 py-2 text-right">Enviadas</th>
                 <th class="px-2 py-2 text-right">Entregues</th>
+                <th class="px-2 py-2 text-right">Lidas</th>
+                <th class="px-2 py-2 text-right">Falhas</th>
                 <th class="px-2 py-2 text-right">Taxa de leitura</th>
               </tr>
             </thead>
@@ -303,10 +305,12 @@ async function exportCsv(): Promise<void> {
                 <td class="px-2 py-2 capitalize text-brand-gray">{{ row.status }}</td>
                 <td class="px-2 py-2 text-right">{{ row.sent_count }}</td>
                 <td class="px-2 py-2 text-right">{{ row.delivered_count }}</td>
+                <td class="px-2 py-2 text-right">{{ row.read_count }}</td>
+                <td class="px-2 py-2 text-right">{{ row.failed_count ?? 0 }}</td>
                 <td class="px-2 py-2 text-right">{{ readRate(row) }}</td>
               </tr>
               <tr v-if="!report.campaigns.length">
-                <td colspan="5" class="py-6 text-center text-brand-gray">Nenhuma campanha cadastrada.</td>
+                <td colspan="7" class="py-6 text-center text-brand-gray">Nenhuma campanha cadastrada.</td>
               </tr>
             </tbody>
           </table>

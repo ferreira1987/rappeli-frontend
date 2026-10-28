@@ -14,6 +14,7 @@ import type {
   Conversation,
   ConversationMessage,
   InboxConversationCounts,
+  InboxMessageStatusEvent,
 } from '@/types/conversations'
 import {
   type ConversationFilterTab,
@@ -24,6 +25,7 @@ import {
   pageToChronological,
   upsertMessage,
 } from '@/utils/conversationMessages'
+import { mergeMessageStatusFromEvent } from '@/utils/messageDeliveryStatus'
 import { getErrorMessage } from '@/utils/errors'
 import { inboxContactDisplayName, isMessagingWindowOpen } from '@/utils/inbox'
 import { isMessagingWindowClosedError, MESSAGING_WINDOW_CLOSED_MESSAGE } from '@/utils/messaging'
@@ -311,16 +313,26 @@ export function useConversationsInbox(companyId: () => number | null | undefined
     )
   }
 
-  function applyRealtimeStatus(
-    conversationId: number,
-    messageId: number,
-    status: ConversationMessage['status'],
-  ): void {
+  function applyRealtimeStatus(event: InboxMessageStatusEvent): void {
+    const { conversation_id: conversationId, message_id: messageId } = event
+
     if (selectedId.value === conversationId) {
-      messages.value = messages.value.map((m) =>
-        m.id === messageId ? { ...m, status } : m,
-      )
+      messages.value = messages.value.map((m) => mergeMessageStatusFromEvent(m, event))
     }
+
+    listConversations.value = listConversations.value.map((conversation) => {
+      if (conversation.id !== conversationId) {
+        return conversation
+      }
+      const last = conversation.last_message
+      if (!last || last.id !== messageId) {
+        return conversation
+      }
+      return {
+        ...conversation,
+        last_message: mergeMessageStatusFromEvent(last, event),
+      }
+    })
   }
 
   function consumeScrollToBottomRequest(): boolean {
@@ -345,8 +357,7 @@ export function useConversationsInbox(companyId: () => number | null | undefined
       if (id != null && isRealtimeConfigured()) {
         unsubscribeRealtime = subscribeCompanyInbox(id, {
           onMessageCreated: applyRealtimeMessage,
-          onMessageStatusUpdated: ({ conversation_id, message_id, status }) =>
-            applyRealtimeStatus(conversation_id, message_id, status),
+          onMessageStatusUpdated: applyRealtimeStatus,
         })
       }
     },

@@ -1,9 +1,12 @@
 import type {
   Conversation,
+  ConversationMessage,
   InboxContact,
   InboxConversationCounts,
+  MessageDirection,
   PaginationMeta,
 } from '@/types/conversations'
+import { isMessageDeliveryStatus } from '@/utils/messageDeliveryStatus'
 
 export class InboxParseError extends Error {
   constructor(message: string) {
@@ -41,6 +44,74 @@ export function parseInboxConversationCounts(payload: unknown): InboxConversatio
   }
 }
 
+function readOptionalIso(value: unknown): string | null {
+  if (typeof value === 'string') {
+    return value
+  }
+  if (value === null) {
+    return null
+  }
+  return null
+}
+
+function readOptionalString(value: unknown): string | null {
+  if (typeof value === 'string') {
+    return value
+  }
+  if (value === null) {
+    return null
+  }
+  return null
+}
+
+function readMessageDirection(value: unknown): MessageDirection {
+  return value === 'inbound' || value === 'outbound' ? value : 'inbound'
+}
+
+export function parseConversationMessage(raw: unknown): ConversationMessage {
+  if (!isRecord(raw) || typeof raw.id !== 'number' || typeof raw.conversation_id !== 'number') {
+    throw new InboxParseError('Mensagem de conversa inválida na resposta da inbox.')
+  }
+
+  if (!isMessageDeliveryStatus(raw.status)) {
+    throw new InboxParseError('status inválido em mensagem da inbox.')
+  }
+
+  if (typeof raw.body !== 'string' || typeof raw.message_type !== 'string') {
+    throw new InboxParseError('Campos obrigatórios ausentes em mensagem da inbox.')
+  }
+
+  const automatedReplyKind = raw.automated_reply_kind
+  const parsedAutomatedReplyKind =
+    automatedReplyKind === 'welcome' ||
+    automatedReplyKind === 'out_of_hours' ||
+    automatedReplyKind === 'keyword'
+      ? automatedReplyKind
+      : automatedReplyKind === null
+        ? null
+        : undefined
+
+  return {
+    id: raw.id,
+    conversation_id: raw.conversation_id,
+    direction: readMessageDirection(raw.direction),
+    message_type: raw.message_type,
+    body: raw.body,
+    wa_message_id: readOptionalString(raw.wa_message_id),
+    status: raw.status,
+    delivered_at: readOptionalIso(raw.delivered_at),
+    read_at: readOptionalIso(raw.read_at),
+    failed_at: readOptionalIso(raw.failed_at),
+    failure_reason: readOptionalString(raw.failure_reason),
+    wa_timestamp: readOptionalIso(raw.wa_timestamp),
+    created_at: readOptionalIso(raw.created_at),
+    ...(typeof raw.is_automated === 'boolean' ? { is_automated: raw.is_automated } : {}),
+    ...(parsedAutomatedReplyKind !== undefined
+      ? { automated_reply_kind: parsedAutomatedReplyKind }
+      : {}),
+  }
+}
+
 function parseInboxContact(raw: unknown): InboxContact {
   if (!isRecord(raw) || typeof raw.id !== 'number' || typeof raw.phone !== 'string') {
     throw new InboxParseError('Contato de conversa inválido na resposta da inbox.')
@@ -69,10 +140,7 @@ function parseConversationItem(raw: unknown): Conversation {
   const lastMessage = raw.last_message
   let parsedLastMessage: Conversation['last_message'] = null
   if (lastMessage != null) {
-    if (!isRecord(lastMessage) || typeof lastMessage.id !== 'number') {
-      throw new InboxParseError('last_message inválido na resposta da inbox.')
-    }
-    parsedLastMessage = lastMessage as unknown as Conversation['last_message']
+    parsedLastMessage = parseConversationMessage(lastMessage)
   }
 
   return {
