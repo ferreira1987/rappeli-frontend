@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Loader2 } from '@lucide/vue'
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 
 import {
@@ -9,12 +9,18 @@ import {
   fetchCampaignSegmentPreview,
   updateCampaign,
 } from '@/api/campaigns'
-import { fetchMessageTemplates } from '@/api/messageTemplates'
+import { fetchMessageTemplatesList } from '@/api/messageTemplates'
 import AppPageHeader from '@/components/app/AppPageHeader.vue'
 import CampaignSendRateSelect from '@/components/campaigns/CampaignSendRateSelect.vue'
 import AppPageFooter from '@/components/layout/AppPageFooter.vue'
 import { panelBreadcrumbs } from '@/constants/panelBreadcrumbs'
-import type { CampaignStatus, MessageTemplate } from '@/types/campaigns'
+import type { CampaignStatus } from '@/types/campaigns'
+import type { MessageTemplate } from '@/types/messageTemplates'
+import {
+  applyTemplateBodyParameters,
+  isMessageTemplateApproved,
+  resolveTemplateVariableIndexes,
+} from '@/utils/messageTemplatePreview'
 import {
   campaignSendRatePayloadValue,
   normalizeCampaignSendRateForForm,
@@ -36,6 +42,7 @@ const isEditMode = computed(() => campaignId.value != null)
 const campaignName = ref('')
 const optInOnly = ref(true)
 const selectedTemplateId = ref<number | null>(null)
+const templateBodyParameters = ref<string[]>([])
 const sendRate = ref('default')
 const scheduleMode = ref<'draft' | 'scheduled'>('draft')
 const scheduleDate = ref('')
@@ -58,23 +65,39 @@ const breadcrumbs = computed(() =>
   ),
 )
 
+const approvedTemplates = computed(() => templates.value.filter((template) => isMessageTemplateApproved(template)))
+
 const selectedTemplate = computed(() =>
-  templates.value.find((t) => t.id === selectedTemplateId.value),
+  approvedTemplates.value.find((t) => t.id === selectedTemplateId.value),
+)
+
+const selectedVariableIndexes = computed(() =>
+  resolveTemplateVariableIndexes(selectedTemplate.value?.variables, selectedTemplate.value?.body ?? null),
 )
 
 const previewBody = computed(() => {
   const body = selectedTemplate.value?.body ?? ''
-  return body
-    .replace(/\{\{nome\}\}/gi, 'Mariana Costa')
-    .replace(/\{\{procedimento\}\}/gi, 'limpeza e avaliação preventiva')
-    .replace(/\{\{profissional\}\}/gi, 'Dra. Fernanda Lins')
+  if (!body) {
+    return ''
+  }
+  if (!selectedVariableIndexes.value.length) {
+    return body
+  }
+  return applyTemplateBodyParameters(body, templateBodyParameters.value)
 })
+
+function syncTemplateBodyParametersFromSelection(): void {
+  const indexes = selectedVariableIndexes.value
+  const previous = templateBodyParameters.value
+  templateBodyParameters.value = indexes.map((_, index) => previous[index] ?? '')
+}
 
 function applyCampaignToForm(campaign: {
   name: string
   opt_in_only: boolean
   segment_tags: string[] | null
   message_template_id: number | null
+  template_body_parameters?: string[] | null
   send_rate: string | null
   scheduled_at: string | null
   status: CampaignStatus
@@ -83,6 +106,9 @@ function applyCampaignToForm(campaign: {
   optInOnly.value = campaign.opt_in_only
   segmentTags.value = campaign.segment_tags?.join(', ') ?? ''
   selectedTemplateId.value = campaign.message_template_id
+  templateBodyParameters.value = campaign.template_body_parameters?.length
+    ? [...campaign.template_body_parameters]
+    : []
   sendRate.value = normalizeCampaignSendRateForForm(campaign.send_rate)
 
   if (campaign.scheduled_at) {
@@ -101,23 +127,28 @@ async function loadTemplates(): Promise<void> {
   loading.value = true
   formError.value = null
   try {
-    const [loadedTemplates, existingCampaign] = await Promise.all([
-      fetchMessageTemplates(),
+    const [templatesResult, existingCampaign] = await Promise.all([
+      fetchMessageTemplatesList(),
       isEditMode.value && campaignId.value != null
         ? fetchCampaign(campaignId.value)
         : Promise.resolve(null),
     ])
 
-    templates.value = loadedTemplates
+    templates.value = templatesResult.templates
 
     if (existingCampaign) {
       if (existingCampaign.status === 'enviando' || existingCampaign.status === 'concluida') {
         formError.value = 'Esta campanha não pode mais ser editada.'
       } else {
         applyCampaignToForm(existingCampaign)
+        syncTemplateBodyParametersFromSelection()
       }
-    } else if (loadedTemplates[0]) {
-      selectedTemplateId.value = loadedTemplates[0].id
+    } else {
+      const firstApproved = templates.value.find((template) => isMessageTemplateApproved(template))
+      if (firstApproved) {
+        selectedTemplateId.value = firstApproved.id
+        syncTemplateBodyParametersFromSelection()
+      }
     }
   } catch (err) {
     formError.value = getErrorMessage(err)
@@ -128,6 +159,10 @@ async function loadTemplates(): Promise<void> {
 
 onMounted(() => {
   void loadTemplates()
+})
+
+watch(selectedTemplateId, () => {
+  syncTemplateBodyParametersFromSelection()
 })
 
 function scheduledAtIso(): string | null {
@@ -141,11 +176,16 @@ function buildPayload(status: 'rascunho' | 'agendada') {
     .map((t) => t.trim())
     .filter(Boolean)
 
+  const templateParameters = selectedVariableIndexes.value.length
+    ? selectedVariableIndexes.value.map((_, index) => templateBodyParameters.value[index]?.trim() ?? '')
+    : undefined
+
   return {
     name: campaignName.value.trim(),
     opt_in_only: optInOnly.value,
     segment_tags: tags.length ? tags : null,
     message_template_id: selectedTemplateId.value,
+    template_body_parameters: templateParameters,
     status,
     scheduled_at: scheduledAtIso(),
     send_rate: campaignSendRatePayloadValue(sendRate.value),
@@ -265,9 +305,10 @@ async function submit(status: 'rascunho' | 'agendada'): Promise<void> {
 
         <section class="rounded-xl border border-slate-200 bg-white p-5 shadow-xs">
           <h2 class="text-sm font-bold text-brand-ink">3. Mensagem (template)</h2>
+          <p class="mt-1 text-xs text-brand-gray">Somente modelos aprovados pela Meta.</p>
           <div class="mt-4 space-y-3">
             <label
-              v-for="template in templates"
+              v-for="template in approvedTemplates"
               :key="template.id"
               class="flex cursor-pointer items-start gap-3 rounded-lg border p-3"
               :class="selectedTemplateId === template.id ? 'border-brand-indigo bg-brand-mist/30' : 'border-slate-200'"
@@ -278,7 +319,36 @@ async function submit(status: 'rascunho' | 'agendada'): Promise<void> {
                 <p class="text-xs text-brand-gray line-clamp-2">{{ template.body }}</p>
               </div>
             </label>
-            <p v-if="!templates.length" class="text-sm text-brand-gray">Nenhum template na API.</p>
+            <p v-if="!approvedTemplates.length" class="text-sm text-brand-gray">
+              Nenhum modelo aprovado. Sincronize ou aguarde aprovação em Campanhas → Modelos de mensagem.
+            </p>
+          </div>
+
+          <div v-if="selectedVariableIndexes.length" class="mt-5 space-y-3 border-t border-slate-100 pt-4">
+            <p class="text-sm font-semibold text-brand-ink">Variáveis do modelo</p>
+            <div
+              v-for="(variableIndex, parameterIndex) in selectedVariableIndexes"
+              :key="variableIndex"
+            >
+              <label class="block text-xs font-medium text-brand-ink">
+                Valor para <code>{{ '{{' + variableIndex + '}}' }}</code>
+              </label>
+              <input
+                v-model="templateBodyParameters[parameterIndex]"
+                type="text"
+                class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                :placeholder="`Ex.: valor para posição ${variableIndex}`"
+              />
+              <p
+                v-if="fieldErrors[`template_body_parameters.${parameterIndex}`]"
+                class="mt-1 text-xs text-red-600"
+              >
+                {{ fieldErrors[`template_body_parameters.${parameterIndex}`] }}
+              </p>
+            </div>
+            <p v-if="fieldErrors.template_body_parameters" class="text-xs text-red-600">
+              {{ fieldErrors.template_body_parameters }}
+            </p>
           </div>
         </section>
 

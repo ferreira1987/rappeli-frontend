@@ -4,14 +4,14 @@ import { computed, onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 
 import { fetchCampaigns, sendCampaignNow } from '@/api/campaigns'
-import { fetchMessageTemplates } from '@/api/messageTemplates'
 import { fetchSequences } from '@/api/sequences'
 import AppConfirmModal from '@/components/app/AppConfirmModal.vue'
+import MessageTemplatesPanel from '@/components/message-templates/MessageTemplatesPanel.vue'
 import AppPageHeader from '@/components/app/AppPageHeader.vue'
 import AppPageTabs from '@/components/app/AppPageTabs.vue'
 import { panelBreadcrumbs } from '@/constants/panelBreadcrumbs'
 import AppPageFooter from '@/components/layout/AppPageFooter.vue'
-import type { Campaign, CampaignStatus, MessageTemplate, Sequence } from '@/types/campaigns'
+import type { Campaign, CampaignStatus, Sequence } from '@/types/campaigns'
 import { formatCampaignDeliverySummary } from '@/utils/campaignDeliveryCounts'
 import { getErrorMessage } from '@/utils/errors'
 import { pluralizePt } from '@/utils/pluralize'
@@ -24,7 +24,7 @@ const error = ref<string | null>(null)
 
 const campaigns = ref<Campaign[]>([])
 const sequences = ref<Sequence[]>([])
-const templates = ref<MessageTemplate[]>([])
+const templatesCount = ref(0)
 const sendingId = ref<number | null>(null)
 const actionMessage = ref<string | null>(null)
 const sendConfirmOpen = ref(false)
@@ -75,10 +75,9 @@ async function loadAll(): Promise<void> {
   loading.value = true
   error.value = null
   try {
-    const [c, s, t] = await Promise.all([fetchCampaigns(), fetchSequences(), fetchMessageTemplates()])
+    const [c, s] = await Promise.all([fetchCampaigns(), fetchSequences()])
     campaigns.value = c
     sequences.value = s
-    templates.value = t
   } catch (err) {
     error.value = getErrorMessage(err)
   } finally {
@@ -175,8 +174,8 @@ function canEditCampaign(campaign: Campaign): boolean {
         :class="mainTab === 'modelos' ? 'border-brand-indigo text-brand-indigo' : 'border-transparent text-brand-gray'"
         @click="mainTab = 'modelos'"
       >
-        Modelos Meta
-        <span class="rounded-full bg-slate-100 px-2 py-0.5 text-[11px]">{{ templates.length }}</span>
+        Modelos de mensagem
+        <span class="rounded-full bg-slate-100 px-2 py-0.5 text-[11px]">{{ templatesCount }}</span>
       </button>
     </AppPageTabs>
 
@@ -274,18 +273,10 @@ function canEditCampaign(campaign: Campaign): boolean {
           </ul>
         </div>
 
-        <div v-if="mainTab === 'modelos'" class="rounded-xl border border-slate-200 bg-white p-4 shadow-xs">
-          <p class="text-xs text-brand-gray mb-3">
-            Templates sincronizados do banco (provider fake até integração Meta real).
-          </p>
-          <ul class="divide-y divide-slate-100">
-            <li v-for="template in templates" :key="template.id" class="py-3">
-              <p class="font-medium text-brand-ink">{{ template.name }}</p>
-              <p class="text-xs text-brand-gray">{{ template.category }} · {{ template.approved ? 'Aprovado' : 'Pendente' }}</p>
-            </li>
-            <li v-if="!templates.length" class="py-6 text-center text-sm text-brand-gray">Nenhum modelo.</li>
-          </ul>
-        </div>
+        <MessageTemplatesPanel
+          v-if="mainTab === 'modelos'"
+          @update:count="templatesCount = $event"
+        />
       </template>
 
       <AppPageFooter />

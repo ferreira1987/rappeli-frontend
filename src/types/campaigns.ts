@@ -1,15 +1,8 @@
-export type CampaignStatus = 'rascunho' | 'agendada' | 'enviando' | 'concluida'
+import type { MessageTemplate } from '@/types/messageTemplates'
 
-export interface MessageTemplate {
-  id: number
-  name: string
-  category: string | null
-  locale: string | null
-  approved: boolean
-  body: string | null
-  footer: string | null
-  marketing: boolean
-}
+export type { MessageTemplate } from '@/types/messageTemplates'
+
+export type CampaignStatus = 'rascunho' | 'agendada' | 'enviando' | 'concluida'
 
 export interface Campaign {
   id: number
@@ -18,6 +11,7 @@ export interface Campaign {
   segment_tags: string[] | null
   opt_in_only: boolean
   message_template_id: number | null
+  template_body_parameters?: string[] | null
   template?: MessageTemplate | null
   status: CampaignStatus
   scheduled_at: string | null
