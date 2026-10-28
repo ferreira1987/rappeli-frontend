@@ -12,6 +12,7 @@ import AppPageTabs from '@/components/app/AppPageTabs.vue'
 import { panelBreadcrumbs } from '@/constants/panelBreadcrumbs'
 import AppPageFooter from '@/components/layout/AppPageFooter.vue'
 import type { Campaign, CampaignStatus, MessageTemplate, Sequence } from '@/types/campaigns'
+import { formatCampaignDeliverySummary } from '@/utils/campaignDeliveryCounts'
 import { getErrorMessage } from '@/utils/errors'
 import { pluralizePt } from '@/utils/pluralize'
 
@@ -217,7 +218,8 @@ function canSendNow(campaign: Campaign): boolean {
               <div>
                 <p class="font-semibold text-brand-ink">{{ campaign.name }}</p>
                 <p class="text-xs text-brand-gray">
-                  {{ campaign.template?.name ?? 'Sem template' }} · {{ campaign.sent_count }} enviadas
+                  {{ campaign.template?.name ?? 'Sem template' }} ·
+                  {{ formatCampaignDeliverySummary(campaign) }}
                 </p>
               </div>
               <div class="flex flex-wrap items-center gap-2">

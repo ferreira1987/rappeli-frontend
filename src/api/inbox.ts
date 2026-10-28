@@ -1,6 +1,7 @@
 import { http } from '@/api/http'
 import {
   type InboxConversationsPage,
+  parseConversationMessage,
   parseInboxConversationsResponse,
 } from '@/api/inboxParsing'
 import { parseResourceCollection } from '@/api/resource'
@@ -62,8 +63,10 @@ export async function fetchInboxMessagesPage(
     },
   )
 
+  const rawMessages = data.data ?? []
+
   return {
-    messages: data.data ?? [],
+    messages: rawMessages.map((item) => parseConversationMessage(item)),
     meta: parsePaginationMeta(data.meta),
   }
 }
@@ -72,11 +75,11 @@ export async function sendInboxMessage(
   conversationId: number,
   body: string,
 ): Promise<ConversationMessage> {
-  const { data } = await http.post<ConversationMessage>(
+  const { data } = await http.post<unknown>(
     `/api/inbox/conversations/${conversationId}/messages`,
     { body },
   )
-  return data
+  return parseConversationMessage(data)
 }
 
 export async function markInboxConversationRead(conversationId: number): Promise<Conversation> {

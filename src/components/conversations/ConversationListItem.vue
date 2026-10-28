@@ -84,6 +84,10 @@ function avatarInitials(contact: Conversation['contact']): string | null {
         <MessageStatusIcon
           v-if="conversation.last_message.direction === 'outbound'"
           :status="conversation.last_message.status"
+          :delivered-at="conversation.last_message.delivered_at"
+          :read-at="conversation.last_message.read_at"
+          :failed-at="conversation.last_message.failed_at"
+          :failure-reason="conversation.last_message.failure_reason"
         />
       </span>
       <p class="line-clamp-2 min-w-0 flex-1">{{ conversation.last_message.body }}</p>

@@ -19,6 +19,10 @@ export interface ConversationMessage {
   body: string
   wa_message_id: string | null
   status: MessageDeliveryStatus
+  delivered_at?: string | null
+  read_at?: string | null
+  failed_at?: string | null
+  failure_reason?: string | null
   wa_timestamp: string | null
   created_at: string | null
   is_automated?: boolean
@@ -65,4 +69,8 @@ export interface InboxMessageStatusEvent {
   conversation_id: number
   wa_message_id: string | null
   status: MessageDeliveryStatus
+  delivered_at?: string | null
+  read_at?: string | null
+  failed_at?: string | null
+  failure_reason?: string | null
 }
