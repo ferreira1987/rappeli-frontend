@@ -10,6 +10,8 @@ const DEFAULT_FORMS: Record<string, PluralForms> = {
   etapa: { one: 'etapa', other: 'etapas' },
   sequência: { one: 'sequência', other: 'sequências' },
   sequencia: { one: 'sequência', other: 'sequências' },
+  convite: { one: 'convite pendente', other: 'convites pendentes' },
+  setor: { one: 'setor', other: 'setores' },
 }
 
 export function pluralizePt(count: number, word: string, forms?: PluralForms): string {

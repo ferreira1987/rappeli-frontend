@@ -5,10 +5,11 @@ import { RouterLink } from 'vue-router'
 
 import {
   cancelSubscription,
-  fetchBillingPayments,
-  fetchCurrentSubscription,
-  updateSubscriptionPaymentMethod,
-} from '@/api/billing'
+  fetchSubscription,
+  fetchSubscriptionPayments,
+  updateSubscriptionCard,
+} from '@/api/subscription'
+import AppConfirmModal from '@/components/app/AppConfirmModal.vue'
 import AppPageHeader from '@/components/app/AppPageHeader.vue'
 import BillingBlockedBanner from '@/components/billing/BillingBlockedBanner.vue'
 import BillingCheckoutForms from '@/components/billing/BillingCheckoutForms.vue'
@@ -36,6 +37,7 @@ const actionError = ref<string | null>(null)
 const actionMessage = ref<string | null>(null)
 
 const cancelLoading = ref(false)
+const cancelConfirmOpen = ref(false)
 const cardFormOpen = ref(false)
 const cardSubmitting = ref(false)
 const cardFieldErrors = ref<Record<string, string>>({})
@@ -49,8 +51,8 @@ async function load(): Promise<void> {
   loading.value = true
   pageError.value = null
   try {
-    subscription.value = await fetchCurrentSubscription()
-    payments.value = await fetchBillingPayments()
+    subscription.value = await fetchSubscription()
+    payments.value = await fetchSubscriptionPayments()
   } catch (error) {
     pageError.value = getErrorMessage(error)
   } finally {
@@ -87,7 +89,7 @@ async function submitCardUpdate(): Promise<void> {
   cardSubmitting.value = true
   actionError.value = null
   try {
-    subscription.value = await updateSubscriptionPaymentMethod({
+    subscription.value = await updateSubscriptionCard({
       holder: { ...cardForms.holder },
       credit_card: { ...cardForms.creditCard },
     })
@@ -117,12 +119,17 @@ async function onCancel(): Promise<void> {
   try {
     subscription.value = await cancelSubscription()
     actionMessage.value = 'Assinatura cancelada. Você pode assinar novamente quando quiser.'
-    payments.value = await fetchBillingPayments()
+    payments.value = await fetchSubscriptionPayments()
+    cancelConfirmOpen.value = false
   } catch (error) {
     actionError.value = getErrorMessage(error)
   } finally {
     cancelLoading.value = false
   }
+}
+
+function requestCancel(): void {
+  cancelConfirmOpen.value = true
 }
 
 function maskedCard(sub: Subscription): string {
@@ -226,7 +233,7 @@ function maskedCard(sub: Subscription): string {
                 </dd>
               </div>
               <div>
-                <dt class="text-brand-gray">Próximo vencimento</dt>
+                <dt class="text-brand-gray">Próxima cobrança</dt>
                 <dd class="mt-1 font-medium text-brand-ink">
                   {{ formatBillingDate(subscription.next_due_date) }}
                 </dd>
@@ -245,7 +252,7 @@ function maskedCard(sub: Subscription): string {
                 type="button"
                 class="rounded-xl border border-red-200 px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50"
                 :disabled="cancelLoading"
-                @click="onCancel"
+                @click="requestCancel"
               >
                 <Loader2
                   v-if="cancelLoading"
@@ -357,6 +364,16 @@ function maskedCard(sub: Subscription): string {
         </div>
       </div>
     </template>
+
+    <AppConfirmModal
+      :open="cancelConfirmOpen"
+      title="Cancelar assinatura"
+      message="Tem certeza? O cancelamento interrompe novas cobranças recorrentes. Você continua com acesso até o fim do período já pago, conforme seu plano."
+      confirm-label="Cancelar assinatura"
+      :loading="cancelLoading"
+      @close="cancelConfirmOpen = false"
+      @confirm="onCancel"
+    />
 
     <AppPageFooter class="mt-12" />
     </div>

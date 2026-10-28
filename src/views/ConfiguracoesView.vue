@@ -1,21 +1,40 @@
 <script setup lang="ts">
-import { Bell, CircleHelp, Users } from '@lucide/vue'
-import { ref, watch } from 'vue'
+import { Bell, CircleHelp } from '@lucide/vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 
+import { fetchPendingTeamInvitations, fetchTeamAgents } from '@/api/team'
 import AppPageHeader from '@/components/app/AppPageHeader.vue'
 import AppPageTabs from '@/components/app/AppPageTabs.vue'
-import WhatsAppSettingsPanel from '@/components/whatsapp/WhatsAppSettingsPanel.vue'
+import CompanySettingsForm from '@/components/settings/CompanySettingsForm.vue'
+import WhatsAppBusinessSettings from '@/components/settings/WhatsAppBusinessSettings.vue'
 import AppPageFooter from '@/components/layout/AppPageFooter.vue'
 import { panelBreadcrumbs } from '@/constants/panelBreadcrumbs'
-import { useAuthStore } from '@/stores/auth'
+import { pluralizePt } from '@/utils/pluralize'
+import { getErrorMessage } from '@/utils/errors'
 
-const auth = useAuthStore()
 const route = useRoute()
 const router = useRouter()
 
 const tabs = ['Empresa', 'Equipe', 'Plano e cobrança', 'WhatsApp'] as const
 const activeTab = ref<(typeof tabs)[number]>('Empresa')
+
+const teamSummaryLoading = ref(false)
+const teamSummaryError = ref<string | null>(null)
+const teamAgentCount = ref<number | null>(null)
+const teamPendingCount = ref<number | null>(null)
+
+const teamSummaryLine = computed(() => {
+  if (teamAgentCount.value == null) {
+    return null
+  }
+  const agents = pluralizePt(teamAgentCount.value, 'atendente')
+  const pending = teamPendingCount.value ?? 0
+  if (pending <= 0) {
+    return agents
+  }
+  return `${agents} · ${pluralizePt(pending, 'convite')}`
+})
 
 watch(
   () => route.query.tab,
@@ -52,6 +71,29 @@ function selectTab(tab: (typeof tabs)[number]): void {
     void router.replace({ query })
   }
 }
+
+async function loadTeamSummary(): Promise<void> {
+  teamSummaryLoading.value = true
+  teamSummaryError.value = null
+  try {
+    const [agents, invitations] = await Promise.all([
+      fetchTeamAgents(),
+      fetchPendingTeamInvitations(),
+    ])
+    teamAgentCount.value = agents.length
+    teamPendingCount.value = invitations.length
+  } catch (error) {
+    teamSummaryError.value = getErrorMessage(error)
+    teamAgentCount.value = null
+    teamPendingCount.value = null
+  } finally {
+    teamSummaryLoading.value = false
+  }
+}
+
+onMounted(() => {
+  void loadTeamSummary()
+})
 </script>
 
 <template>
@@ -100,90 +142,35 @@ function selectTab(tab: (typeof tabs)[number]): void {
 
     <div class="flex-1 space-y-6 px-4 py-6 sm:px-6 lg:px-8">
       <template v-if="activeTab === 'Plano e cobrança'">
-        <div class="grid gap-6 lg:grid-cols-3">
-          <section class="space-y-4 lg:col-span-2">
-            <article class="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
-              <p class="text-xs font-semibold uppercase tracking-wide text-brand-gray">Assinatura</p>
-              <h2 class="mt-2 font-display text-xl font-semibold text-brand-ink">Plano e pagamentos</h2>
-              <p class="mt-2 text-sm text-brand-gray">
-                Consulte seu plano, atualize o cartão, cancele ou veja o histórico de cobranças.
-              </p>
-              <div class="mt-6 flex flex-wrap gap-3">
-                <RouterLink
-                  :to="{ name: 'minha-assinatura' }"
-                  class="rounded-xl bg-brand-indigo px-4 py-2 text-sm font-semibold text-white"
-                >
-                  Minha assinatura
-                </RouterLink>
-                <RouterLink
-                  :to="{ name: 'assinatura-planos' }"
-                  class="rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-brand-ink"
-                >
-                  Ver planos
-                </RouterLink>
-              </div>
-            </article>
-          </section>
-
-          <aside class="space-y-4">
-            <article class="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
-              <div class="flex items-center justify-between">
-                <h2 class="font-display text-sm font-semibold text-brand-ink">Equipe</h2>
-                <Users class="h-4 w-4 text-brand-gray" aria-hidden="true" />
-              </div>
-              <p class="mt-4 text-sm text-brand-gray">
-                Convide colaboradores, defina setores e regras de distribuição.
-              </p>
-              <RouterLink
-                :to="{ name: 'equipe' }"
-                class="mt-4 inline-flex w-full items-center justify-center rounded-xl bg-brand-indigo px-4 py-2 text-sm font-semibold text-white hover:bg-brand-indigo-hover"
-              >
-                Gerenciar equipe
-              </RouterLink>
-            </article>
-
-            <article class="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
-              <h2 class="font-display text-sm font-semibold text-brand-ink">Dados da empresa</h2>
-              <dl class="mt-4 space-y-2 text-sm">
-                <div class="flex justify-between gap-2">
-                  <dt class="text-brand-gray">Responsável</dt>
-                  <dd class="text-right text-brand-ink">{{ auth.user?.name ?? '—' }}</dd>
-                </div>
-                <div class="flex justify-between gap-2">
-                  <dt class="text-brand-gray">E-mail</dt>
-                  <dd class="text-right text-brand-ink">{{ auth.user?.email ?? '—' }}</dd>
-                </div>
-                <div class="flex justify-between gap-2">
-                  <dt class="text-brand-gray">CNPJ</dt>
-                  <dd class="text-right text-brand-gray">Não informado</dd>
-                </div>
-              </dl>
-            </article>
-          </aside>
-        </div>
+        <section class="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
+          <p class="text-xs font-semibold uppercase tracking-wide text-brand-gray">Assinatura</p>
+          <h2 class="mt-2 font-display text-xl font-semibold text-brand-ink">Plano e pagamentos</h2>
+          <p class="mt-2 text-sm text-brand-gray">
+            Consulte seu plano, atualize o cartão, cancele ou veja o histórico de cobranças.
+          </p>
+          <div class="mt-6 flex flex-wrap gap-3">
+            <RouterLink
+              :to="{ name: 'minha-assinatura' }"
+              class="rounded-xl bg-brand-indigo px-4 py-2 text-sm font-semibold text-white hover:bg-brand-indigo-hover"
+            >
+              Minha assinatura
+            </RouterLink>
+            <RouterLink
+              :to="{ name: 'assinatura-planos' }"
+              class="rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-brand-ink hover:bg-slate-50"
+            >
+              Ver planos
+            </RouterLink>
+          </div>
+        </section>
       </template>
 
       <template v-else-if="activeTab === 'WhatsApp'">
-        <WhatsAppSettingsPanel />
+        <WhatsAppBusinessSettings />
       </template>
 
       <template v-else-if="activeTab === 'Empresa'">
-        <section class="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
-          <h2 class="font-display text-lg font-semibold text-brand-ink">Dados da conta</h2>
-          <dl class="mt-6 grid gap-4 sm:grid-cols-2">
-            <div>
-              <dt class="text-xs font-semibold uppercase tracking-wide text-brand-gray">Nome</dt>
-              <dd class="mt-1 text-sm text-brand-ink">{{ auth.user?.name ?? '—' }}</dd>
-            </div>
-            <div>
-              <dt class="text-xs font-semibold uppercase tracking-wide text-brand-gray">E-mail</dt>
-              <dd class="mt-1 text-sm text-brand-ink">{{ auth.user?.email ?? '—' }}</dd>
-            </div>
-          </dl>
-          <p class="mt-6 text-sm text-brand-gray">
-            Dados fiscais e informações adicionais da empresa poderão ser editados aqui futuramente.
-          </p>
-        </section>
+        <CompanySettingsForm />
       </template>
 
       <template v-else-if="activeTab === 'Equipe'">
@@ -191,6 +178,11 @@ function selectTab(tab: (typeof tabs)[number]): void {
           <h2 class="font-display text-lg font-semibold text-brand-ink">Equipe</h2>
           <p class="mt-2 text-sm text-brand-gray">
             Atendentes, setores, papéis e regras de distribuição estão na área dedicada de equipe.
+          </p>
+          <p v-if="teamSummaryLoading" class="mt-4 text-sm text-brand-gray">Carregando resumo…</p>
+          <p v-else-if="teamSummaryError" class="mt-4 text-sm text-red-600">{{ teamSummaryError }}</p>
+          <p v-else-if="teamSummaryLine" class="mt-4 text-sm font-medium text-brand-ink">
+            {{ teamSummaryLine }}
           </p>
           <RouterLink
             :to="{ name: 'equipe' }"
