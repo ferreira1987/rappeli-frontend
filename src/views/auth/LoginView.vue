@@ -130,7 +130,7 @@ async function onSubmit(): Promise<void> {
           <p class="mt-6 text-center text-sm text-slate-500">
             Ainda não tem conta?
             <RouterLink to="/cadastro" class="font-medium text-brand-indigo hover:underline">
-              Crie sua conta grátis
+              Criar conta
             </RouterLink>
           </p>
         </div>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Download, Loader2, Pencil, Plus, Trash2, UserPlus } from '@lucide/vue'
+import { Download, Pencil, Plus, Trash2, UserPlus } from '@lucide/vue'
 import { computed, onMounted, ref } from 'vue'
 
 import {
@@ -21,11 +21,14 @@ import SectorFormModal from '@/components/team/SectorFormModal.vue'
 import AppPageHeader from '@/components/app/AppPageHeader.vue'
 import AppPageFooter from '@/components/layout/AppPageFooter.vue'
 import { initialsFromName } from '@/composables/useInitials'
+import { useWhatsAppStore } from '@/stores/whatsapp'
 import type { Sector, TeamAgent, TeamDistributionSettings, TeamPendingInvitation } from '@/types/team'
 import { formatDateTimeBrazil } from '@/utils/datetime'
 import { getErrorMessage, getValidationErrors } from '@/utils/errors'
-import { pluralizePt } from '@/utils/pluralize'
+import { pluralizePt, pluralWordPt } from '@/utils/pluralize'
 import { formatAgentDisplayName, roleLabels } from '@/utils/teamLabels'
+
+const whatsappStore = useWhatsAppStore()
 
 const tab = ref<'atendentes' | 'setores' | 'papeis' | 'regras'>('atendentes')
 const search = ref('')
@@ -57,8 +60,32 @@ const sectorDeleteMessage = computed(() => {
 const routingMethod = ref<TeamDistributionSettings['routing_method']>('round_robin')
 const respectLimit = ref(true)
 const overflowQueue = ref(true)
-const chatLimit = ref(8)
+const chatLimitText = ref('8')
+const chatLimitFieldError = ref<string | null>(null)
 const defaultSectorId = ref<number | null>(null)
+
+const showWhatsappStatusColumn = computed(() => whatsappStore.connected)
+
+const teamTabs = computed(() => {
+  const pending = activePendingInvitations.value.length
+  const agentCount = agents.value.length
+  let atendentesLabel = pluralWordPt(agentCount, 'atendente')
+  atendentesLabel = atendentesLabel.charAt(0).toUpperCase() + atendentesLabel.slice(1)
+  if (pending > 0) {
+    atendentesLabel += ` (${agentCount} · ${pluralizePt(pending, 'convite')})`
+  } else if (agentCount > 0) {
+    atendentesLabel += ` (${agentCount})`
+  }
+  return [
+    { key: 'atendentes' as const, label: atendentesLabel },
+    {
+      key: 'setores' as const,
+      label: `Setores (${sectors.value.length})`,
+    },
+    { key: 'papeis' as const, label: 'Papéis e permissões' },
+    { key: 'regras' as const, label: 'Regras de distribuição' },
+  ]
+})
 
 const permissionRows = [
   'Ver conversas',
@@ -220,7 +247,7 @@ async function loadAll(): Promise<void> {
     routingMethod.value = dist.routing_method
     respectLimit.value = dist.respect_chat_limit
     overflowQueue.value = dist.overflow_to_sector_queue
-    chatLimit.value = dist.chat_limit
+    chatLimitText.value = String(dist.chat_limit)
     defaultSectorId.value = dist.default_sector_id
   } catch (err) {
     error.value = getErrorMessage(err)
@@ -230,8 +257,35 @@ async function loadAll(): Promise<void> {
 }
 
 onMounted(() => {
+  if (!whatsappStore.hydrated) {
+    void whatsappStore.refresh()
+  }
   void loadAll()
 })
+
+function parseChatLimit(): number | null {
+  const trimmed = chatLimitText.value.trim()
+  if (!/^\d+$/.test(trimmed)) {
+    return null
+  }
+  const parsed = Number(trimmed)
+  if (!Number.isInteger(parsed) || parsed < 1) {
+    return null
+  }
+  return parsed
+}
+
+function validateChatLimitClient(): boolean {
+  chatLimitFieldError.value = null
+  if (!respectLimit.value) {
+    return true
+  }
+  if (parseChatLimit() === null) {
+    chatLimitFieldError.value = 'Informe um número inteiro maior ou igual a 1.'
+    return false
+  }
+  return true
+}
 
 async function exportTeamCsv(): Promise<void> {
   try {
@@ -271,19 +325,32 @@ async function onInvited(payload: {
 }
 
 async function saveDistribution(): Promise<void> {
+  if (!validateChatLimitClient()) {
+    return
+  }
+
+  const chatLimit = parseChatLimit() ?? 1
+
   settingsSaving.value = true
   statusMessage.value = null
+  chatLimitFieldError.value = null
   try {
     settings.value = await updateDistributionSettings({
       routing_method: routingMethod.value,
       respect_chat_limit: respectLimit.value,
-      chat_limit: chatLimit.value,
+      chat_limit: chatLimit,
       overflow_to_sector_queue: overflowQueue.value,
       default_sector_id: defaultSectorId.value,
     })
+    chatLimitText.value = String(settings.value.chat_limit)
     statusMessage.value = 'Regras de distribuição salvas.'
   } catch (err) {
-    statusMessage.value = getErrorMessage(err)
+    const validation = getValidationErrors(err)
+    if (validation?.chat_limit) {
+      chatLimitFieldError.value = validation.chat_limit
+    } else {
+      statusMessage.value = getErrorMessage(err)
+    }
   } finally {
     settingsSaving.value = false
   }
@@ -317,17 +384,12 @@ async function saveDistribution(): Promise<void> {
     </AppPageHeader>
 
     <div class="border-b border-slate-200 bg-white px-4 sm:px-6 lg:px-8">
-      <div class="flex flex-wrap gap-6">
+      <div v-if="loading" class="flex flex-wrap gap-6 py-3">
+        <div v-for="i in 4" :key="i" class="h-8 w-28 animate-pulse rounded-lg bg-slate-100" />
+      </div>
+      <div v-else class="flex flex-wrap gap-6">
         <button
-          v-for="item in [
-            {
-              key: 'atendentes',
-              label: `Atendentes (${agents.length}${activePendingInvitations.length ? ` · ${activePendingInvitations.length} convite(s) pendente(s)` : ''})`,
-            },
-            { key: 'setores', label: `Setores (${sectors.length})` },
-            { key: 'papeis', label: 'Papéis e permissões' },
-            { key: 'regras', label: 'Regras de distribuição' },
-          ]"
+          v-for="item in teamTabs"
           :key="item.key"
           type="button"
           class="border-b-2 py-3 text-sm font-semibold transition"
@@ -336,7 +398,7 @@ async function saveDistribution(): Promise<void> {
               ? 'border-brand-indigo text-brand-indigo'
               : 'border-transparent text-brand-gray hover:text-brand-ink'
           "
-          @click="tab = item.key as typeof tab"
+          @click="tab = item.key"
         >
           {{ item.label }}
         </button>
@@ -346,8 +408,14 @@ async function saveDistribution(): Promise<void> {
     <div class="flex-1 space-y-6 px-4 py-6 sm:px-6 lg:px-8">
       <p v-if="statusMessage" class="text-sm text-brand-indigo" role="status">{{ statusMessage }}</p>
 
-      <div v-if="loading" class="flex justify-center py-16">
-        <Loader2 class="h-8 w-8 animate-spin text-brand-indigo" aria-label="Carregando equipe" />
+      <div v-if="loading" class="space-y-4" aria-busy="true" aria-label="Carregando equipe">
+        <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-xs">
+          <div class="h-6 w-40 animate-pulse rounded bg-slate-100" />
+          <div class="mt-4 h-10 animate-pulse rounded-lg bg-slate-100" />
+          <div class="mt-6 space-y-3">
+            <div v-for="row in 5" :key="row" class="h-14 animate-pulse rounded-lg bg-slate-50" />
+          </div>
+        </div>
       </div>
 
       <div v-else-if="error" class="rounded-xl border border-red-200 bg-red-50 p-6 text-center">
@@ -359,7 +427,7 @@ async function saveDistribution(): Promise<void> {
 
       <template v-else>
         <section v-if="tab === 'atendentes'" class="rounded-xl border border-slate-200 bg-white p-4 shadow-xs">
-          <h2 class="font-display text-base font-bold text-brand-ink">Atendentes da clínica</h2>
+          <h2 class="font-display text-base font-bold text-brand-ink">Atendentes</h2>
           <div class="mt-4 flex flex-wrap gap-3">
             <input
               v-model="search"
@@ -419,7 +487,7 @@ async function saveDistribution(): Promise<void> {
                   <th class="py-2 pr-4">Colaborador</th>
                   <th class="px-4 py-2">Setor</th>
                   <th class="px-4 py-2">Papel</th>
-                  <th class="px-4 py-2">Status WhatsApp</th>
+                  <th v-if="showWhatsappStatusColumn" class="px-4 py-2">Status WhatsApp</th>
                   <th class="px-4 py-2">Recebe conversas</th>
                 </tr>
               </thead>
@@ -442,7 +510,7 @@ async function saveDistribution(): Promise<void> {
                       {{ roleLabels[agent.role] }}
                     </span>
                   </td>
-                  <td class="px-4 py-3">
+                  <td v-if="showWhatsappStatusColumn" class="px-4 py-3">
                     <span class="inline-flex items-center gap-1.5 text-xs">
                       <span class="h-2 w-2 rounded-full" :class="presenceDot(agent)" />
                       {{ presenceLabel(agent) }}
@@ -453,7 +521,9 @@ async function saveDistribution(): Promise<void> {
                   </td>
                 </tr>
                 <tr v-if="!filteredAgents.length">
-                  <td colspan="5" class="py-6 text-center text-brand-gray">Nenhum atendente encontrado.</td>
+                  <td :colspan="showWhatsappStatusColumn ? 5 : 4" class="py-6 text-center text-brand-gray">
+                    Nenhum atendente encontrado.
+                  </td>
                 </tr>
               </tbody>
             </table>
@@ -464,7 +534,7 @@ async function saveDistribution(): Promise<void> {
                 one: 'atendente exibido',
                 other: 'atendentes exibidos',
               })
-            }}. Edição inline: Em breve.
+            }}.
           </p>
         </section>
 
@@ -534,7 +604,7 @@ async function saveDistribution(): Promise<void> {
 
         <section v-if="tab === 'papeis'" class="rounded-xl border border-slate-200 bg-white p-4 shadow-xs">
           <h2 class="font-display font-bold text-brand-ink">Papéis e permissões</h2>
-          <p class="mt-1 text-xs text-brand-gray">Matriz estática — permissões granulares via API: Em breve.</p>
+          <p class="mt-1 text-xs text-brand-gray">Visão geral das permissões por papel no painel.</p>
           <div class="mt-4 overflow-x-auto">
             <table class="w-full min-w-[640px] text-sm">
               <thead>
@@ -584,10 +654,24 @@ async function saveDistribution(): Promise<void> {
               <span class="text-sm text-brand-ink">Respeitar limite de conversas simultâneas</span>
               <input v-model="respectLimit" type="checkbox" class="h-4 w-4 rounded text-brand-indigo" />
             </label>
-            <div v-if="respectLimit" class="flex items-center gap-2 text-sm">
-              <span class="text-brand-gray">Limite:</span>
-              <input v-model.number="chatLimit" type="number" class="w-20 rounded border border-slate-200 px-2 py-1" />
-              <span class="text-brand-gray">chats</span>
+            <div v-if="respectLimit" class="text-sm">
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="text-brand-gray">Limite:</span>
+                <input
+                  v-model="chatLimitText"
+                  type="text"
+                  inputmode="numeric"
+                  pattern="[0-9]*"
+                  class="w-20 rounded border px-2 py-1"
+                  :class="chatLimitFieldError ? 'border-red-300 bg-red-50' : 'border-slate-200'"
+                  aria-describedby="chat-limit-error"
+                  @input="chatLimitFieldError = null"
+                />
+                <span class="text-brand-gray">chats</span>
+              </div>
+              <p v-if="chatLimitFieldError" id="chat-limit-error" class="mt-1 text-xs text-red-600" role="alert">
+                {{ chatLimitFieldError }}
+              </p>
             </div>
             <label class="flex items-center justify-between gap-4">
               <span class="text-sm text-brand-ink">Enviar para fila do setor quando ninguém estiver online</span>
