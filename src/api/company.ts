@@ -1,16 +1,10 @@
 import { http } from '@/api/http'
-import type { Company, CompanyResponse, CompanyUpdatePayload } from '@/types/company'
+import { unwrapData } from '@/api/resource'
+import type { Company, CompanyUpdatePayload } from '@/types/company'
 
-function parseCompanyResponse(data: CompanyResponse): Company | null {
-  if (data && typeof data === 'object' && 'company' in data && data.company === null) {
-    return null
-  }
-  return data as Company
-}
-
-export async function fetchCompany(): Promise<Company | null> {
-  const { data } = await http.get<CompanyResponse>('/api/company')
-  return parseCompanyResponse(data)
+export async function fetchCompany(): Promise<Company> {
+  const { data } = await http.get<unknown>('/api/company')
+  return unwrapData<Company>(data)
 }
 
 export async function updateCompany(payload: CompanyUpdatePayload): Promise<Company> {
@@ -22,8 +16,8 @@ export async function updateCompany(payload: CompanyUpdatePayload): Promise<Comp
     form.append('logo', payload.logo)
   }
 
-  const { data } = await http.put<Company>('/api/company', form, {
+  const { data } = await http.put<unknown>('/api/company', form, {
     headers: { 'Content-Type': 'multipart/form-data' },
   })
-  return data
+  return unwrapData<Company>(data)
 }

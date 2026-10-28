@@ -23,29 +23,42 @@ describe('subscription API', () => {
     vi.mocked(http.post).mockReset()
   })
 
-  it('fetchSubscription calls GET /api/subscription', async () => {
+  it('fetchSubscription calls GET /api/billing/subscription without wrapper', async () => {
     vi.mocked(http.get).mockResolvedValue({
-      data: { id: 1, plan_name: 'Pro', status: 'ACTIVE' },
+      data: {
+        id: 1,
+        plan_name: 'Pro',
+        status: 'ACTIVE',
+        payment_method: { brand: 'VISA', last_digits: '4242' },
+        next_due_date: '2026-11-01',
+      },
     })
 
     const sub = await fetchSubscription()
 
-    expect(http.get).toHaveBeenCalledWith('/api/subscription')
+    expect(http.get).toHaveBeenCalledWith('/api/billing/subscription')
     expect(sub?.plan_name).toBe('Pro')
+    expect(sub?.payment_method.last_digits).toBe('4242')
   })
 
-  it('fetchSubscriptionPayments normalizes paginated payload', async () => {
+  it('fetchSubscription treats subscription null wrapper as empty', async () => {
+    vi.mocked(http.get).mockResolvedValue({ data: { subscription: null } })
+
+    await expect(fetchSubscription()).resolves.toBeNull()
+  })
+
+  it('fetchSubscriptionPayments reads Laravel data collection', async () => {
     vi.mocked(http.get).mockResolvedValue({
-      data: { data: [{ id: 2, value: 99 }] },
+      data: { data: [{ id: 2, value: 99, asaas_payment_id: 'pay_1' }] },
     })
 
     const payments = await fetchSubscriptionPayments()
 
-    expect(http.get).toHaveBeenCalledWith('/api/subscription/payments')
+    expect(http.get).toHaveBeenCalledWith('/api/billing/payments')
     expect(payments).toHaveLength(1)
   })
 
-  it('updateSubscriptionCard strips document digits', async () => {
+  it('updateSubscriptionCard uses payment-method route', async () => {
     vi.mocked(http.put).mockResolvedValue({ data: { id: 1 } })
 
     await updateSubscriptionCard({
@@ -67,18 +80,18 @@ describe('subscription API', () => {
     })
 
     expect(http.put).toHaveBeenCalledWith(
-      '/api/subscription/card',
+      '/api/billing/subscription/payment-method',
       expect.objectContaining({
         holder: expect.objectContaining({ cpf_cnpj: '12345678000190' }),
       }),
     )
   })
 
-  it('cancelSubscription posts confirmation', async () => {
+  it('cancelSubscription posts confirmation to billing cancel route', async () => {
     vi.mocked(http.post).mockResolvedValue({ data: { status: 'CANCELED' } })
 
     await cancelSubscription()
 
-    expect(http.post).toHaveBeenCalledWith('/api/subscription/cancel', { confirm: true })
+    expect(http.post).toHaveBeenCalledWith('/api/billing/subscription/cancel', { confirm: true })
   })
 })

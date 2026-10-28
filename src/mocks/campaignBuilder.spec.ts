@@ -1,9 +1,18 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { buildExampleCampaigns } from '@/mocks/campaignBuilder'
 
 describe('buildExampleCampaigns', () => {
   const reference = new Date('2026-10-27T12:00:00')
+
+  beforeEach(() => {
+    vi.useFakeTimers()
+    vi.setSystemTime(reference)
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
 
   it('aligns retorno preventivo odonto sent count with reports source', () => {
     const campaigns = buildExampleCampaigns(reference)

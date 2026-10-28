@@ -3,12 +3,17 @@ import { Loader2 } from '@lucide/vue'
 import { computed, onMounted, ref } from 'vue'
 
 import { fetchCompany, updateCompany } from '@/api/company'
+import { fetchTeamAgents } from '@/api/team'
+import { useAuthStore } from '@/stores/auth'
 import { isValidBrazilianDocument, maskCpfCnpj } from '@/utils/brazilianDocument'
 import { maskPhoneBr } from '@/utils/billingFormat'
 import { getErrorMessage, getValidationErrors } from '@/utils/errors'
 
+const auth = useAuthStore()
+
 const loading = ref(true)
 const saving = ref(false)
+const canEdit = ref(false)
 const loadError = ref<string | null>(null)
 const successMessage = ref<string | null>(null)
 const submitError = ref<string | null>(null)
@@ -21,21 +26,37 @@ const logoUrl = ref<string | null>(null)
 const logoFile = ref<File | null>(null)
 const logoPreview = ref<string | null>(null)
 
+const readOnlyClass = computed(() =>
+  canEdit.value ? '' : 'cursor-not-allowed bg-slate-50 text-brand-gray',
+)
+
 onMounted(() => {
   void load()
 })
+
+async function resolveCanEdit(): Promise<void> {
+  if (!auth.user?.email) {
+    canEdit.value = false
+    return
+  }
+  try {
+    const agents = await fetchTeamAgents()
+    const me = agents.find((agent) => agent.email === auth.user?.email)
+    canEdit.value = me?.role === 'administrador'
+  } catch {
+    canEdit.value = false
+  }
+}
 
 async function load(): Promise<void> {
   loading.value = true
   loadError.value = null
   try {
-    const company = await fetchCompany()
-    if (company) {
-      name.value = company.name
-      cnpj.value = company.cnpj ? maskCpfCnpj(company.cnpj) : ''
-      phone.value = company.phone ? maskPhoneBr(company.phone) : ''
-      logoUrl.value = company.logo_url
-    }
+    const [company] = await Promise.all([fetchCompany(), resolveCanEdit()])
+    name.value = company.name
+    cnpj.value = company.cnpj ? maskCpfCnpj(company.cnpj) : ''
+    phone.value = company.phone ? maskPhoneBr(company.phone) : ''
+    logoUrl.value = company.logo_url
   } catch (error) {
     loadError.value = getErrorMessage(error)
   } finally {
@@ -44,16 +65,25 @@ async function load(): Promise<void> {
 }
 
 function onCnpjInput(event: Event): void {
+  if (!canEdit.value) {
+    return
+  }
   cnpj.value = maskCpfCnpj((event.target as HTMLInputElement).value)
   delete fieldErrors.value.cnpj
 }
 
 function onPhoneInput(event: Event): void {
+  if (!canEdit.value) {
+    return
+  }
   phone.value = maskPhoneBr((event.target as HTMLInputElement).value)
   delete fieldErrors.value.phone
 }
 
 function onLogoChange(event: Event): void {
+  if (!canEdit.value) {
+    return
+  }
   const input = event.target as HTMLInputElement
   const file = input.files?.[0] ?? null
   logoFile.value = file
@@ -84,6 +114,10 @@ function validateClient(): boolean {
 }
 
 async function onSubmit(): Promise<void> {
+  if (!canEdit.value) {
+    return
+  }
+
   successMessage.value = null
   submitError.value = null
   if (!validateClient()) {
@@ -126,6 +160,9 @@ const displayedLogo = computed(() => logoPreview.value ?? logoUrl.value)
     <p class="mt-2 text-sm text-brand-gray">
       Nome, CNPJ, telefone e logotipo usados no painel e nas comunicações com clientes.
     </p>
+    <p v-if="!loading && !canEdit" class="mt-3 text-sm text-brand-gray">
+      Apenas administradores podem editar estes dados. Você está visualizando em modo leitura.
+    </p>
 
     <div v-if="loading" class="mt-8 space-y-4">
       <div class="h-10 animate-pulse rounded-lg bg-slate-100" />
@@ -162,7 +199,8 @@ const displayedLogo = computed(() => logoPreview.value ?? logoUrl.value)
           type="text"
           autocomplete="organization"
           class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
-          :class="fieldErrors.name ? 'border-red-300' : ''"
+          :class="[readOnlyClass, fieldErrors.name ? 'border-red-300' : '']"
+          :readonly="!canEdit"
           @input="delete fieldErrors.name"
         />
         <p v-if="fieldErrors.name" class="mt-1 text-xs text-red-600">{{ fieldErrors.name }}</p>
@@ -179,7 +217,8 @@ const displayedLogo = computed(() => logoPreview.value ?? logoUrl.value)
             autocomplete="off"
             placeholder="00.000.000/0000-00"
             class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
-            :class="fieldErrors.cnpj ? 'border-red-300' : ''"
+            :class="[readOnlyClass, fieldErrors.cnpj ? 'border-red-300' : '']"
+            :readonly="!canEdit"
             @input="onCnpjInput"
           />
           <p v-if="fieldErrors.cnpj" class="mt-1 text-xs text-red-600">{{ fieldErrors.cnpj }}</p>
@@ -196,7 +235,8 @@ const displayedLogo = computed(() => logoPreview.value ?? logoUrl.value)
             autocomplete="tel"
             placeholder="(00) 00000-0000"
             class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
-            :class="fieldErrors.phone ? 'border-red-300' : ''"
+            :class="[readOnlyClass, fieldErrors.phone ? 'border-red-300' : '']"
+            :readonly="!canEdit"
             @input="onPhoneInput"
           />
           <p v-if="fieldErrors.phone" class="mt-1 text-xs text-red-600">{{ fieldErrors.phone }}</p>
@@ -213,6 +253,7 @@ const displayedLogo = computed(() => logoPreview.value ?? logoUrl.value)
             <img :src="displayedLogo" alt="" class="max-h-full max-w-full object-contain" />
           </div>
           <input
+            v-if="canEdit"
             id="company-logo"
             type="file"
             accept="image/png,image/jpeg,image/webp,image/svg+xml"
@@ -223,7 +264,7 @@ const displayedLogo = computed(() => logoPreview.value ?? logoUrl.value)
         <p v-if="fieldErrors.logo" class="mt-1 text-xs text-red-600">{{ fieldErrors.logo }}</p>
       </div>
 
-      <div class="flex justify-end pt-2">
+      <div v-if="canEdit" class="flex justify-end pt-2">
         <button
           type="submit"
           class="inline-flex items-center gap-2 rounded-xl bg-brand-indigo px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-60"

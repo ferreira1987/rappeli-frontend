@@ -14,13 +14,13 @@ function parseSubscriptionResponse(data: SubscriptionResponse): Subscription | n
 }
 
 export async function fetchSubscription(): Promise<Subscription | null> {
-  const { data } = await http.get<SubscriptionResponse>('/api/subscription')
+  const { data } = await http.get<SubscriptionResponse>('/api/billing/subscription')
   return parseSubscriptionResponse(data)
 }
 
 export async function fetchSubscriptionPayments(): Promise<BillingPayment[]> {
   const { data } = await http.get<BillingPayment[] | { data: BillingPayment[] }>(
-    '/api/subscription/payments',
+    '/api/billing/payments',
   )
   if (Array.isArray(data)) {
     return data
@@ -31,7 +31,7 @@ export async function fetchSubscriptionPayments(): Promise<BillingPayment[]> {
 export async function updateSubscriptionCard(
   payload: Omit<CheckoutPayload, 'modality' | 'tier' | 'cycle'>,
 ): Promise<Subscription> {
-  const { data } = await http.put<Subscription>('/api/subscription/card', {
+  const { data } = await http.put<Subscription>('/api/billing/subscription/payment-method', {
     holder: {
       ...payload.holder,
       cpf_cnpj: payload.holder.cpf_cnpj.replace(/\D/g, ''),
@@ -48,7 +48,7 @@ export async function updateSubscriptionCard(
 }
 
 export async function cancelSubscription(): Promise<Subscription> {
-  const { data } = await http.post<Subscription>('/api/subscription/cancel', {
+  const { data } = await http.post<Subscription>('/api/billing/subscription/cancel', {
     confirm: true,
   })
   return data

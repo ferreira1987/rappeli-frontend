@@ -12,5 +12,3 @@ export type CompanyUpdatePayload = {
   phone: string
   logo?: File | null
 }
-
-export type CompanyResponse = Company | { company: null }
