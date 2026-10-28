@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ArrowRight, Eye, EyeOff, Lock, Mail } from '@lucide/vue'
+import { ArrowRight, CircleHelp, Eye, EyeOff, Lock, Mail } from '@lucide/vue'
 import { ref } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 
@@ -36,69 +36,78 @@ async function onSubmit(): Promise<void> {
 </script>
 
 <template>
-  <div class="flex min-h-screen flex-col lg:flex-row">
+  <div class="flex min-h-screen flex-col overflow-hidden lg:flex-row lg:min-h-screen">
     <AuthMarketingPanel />
 
-    <section class="flex flex-1 flex-col bg-white">
-      <AuthPageChrome>
-        <div class="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-6 pb-10 lg:px-10">
-          <h1 class="font-display text-2xl font-bold text-brand-ink">Acesse sua conta</h1>
-          <p class="mt-2 text-sm text-slate-500">
-            Gerencie suas confirmações, mensagens e automações ativas.
-          </p>
+    <main class="flex flex-1 flex-col justify-between overflow-y-auto bg-[#f8fafc]">
+      <header
+        class="mb-6 flex items-center justify-end gap-6 px-6 py-4 text-xs text-slate-500 sm:text-sm lg:mb-0 lg:px-12"
+      >
+        <a href="#" class="inline-flex items-center gap-1.5 hover:text-slate-800" @click.prevent>
+          <CircleHelp class="h-4 w-4 text-slate-400" aria-hidden="true" />
+          Central de Ajuda
+        </a>
+        <a
+          href="#"
+          class="inline-flex items-center gap-1.5 font-semibold text-slate-600 hover:text-brand-indigo"
+          @click.prevent
+        >
+          Suporte
+          <ArrowRight class="h-3.5 w-3.5" aria-hidden="true" />
+        </a>
+      </header>
 
-          <form class="mt-8 space-y-5" @submit.prevent="onSubmit">
-            <div v-if="formError" class="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">
+      <div class="mx-auto my-auto w-full max-w-md px-6 py-6 lg:px-12">
+        <div class="rounded-2xl border border-slate-200/80 bg-white p-8 shadow-sm lg:p-10">
+          <header class="mb-6 text-left">
+            <h1 class="font-display text-2xl font-bold tracking-tight text-slate-900">Entrar</h1>
+            <p class="mt-1 text-sm text-slate-500">
+              Acesse sua conta para gerenciar mensagens, lembretes e atendimentos.
+            </p>
+          </header>
+
+          <form class="space-y-4" @submit.prevent="onSubmit">
+            <div v-if="formError" class="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
               {{ formError }}
             </div>
 
             <div>
-              <label for="email" class="text-xs font-semibold tracking-wide text-slate-500">
-                E-MAIL PROFISSIONAL
+              <label for="email" class="text-xs font-semibold uppercase tracking-wider text-slate-700">
+                E-mail profissional
               </label>
-              <div class="relative mt-2">
-                <Mail
-                  class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
-                  aria-hidden="true"
-                />
-                <input
-                  id="email"
-                  v-model="email"
-                  type="email"
-                  autocomplete="email"
-                  required
-                  placeholder="contato@exemplo.com.br"
-                  class="w-full rounded-xl border border-slate-200 py-3 pl-10 pr-4 text-sm outline-none ring-brand-indigo focus:border-brand-indigo focus:ring-2"
-                />
-              </div>
+              <input
+                id="email"
+                v-model="email"
+                type="email"
+                autocomplete="email"
+                required
+                placeholder="seu@email.com"
+                class="mt-1.5 w-full rounded-lg border border-slate-200 px-3.5 py-2.5 text-sm text-slate-800 outline-none focus:border-brand-indigo focus:ring-1 focus:ring-brand-indigo"
+              />
             </div>
 
             <div>
-              <div class="flex items-center justify-between">
-                <label for="password" class="text-xs font-semibold tracking-wide text-slate-500">
-                  SENHA
+              <div class="mb-1.5 flex items-center justify-between">
+                <label for="password" class="text-xs font-semibold uppercase tracking-wider text-slate-700">
+                  Senha
                 </label>
-                <a href="#" class="text-xs font-medium text-brand-indigo hover:underline" @click.prevent>
-                  Esqueci minha senha
+                <a href="#" class="text-xs font-semibold text-brand-indigo hover:underline" @click.prevent>
+                  Esqueceu a senha?
                 </a>
               </div>
-              <div class="relative mt-2">
-                <Lock
-                  class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
-                  aria-hidden="true"
-                />
+              <div class="relative">
                 <input
                   id="password"
                   v-model="password"
                   :type="showPassword ? 'text' : 'password'"
                   autocomplete="current-password"
                   required
-                  placeholder="Digite sua senha de acesso"
-                  class="w-full rounded-xl border border-slate-200 py-3 pl-10 pr-11 text-sm outline-none ring-brand-indigo focus:border-brand-indigo focus:ring-2"
+                  placeholder="••••••••"
+                  class="w-full rounded-lg border border-slate-200 py-2.5 pl-3.5 pr-10 text-sm outline-none focus:border-brand-indigo focus:ring-1 focus:ring-brand-indigo"
                 />
                 <button
                   type="button"
-                  class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  class="absolute inset-y-0 right-0 flex items-center pr-3.5 text-slate-400 hover:text-slate-600"
                   :aria-label="showPassword ? 'Ocultar senha' : 'Mostrar senha'"
                   @click="showPassword = !showPassword"
                 >
@@ -108,7 +117,7 @@ async function onSubmit(): Promise<void> {
               </div>
             </div>
 
-            <label class="flex cursor-pointer items-center gap-2 text-sm text-slate-600">
+            <label class="flex cursor-pointer items-center gap-2 pt-1 text-sm text-slate-600">
               <input
                 v-model="remember"
                 type="checkbox"
@@ -120,21 +129,23 @@ async function onSubmit(): Promise<void> {
             <button
               type="submit"
               :disabled="auth.loading"
-              class="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-indigo px-4 py-3.5 text-sm font-semibold text-white transition hover:bg-brand-indigo-hover disabled:opacity-60"
+              class="flex w-full items-center justify-center gap-2 rounded-lg bg-brand-indigo px-4 py-3 text-sm font-medium text-white shadow-sm transition hover:bg-brand-indigo-hover disabled:opacity-60"
             >
-              {{ auth.loading ? 'Entrando…' : 'Entrar na plataforma' }}
+              {{ auth.loading ? 'Entrando…' : 'Entrar' }}
               <ArrowRight class="h-4 w-4" aria-hidden="true" />
             </button>
           </form>
 
           <p class="mt-6 text-center text-sm text-slate-500">
             Ainda não tem conta?
-            <RouterLink to="/cadastro" class="font-medium text-brand-indigo hover:underline">
+            <RouterLink :to="{ name: 'cadastro' }" class="ml-1 font-semibold text-brand-indigo hover:underline">
               Criar conta
             </RouterLink>
           </p>
         </div>
-      </AuthPageChrome>
-    </section>
+      </div>
+
+      <AuthPageChrome hide-top />
+    </main>
   </div>
 </template>

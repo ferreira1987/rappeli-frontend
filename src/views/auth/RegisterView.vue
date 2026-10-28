@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Bell, Eye, EyeOff, Group, Share2, ShieldCheck } from '@lucide/vue'
+import { Eye, EyeOff, Handshake, LockOpen, Share2, Users } from '@lucide/vue'
 import { ref } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 
@@ -91,11 +91,11 @@ async function onSubmit(): Promise<void> {
         class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm lg:col-span-7 md:p-8"
       >
         <div class="mb-6">
-          <h1 class="text-2xl font-semibold tracking-tight text-brand-ink">
-            Crie sua conta no Rappeli
+          <h1 class="text-2xl font-extrabold tracking-tight text-brand-ink sm:text-3xl">
+            Crie sua conta
           </h1>
           <p class="mt-1 text-sm text-brand-gray">
-            Automatize atendimentos, lembretes e confirmações pelo WhatsApp com a API oficial.
+            Preencha os dados abaixo para iniciar sua configuração no Rappeli.
           </p>
         </div>
 
@@ -133,7 +133,7 @@ async function onSubmit(): Promise<void> {
               for="email"
               class="text-[11px] font-semibold uppercase tracking-wide text-brand-gray"
             >
-              E-mail
+              E-mail de trabalho *
             </label>
             <input
               id="email"
@@ -151,48 +151,14 @@ async function onSubmit(): Promise<void> {
           </div>
 
           <div>
-            <label
-              for="whatsapp"
-              class="text-[11px] font-semibold uppercase tracking-wide text-brand-gray"
-            >
-              WhatsApp
-            </label>
-            <input
-              id="whatsapp"
-              :value="whatsapp"
-              type="tel"
-              autocomplete="tel"
-              placeholder="(00) 00000-0000"
-              class="mt-1 h-[42px] w-full rounded-lg border border-slate-200 px-3 text-sm outline-none ring-0 focus:border-brand-indigo focus:ring-2 focus:ring-brand-indigo/20"
-              @input="onWhatsappInput"
-            />
-          </div>
-
-          <div>
-            <label
-              for="company"
-              class="text-[11px] font-semibold uppercase tracking-wide text-brand-gray"
-            >
-              Nome da empresa
-            </label>
-            <input
-              id="company"
-              v-model="companyName"
-              type="text"
-              placeholder="Nome do seu negócio ou clínica"
-              class="mt-1 h-[42px] w-full rounded-lg border border-slate-200 px-3 text-sm outline-none focus:border-brand-indigo focus:ring-2 focus:ring-brand-indigo/20"
-            />
-          </div>
-
-          <div>
             <div class="mb-1 flex items-center justify-between">
               <label
                 for="password"
                 class="text-[11px] font-semibold uppercase tracking-wide text-brand-gray"
               >
-                Senha
+                Senha *
               </label>
-              <span class="text-xs text-slate-400">(mínimo 8 caracteres)</span>
+              <span class="text-xs text-slate-400">Mínimo de 8 caracteres</span>
             </div>
             <div class="relative">
               <input
@@ -201,8 +167,8 @@ async function onSubmit(): Promise<void> {
                 :type="showPassword ? 'text' : 'password'"
                 autocomplete="new-password"
                 minlength="8"
-                placeholder="Mínimo de 8 caracteres"
-                class="mt-0 h-[42px] w-full rounded-lg border px-3 pr-10 text-sm outline-none ring-0 focus:ring-2"
+                placeholder="Crie uma senha segura"
+                class="h-[42px] w-full rounded-lg border bg-slate-50 px-3.5 pr-10 text-sm outline-none ring-0 focus:bg-white focus:ring-2"
                 :class="inputClass('password')"
                 @input="clearFieldError('password')"
               />
@@ -219,6 +185,42 @@ async function onSubmit(): Promise<void> {
             <p v-if="fieldErrors.password" class="mt-1 text-xs text-red-600">
               {{ fieldErrors.password }}
             </p>
+          </div>
+
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <label
+                for="company"
+                class="text-[11px] font-semibold uppercase tracking-wide text-brand-gray"
+              >
+                Nome da empresa / clínica *
+              </label>
+              <input
+                id="company"
+                v-model="companyName"
+                type="text"
+                placeholder="Ex: Clínica Sorriso & Saúde"
+                class="mt-1 h-[42px] w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 text-sm outline-none focus:border-brand-indigo focus:bg-white focus:ring-2 focus:ring-brand-indigo/20"
+              />
+            </div>
+
+            <div>
+              <label
+                for="whatsapp"
+                class="text-[11px] font-semibold uppercase tracking-wide text-brand-gray"
+              >
+                WhatsApp *
+              </label>
+              <input
+                id="whatsapp"
+                :value="whatsapp"
+                type="tel"
+                autocomplete="tel"
+                placeholder="(11) 98765-4321"
+                class="mt-1 h-[42px] w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 text-sm outline-none focus:border-brand-indigo focus:bg-white focus:ring-2 focus:ring-brand-indigo/20"
+                @input="onWhatsappInput"
+              />
+            </div>
           </div>
 
           <label class="flex cursor-pointer items-start gap-2 text-sm text-brand-gray">
@@ -266,60 +268,74 @@ async function onSubmit(): Promise<void> {
       </section>
 
       <section
-        class="flex flex-col justify-between rounded-xl border border-brand-indigo/30 bg-brand-indigo p-6 text-white shadow-sm lg:col-span-5 md:p-8"
+        class="flex flex-col justify-between rounded-2xl bg-brand-indigo p-6 text-white shadow-sm lg:col-span-5 md:p-8 lg:p-10"
+        style="background-color: #4338ca"
       >
         <div>
-          <p class="text-[11px] font-semibold uppercase tracking-wider text-indigo-200">
-            Visão geral
+          <p
+            class="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-white/90"
+          >
+            Vantagens do ecossistema
           </p>
-          <h2 class="mt-1 text-xl font-bold">Por que escolher o Rappeli</h2>
-          <ul class="mt-6 space-y-4">
-            <li class="flex gap-3 rounded-lg border border-white/10 bg-white/5 p-3">
+          <h2 class="mt-4 text-2xl font-bold tracking-tight">Por que escolher o Rappeli</h2>
+          <ul class="mt-6 space-y-3.5">
+            <li class="flex gap-3.5 rounded-xl border border-white/10 bg-white/10 p-4">
               <div
-                class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white/10"
+                class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/15 text-white"
               >
-                <Share2 class="h-5 w-5 text-indigo-200" aria-hidden="true" />
+                <Share2 class="h-5 w-5" aria-hidden="true" />
               </div>
               <div>
-                <p class="font-semibold">API oficial do WhatsApp (Meta)</p>
-                <p class="mt-0.5 text-sm text-indigo-100">
-                  Conexão pela API oficial da Meta, sem aplicativos não oficiais.
+                <p class="text-sm font-bold">API Oficial WhatsApp</p>
+                <p class="mt-0.5 text-xs leading-relaxed text-white/80">
+                  Conexão oficial Cloud API sem risco de bloqueio e com estabilidade profissional.
                 </p>
               </div>
             </li>
-            <li class="flex gap-3 rounded-lg border border-white/10 bg-white/5 p-3">
+            <li class="flex gap-3.5 rounded-xl border border-white/10 bg-white/10 p-4">
               <div
-                class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white/10"
+                class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/15 text-white"
               >
-                <Bell class="h-5 w-5 text-indigo-200" aria-hidden="true" />
+                <Users class="h-5 w-5" aria-hidden="true" />
               </div>
               <div>
-                <p class="font-semibold">Lembretes e confirmações automáticos</p>
-                <p class="mt-0.5 text-sm text-indigo-100">
-                  Fluxos automáticos que notificam clientes e agilizam rotinas operacionais.
+                <p class="text-sm font-bold">Usuários ilimitados</p>
+                <p class="mt-0.5 text-xs leading-relaxed text-white/80">
+                  Toda a sua equipe na mesma conta sem custos adicionais por operador.
                 </p>
               </div>
             </li>
-            <li class="flex gap-3 rounded-lg border border-white/10 bg-white/5 p-3">
+            <li class="flex gap-3.5 rounded-xl border border-white/10 bg-white/10 p-4">
               <div
-                class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white/10"
+                class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/15 text-white"
               >
-                <Group class="h-5 w-5 text-indigo-200" aria-hidden="true" />
+                <Handshake class="h-5 w-5" aria-hidden="true" />
               </div>
               <div>
-                <p class="font-semibold">Vários atendentes no mesmo número</p>
-                <p class="mt-0.5 text-sm text-indigo-100">
-                  Centralize toda a sua equipe em um único canal integrado de atendimento.
+                <p class="text-sm font-bold">Implantação inclusa</p>
+                <p class="mt-0.5 text-xs leading-relaxed text-white/80">
+                  Acompanhamento humanizado na configuração inicial sem taxa extra.
+                </p>
+              </div>
+            </li>
+            <li class="flex gap-3.5 rounded-xl border border-white/10 bg-white/10 p-4">
+              <div
+                class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/15 text-white"
+              >
+                <LockOpen class="h-5 w-5" aria-hidden="true" />
+              </div>
+              <div>
+                <p class="text-sm font-bold">Sem fidelidade</p>
+                <p class="mt-0.5 text-xs leading-relaxed text-white/80">
+                  Altere de plano ou cancele sua assinatura a qualquer momento com 1 clique.
                 </p>
               </div>
             </li>
           </ul>
         </div>
-        <p
-          class="mt-8 flex items-center gap-2 border-t border-white/10 pt-4 text-sm text-indigo-100"
-        >
-          <ShieldCheck class="h-4 w-4" aria-hidden="true" />
-          Sem fidelidade. Cancele quando quiser.
+        <p class="mt-8 flex items-center justify-between border-t border-white/15 pt-6 text-xs text-white/75">
+          <span>Criptografia de ponta a ponta</span>
+          <span>Suporte em português</span>
         </p>
       </section>
     </div>

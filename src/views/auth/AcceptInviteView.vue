@@ -1,12 +1,11 @@
 <script setup lang="ts">
-import { Eye, EyeOff, Loader2, Lock } from '@lucide/vue'
+import { ArrowRight, Eye, EyeOff, Loader2, Lock } from '@lucide/vue'
 import axios from 'axios'
 import { computed, onMounted, ref, watch } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 
 import { acceptTeamInvitation, fetchTeamInvitationPreview } from '@/api/team'
-import AuthMarketingPanel from '@/components/auth/AuthMarketingPanel.vue'
-import AuthPageChrome from '@/components/auth/AuthPageChrome.vue'
+import InviteMarketingPanel from '@/components/auth/InviteMarketingPanel.vue'
 import { useAuthStore } from '@/stores/auth'
 import type { TeamAgentRole, TeamInvitationPreview } from '@/types/team'
 import { getErrorMessage, getValidationErrors } from '@/utils/errors'
@@ -150,10 +149,21 @@ async function onSubmit(): Promise<void> {
 
 <template>
   <div class="flex min-h-screen flex-col lg:flex-row">
-    <AuthMarketingPanel />
-    <section class="flex flex-1 flex-col bg-white">
-      <AuthPageChrome>
-        <div class="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-6 pb-10 lg:px-10">
+    <InviteMarketingPanel />
+    <main class="flex min-h-screen flex-1 flex-col justify-between bg-white">
+      <header
+        class="flex items-center justify-between border-b border-slate-200/60 px-4 py-4 md:px-8 lg:justify-end"
+      >
+        <div class="flex items-center gap-2 lg:hidden">
+          <span class="font-display text-lg font-bold text-brand-indigo">Rappeli</span>
+        </div>
+        <a href="#" class="text-sm font-semibold text-brand-gray hover:text-brand-indigo" @click.prevent>
+          Suporte
+        </a>
+      </header>
+
+      <div class="flex flex-1 items-center justify-center px-4 py-8 md:px-8">
+        <div class="w-full max-w-lg space-y-6">
           <h1 class="font-display text-2xl font-bold text-brand-ink">Aceitar convite</h1>
           <p class="mt-2 text-sm text-slate-500">Crie sua senha para entrar na equipe.</p>
 
@@ -178,16 +188,42 @@ async function onSubmit(): Promise<void> {
             <p class="font-medium">{{ invalidPreviewMessage }}</p>
           </div>
 
-          <form v-else-if="previewReady" class="mt-8 space-y-4" novalidate @submit.prevent="onSubmit">
-            <div class="rounded-lg border border-slate-200 bg-brand-mist/40 px-4 py-3 text-sm">
-              <p class="font-medium text-brand-ink">{{ preview?.name || 'Novo membro' }}</p>
-              <p class="text-brand-gray">{{ preview?.email }}</p>
-              <p v-if="preview?.company_name" class="mt-1 text-xs text-brand-gray">
-                Empresa: <span class="font-medium text-brand-ink">{{ preview.company_name }}</span>
-              </p>
-              <p v-if="preview?.role" class="mt-1 text-xs text-brand-gray">
-                Papel: {{ roleLabel(preview.role) }}
-              </p>
+          <form v-else-if="previewReady" class="space-y-4" novalidate @submit.prevent="onSubmit">
+            <div
+              class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
+            >
+              <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+                <span class="text-[11px] font-semibold uppercase tracking-wider text-brand-gray">
+                  Detalhes do acesso
+                </span>
+                <span
+                  class="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-0.5 text-[11px] font-semibold text-amber-900"
+                >
+                  Convite pendente
+                </span>
+              </div>
+              <div class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 text-sm">
+                <div>
+                  <p class="text-[11px] font-semibold uppercase text-brand-gray">Nome</p>
+                  <p class="font-semibold text-brand-ink">{{ preview?.name || 'Novo membro' }}</p>
+                </div>
+                <div>
+                  <p class="text-[11px] font-semibold uppercase text-brand-gray">E-mail</p>
+                  <p class="truncate font-semibold text-brand-ink">{{ preview?.email }}</p>
+                </div>
+                <div v-if="preview?.company_name">
+                  <p class="text-[11px] font-semibold uppercase text-brand-gray">Empresa</p>
+                  <p class="font-semibold text-brand-ink">{{ preview.company_name }}</p>
+                </div>
+                <div v-if="preview?.role">
+                  <p class="text-[11px] font-semibold uppercase text-brand-gray">Papel</p>
+                  <span
+                    class="mt-0.5 inline-flex rounded-full border border-slate-200 bg-brand-mist px-2 py-0.5 text-xs font-semibold text-brand-indigo"
+                  >
+                    {{ roleLabel(preview.role) }}
+                  </span>
+                </div>
+              </div>
             </div>
 
             <div
@@ -264,10 +300,11 @@ async function onSubmit(): Promise<void> {
 
             <button
               type="submit"
-              class="w-full rounded-lg bg-brand-indigo py-2.5 text-sm font-semibold text-white hover:bg-brand-indigo-hover disabled:opacity-60"
+              class="flex w-full items-center justify-center gap-2 rounded-lg bg-brand-indigo py-2.5 text-sm font-semibold text-white hover:bg-brand-indigo-hover disabled:opacity-60"
               :disabled="submitting"
             >
               {{ submitting ? 'Ativando…' : 'Ativar conta' }}
+              <ArrowRight v-if="!submitting" class="h-4 w-4" />
             </button>
 
             <p class="text-center text-sm text-brand-gray">
@@ -276,7 +313,11 @@ async function onSubmit(): Promise<void> {
             </p>
           </form>
         </div>
-      </AuthPageChrome>
-    </section>
+      </div>
+
+      <footer class="border-t border-slate-200/60 px-4 py-4 text-center text-xs text-brand-gray md:px-8">
+        © {{ new Date().getFullYear() }} Rappeli. Todos os direitos reservados.
+      </footer>
+    </main>
   </div>
 </template>
