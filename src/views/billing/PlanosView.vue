@@ -377,7 +377,7 @@ function goBack(): void {
         <div
           class="flex flex-col items-center justify-around gap-4 rounded-xl border border-slate-200 bg-white px-6 py-4 text-center text-sm md:flex-row"
         >
-          <span class="inline-flex items-center gap-2"><Check class="h-4 w-4 text-brand-indigo" /> Sem taxa de implantação</span>
+          <span class="inline-flex items-center gap-2"><Check class="h-4 w-4 text-brand-indigo" /> Implantação inclusa, sem taxa</span>
           <span class="hidden h-5 w-px bg-slate-200 md:block" />
           <span class="inline-flex items-center gap-2"><LockOpen class="h-4 w-4 text-brand-indigo" /> Sem fidelidade</span>
           <span class="hidden h-5 w-px bg-slate-200 md:block" />

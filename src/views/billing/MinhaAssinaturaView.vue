@@ -5,10 +5,10 @@ import { RouterLink } from 'vue-router'
 
 import {
   cancelSubscription,
-  fetchSubscription,
-  fetchSubscriptionPayments,
-  updateSubscriptionCard,
-} from '@/api/subscription'
+  fetchBillingPayments,
+  fetchCurrentSubscription,
+  updateSubscriptionPaymentMethod,
+} from '@/api/billing'
 import AppConfirmModal from '@/components/app/AppConfirmModal.vue'
 import AppPageHeader from '@/components/app/AppPageHeader.vue'
 import BillingBlockedBanner from '@/components/billing/BillingBlockedBanner.vue'
@@ -54,7 +54,7 @@ async function loadSubscription(): Promise<void> {
   subscriptionLoading.value = true
   subscriptionError.value = null
   try {
-    subscription.value = await fetchSubscription()
+    subscription.value = await fetchCurrentSubscription()
   } catch (error) {
     subscriptionError.value = getErrorMessage(error)
   } finally {
@@ -66,7 +66,7 @@ async function loadPayments(): Promise<void> {
   paymentsLoading.value = true
   paymentsError.value = null
   try {
-    payments.value = await fetchSubscriptionPayments()
+    payments.value = await fetchBillingPayments()
   } catch (error) {
     paymentsError.value = getErrorMessage(error)
   } finally {
@@ -112,7 +112,7 @@ async function submitCardUpdate(): Promise<void> {
   cardSubmitting.value = true
   actionError.value = null
   try {
-    subscription.value = await updateSubscriptionCard({
+    subscription.value = await updateSubscriptionPaymentMethod({
       holder: { ...cardForms.holder },
       credit_card: { ...cardForms.creditCard },
     })
@@ -142,7 +142,7 @@ async function onCancel(): Promise<void> {
   try {
     subscription.value = await cancelSubscription()
     actionMessage.value = 'Assinatura cancelada. Você pode assinar novamente quando quiser.'
-    payments.value = await fetchSubscriptionPayments()
+    payments.value = await fetchBillingPayments()
     cancelConfirmOpen.value = false
   } catch (error) {
     actionError.value = getErrorMessage(error)
@@ -202,8 +202,8 @@ function maskedCard(sub: Subscription): string {
       {{ actionError }}
     </p>
 
-    <div class="mt-8 grid gap-6 lg:grid-cols-3">
-      <section class="space-y-6 lg:col-span-2">
+    <div class="mt-8 grid gap-6 lg:grid-cols-12 lg:items-start">
+      <section class="space-y-6 lg:col-span-8">
         <article
           v-if="subscriptionLoading"
           class="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm"
@@ -245,50 +245,78 @@ function maskedCard(sub: Subscription): string {
         </article>
 
         <article v-else class="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
-          <div class="flex flex-wrap items-start justify-between gap-3">
+          <div class="flex flex-wrap items-start justify-between gap-4 border-b border-slate-100 pb-4">
             <div>
-              <p class="text-xs font-semibold uppercase tracking-wide text-brand-gray">
-                Plano atual
+              <p class="text-[11px] font-semibold uppercase tracking-wider text-brand-gray">
+                Plano em vigor
               </p>
-              <h2 class="mt-1 font-display text-xl font-semibold text-brand-ink">
-                {{ subscription.plan_name }}
-              </h2>
+              <div class="mt-1 flex flex-wrap items-center gap-3">
+                <h2 class="font-display text-xl font-bold text-brand-ink">
+                  {{ subscription.plan_name }}
+                </h2>
+                <span
+                  v-if="subscription.status === 'ACTIVE'"
+                  class="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-800"
+                >
+                  <span class="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden="true" />
+                  Ativa
+                </span>
+                <span
+                  v-else
+                  class="rounded-full bg-brand-mist px-2.5 py-0.5 text-xs font-medium text-brand-indigo"
+                >
+                  {{ subscriptionStatusLabel(subscription.status) }}
+                </span>
+              </div>
               <p class="mt-1 text-sm text-brand-gray">{{ subscription.modality_label }}</p>
             </div>
-            <span
-              class="rounded-full bg-brand-mist px-2.5 py-1 text-xs font-medium text-brand-indigo"
-            >
-              {{ subscriptionStatusLabel(subscription.status) }}
-            </span>
+            <div class="text-right">
+              <span class="font-display text-2xl font-bold text-brand-ink">
+                {{ formatBillingCurrency(subscription.value) }}
+              </span>
+              <span class="text-xs font-medium text-brand-gray">
+                / {{ billingCycleLabel(subscription.cycle).toLowerCase() }}
+              </span>
+              <p class="mt-0.5 text-[11px] text-slate-400">Cobrança recorrente via Asaas</p>
+            </div>
           </div>
 
-          <dl class="mt-6 grid gap-4 sm:grid-cols-2 text-sm">
+          <dl class="mt-6 grid gap-4 rounded-lg border border-slate-100 bg-slate-50/70 p-4 sm:grid-cols-2 text-sm">
             <div>
-              <dt class="text-brand-gray">Valor</dt>
-              <dd class="mt-1 font-medium text-brand-ink">
-                {{ formatBillingCurrency(subscription.value) }}
-                / {{ billingCycleLabel(subscription.cycle).toLowerCase() }}
-              </dd>
-            </div>
-            <div>
-              <dt class="text-brand-gray">Próxima cobrança</dt>
-              <dd class="mt-1 font-medium text-brand-ink">
+              <dt class="text-[11px] font-semibold uppercase tracking-wider text-brand-gray">
+                Próxima renovação
+              </dt>
+              <dd class="mt-1 font-semibold text-brand-ink">
                 {{ formatBillingDate(subscription.next_due_date) }}
               </dd>
             </div>
+            <div>
+              <dt class="text-[11px] font-semibold uppercase tracking-wider text-brand-gray">
+                Franquia de mensagens
+              </dt>
+              <dd class="mt-1 font-semibold text-brand-ink">Conforme plano contratado</dd>
+            </div>
+            <div>
+              <dt class="text-[11px] font-semibold uppercase tracking-wider text-brand-gray">Atendentes</dt>
+              <dd class="mt-1 font-semibold text-brand-indigo">Usuários ilimitados</dd>
+            </div>
+            <div>
+              <dt class="text-[11px] font-semibold uppercase tracking-wider text-brand-gray">Excedente</dt>
+              <dd class="mt-1 font-semibold text-brand-ink">R$ 0,05 por mensagem</dd>
+            </div>
           </dl>
 
-          <div class="mt-6 flex flex-wrap gap-3">
+          <div class="mt-6 flex flex-wrap items-center justify-between gap-3">
             <RouterLink
               :to="{ name: 'assinatura-planos' }"
-              class="rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-brand-ink"
+              class="inline-flex items-center gap-2 rounded-lg bg-brand-indigo px-5 py-2.5 text-xs font-semibold text-white hover:bg-brand-indigo-hover"
             >
               Trocar plano
             </RouterLink>
             <button
               v-if="subscription.status !== 'CANCELED'"
               type="button"
-              class="rounded-xl border border-red-200 px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50"
+              class="rounded-lg border border-red-200 px-4 py-2.5 text-xs font-semibold text-red-700 hover:bg-red-50"
               :disabled="cancelLoading"
               @click="requestCancel"
             >
@@ -306,9 +334,14 @@ function maskedCard(sub: Subscription): string {
         </article>
 
         <article class="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
-          <h2 class="font-display text-lg font-semibold text-brand-ink">
-            Histórico de pagamentos
-          </h2>
+          <div class="flex items-start justify-between">
+            <div>
+              <h2 class="font-display text-lg font-semibold text-brand-ink">
+                Histórico de pagamentos
+              </h2>
+              <p class="mt-1 text-xs text-brand-gray">Faturas emitidas pelo Asaas.</p>
+            </div>
+          </div>
 
           <div
             v-if="paymentsLoading"
@@ -337,6 +370,7 @@ function maskedCard(sub: Subscription): string {
                 >
                   <th class="pb-2 pr-4 font-semibold">Vencimento</th>
                   <th class="pb-2 pr-4 font-semibold">Valor</th>
+                  <th class="pb-2 pr-4 font-semibold">Forma de pagamento</th>
                   <th class="pb-2 font-semibold">Status</th>
                 </tr>
               </thead>
@@ -352,6 +386,9 @@ function maskedCard(sub: Subscription): string {
                   <td class="py-3 pr-4 text-brand-ink">
                     {{ formatBillingCurrency(payment.value) }}
                   </td>
+                  <td class="py-3 pr-4 text-brand-gray">
+                    {{ payment.billing_type === 'CREDIT_CARD' ? 'Cartão de crédito' : payment.billing_type }}
+                  </td>
                   <td class="py-3 text-brand-gray">{{ paymentStatusLabel(payment.status) }}</td>
                 </tr>
               </tbody>
@@ -360,7 +397,7 @@ function maskedCard(sub: Subscription): string {
         </article>
       </section>
 
-      <aside class="space-y-4">
+      <aside class="space-y-4 lg:col-span-4">
         <article
           v-if="subscriptionLoading"
           class="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm"
@@ -374,11 +411,20 @@ function maskedCard(sub: Subscription): string {
           v-else-if="subscription && !subscriptionError"
           class="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm"
         >
-          <div class="flex items-center gap-2">
+          <div class="flex items-center justify-between">
+            <h2 class="font-display text-sm font-semibold text-brand-ink">Forma de pagamento</h2>
             <CreditCard class="h-4 w-4 text-brand-gray" aria-hidden="true" />
-            <h2 class="font-display text-sm font-semibold text-brand-ink">Cartão de cobrança</h2>
           </div>
-          <p class="mt-4 text-sm text-brand-ink">{{ maskedCard(subscription) }}</p>
+          <div class="mt-4 rounded-xl bg-brand-ink p-4 text-white shadow-sm">
+            <div class="flex items-center justify-between text-xs uppercase tracking-wider text-indigo-200">
+              <span>Cartão de cobrança</span>
+              <span>{{ subscription.payment_method.brand ?? 'Cartão' }}</span>
+            </div>
+            <p class="mt-3 font-mono text-base tracking-widest text-indigo-100">
+              •••• •••• •••• {{ subscription.payment_method.last_digits ?? '••••' }}
+            </p>
+          </div>
+          <p class="mt-3 text-xs text-brand-gray">{{ maskedCard(subscription) }}</p>
           <button
             v-if="subscription.status !== 'CANCELED'"
             type="button"

@@ -309,10 +309,23 @@ async function submit(status: 'rascunho' | 'agendada'): Promise<void> {
       <Loader2 class="h-8 w-8 animate-spin text-brand-indigo" />
     </div>
 
-    <div v-else class="flex flex-1 flex-col gap-6 px-4 py-6 lg:flex-row lg:px-8">
-      <div class="min-w-0 flex-1 space-y-4">
-        <section class="rounded-xl border border-slate-200 bg-white p-5 shadow-xs">
-          <h2 class="text-sm font-bold text-brand-ink">1. Informações da campanha</h2>
+    <div v-else class="mx-auto flex max-w-[1520px] flex-1 flex-col gap-6 px-4 py-6 lg:px-8 xl:grid xl:grid-cols-12">
+      <div class="min-w-0 space-y-6 xl:col-span-7">
+        <div>
+          <h1 class="font-display text-2xl font-semibold tracking-tight text-brand-ink">{{ pageTitle }}</h1>
+          <p class="mt-1 text-sm text-brand-gray">
+            Configure o envio em massa via WhatsApp Cloud API respeitando opt-in e cadência de segurança.
+          </p>
+        </div>
+
+        <section class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div class="mb-5 flex items-center gap-2.5 border-b border-slate-100 pb-4">
+            <span
+              class="flex h-6 w-6 items-center justify-center rounded-full bg-brand-mist text-xs font-bold text-brand-indigo"
+              >1</span
+            >
+            <h2 class="text-base font-semibold text-brand-ink">Informações</h2>
+          </div>
           <label class="mt-4 block text-sm font-medium text-brand-ink">Nome da campanha *</label>
           <input
             v-model="campaignName"
@@ -324,8 +337,14 @@ async function submit(status: 'rascunho' | 'agendada'): Promise<void> {
           <p v-if="fieldErrors.name" class="mt-1 text-xs text-red-600">{{ fieldErrors.name }}</p>
         </section>
 
-        <section class="rounded-xl border border-slate-200 bg-white p-5 shadow-xs">
-          <h2 class="text-sm font-bold text-brand-ink">2. Público (segmento)</h2>
+        <section class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div class="mb-5 flex items-center gap-2.5 border-b border-slate-100 pb-4">
+            <span
+              class="flex h-6 w-6 items-center justify-center rounded-full bg-brand-mist text-xs font-bold text-brand-indigo"
+              >2</span
+            >
+            <h2 class="text-base font-semibold text-brand-ink">Público (segmento)</h2>
+          </div>
           <label class="mt-4 block text-sm">Tags (separadas por vírgula)</label>
           <input v-model="segmentTags" type="text" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" placeholder="retorno, limpeza" />
           <label class="mt-4 flex items-center justify-between gap-4 rounded-lg border border-brand-indigo/20 bg-brand-mist/40 p-3">
@@ -337,9 +356,17 @@ async function submit(status: 'rascunho' | 'agendada'): Promise<void> {
           </p>
         </section>
 
-        <section class="rounded-xl border border-slate-200 bg-white p-5 shadow-xs">
-          <h2 class="text-sm font-bold text-brand-ink">3. Mensagem (template)</h2>
-          <p class="mt-1 text-xs text-brand-gray">Somente modelos aprovados pela Meta.</p>
+        <section class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div class="mb-5 flex items-center justify-between border-b border-slate-100 pb-4">
+            <div class="flex items-center gap-2.5">
+              <span
+                class="flex h-6 w-6 items-center justify-center rounded-full bg-brand-mist text-xs font-bold text-brand-indigo"
+                >3</span
+              >
+              <h2 class="text-base font-semibold text-brand-ink">Mensagem (template aprovado pela Meta)</h2>
+            </div>
+          </div>
+          <p class="text-xs text-brand-gray">Somente modelos aprovados pela Meta.</p>
           <div class="mt-4 space-y-3">
             <label
               v-for="template in approvedTemplates"
@@ -386,15 +413,27 @@ async function submit(status: 'rascunho' | 'agendada'): Promise<void> {
           </div>
         </section>
 
-        <section class="rounded-xl border border-slate-200 bg-white p-5 shadow-xs">
-          <h2 class="text-sm font-bold text-brand-ink">4. Velocidade de envio</h2>
+        <section class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div class="mb-5 flex items-center gap-2.5 border-b border-slate-100 pb-4">
+            <span
+              class="flex h-6 w-6 items-center justify-center rounded-full bg-brand-mist text-xs font-bold text-brand-indigo"
+              >4</span
+            >
+            <h2 class="text-base font-semibold text-brand-ink">Velocidade de envio</h2>
+          </div>
           <div class="mt-4">
             <CampaignSendRateSelect v-model="sendRate" :error="fieldErrors.send_rate" />
           </div>
         </section>
 
-        <section class="rounded-xl border border-slate-200 bg-white p-5 shadow-xs">
-          <h2 class="text-sm font-bold text-brand-ink">5. Agendamento</h2>
+        <section class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div class="mb-5 flex items-center gap-2.5 border-b border-slate-100 pb-4">
+            <span
+              class="flex h-6 w-6 items-center justify-center rounded-full bg-brand-mist text-xs font-bold text-brand-indigo"
+              >5</span
+            >
+            <h2 class="text-base font-semibold text-brand-ink">Agendamento</h2>
+          </div>
           <div class="mt-3 flex gap-4 text-sm">
             <label class="flex items-center gap-2">
               <input v-model="scheduleMode" type="radio" value="draft" />
@@ -435,17 +474,29 @@ async function submit(status: 'rascunho' | 'agendada'): Promise<void> {
         </section>
       </div>
 
-      <aside class="w-full shrink-0 lg:w-80">
-        <div class="sticky top-4 rounded-xl border border-slate-200 bg-white p-4 shadow-xs">
-          <p class="text-xs font-semibold uppercase text-brand-gray">Pré-visualização</p>
-          <div class="mt-3 rounded-lg bg-[#e5ddd5] p-3 text-sm">{{ previewBody || 'Selecione um template.' }}</div>
+      <aside class="w-full xl:col-span-5">
+        <div class="sticky top-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+            <p class="text-sm font-semibold text-brand-ink">Pré-visualização da mensagem</p>
+            <span class="rounded bg-brand-mist px-2 py-0.5 text-[10px] font-semibold uppercase text-brand-gray">
+              Tempo real
+            </span>
+          </div>
+          <div class="mt-4 overflow-hidden rounded-xl border border-slate-200 bg-[#efeae2]">
+            <div class="bg-[#075e54] px-3 py-2 text-xs font-semibold text-white">WhatsApp — preview</div>
+            <div class="p-4">
+              <div class="max-w-[95%] rounded-lg rounded-tl-none bg-white p-3 text-sm leading-relaxed text-slate-800 shadow-sm">
+                {{ previewBody || 'Selecione um template aprovado.' }}
+              </div>
+            </div>
+          </div>
           <RouterLink :to="{ name: 'campanhas' }" class="mt-4 inline-block text-sm font-semibold text-brand-indigo">
             Voltar para campanhas
           </RouterLink>
         </div>
       </aside>
 
-      <AppPageFooter class="lg:col-span-2" />
+      <AppPageFooter class="xl:col-span-12" />
     </div>
   </div>
 </template>
