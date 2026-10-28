@@ -333,7 +333,13 @@ useEscapeKey(
           <h3 id="funnel-add-card-title" class="font-display font-bold text-brand-ink">Novo card</h3>
           <div class="mt-3 space-y-2">
             <input v-model="addCardName" type="text" placeholder="Nome do contato" class="w-full rounded-lg border px-3 py-2 text-sm" />
-            <input v-model="addCardPhone" type="tel" placeholder="Telefone" class="w-full rounded-lg border px-3 py-2 text-sm" />
+            <input
+              v-model="addCardPhone"
+              type="tel"
+              placeholder="Telefone"
+              class="w-full rounded-lg border px-3 py-2 text-sm"
+              @input="delete addCardErrors.phone"
+            />
           </div>
           <p v-for="(msg, key) in addCardErrors" :key="key" class="mt-1 text-xs text-red-600">{{ msg }}</p>
           <div class="mt-4 flex justify-end gap-2">
