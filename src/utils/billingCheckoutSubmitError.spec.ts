@@ -48,6 +48,54 @@ describe('resolveCheckoutSubmitError', () => {
       fieldErrors: { 'credit_card.number': 'Número inválido.' },
     })
   })
+
+  it('surfaces payment errors in the alert when no form field matches', () => {
+    const error = new axios.AxiosError(
+      'Unprocessable',
+      'ERR_BAD_REQUEST',
+      undefined,
+      undefined,
+      {
+        status: 422,
+        data: { errors: { payment: ['Cartão recusado pela operadora.'] } },
+        statusText: 'Unprocessable Entity',
+        headers: {},
+        config: {} as never,
+      },
+    )
+
+    expect(resolveCheckoutSubmitError(error)).toEqual({
+      kind: 'message',
+      message: 'Cartão recusado pela operadora.',
+    })
+  })
+
+  it('keeps field errors and alert for mixed validation payloads', () => {
+    const error = new axios.AxiosError(
+      'Unprocessable',
+      'ERR_BAD_REQUEST',
+      undefined,
+      undefined,
+      {
+        status: 422,
+        data: {
+          errors: {
+            'holder.email': ['Informe um e-mail válido.'],
+            payment: ['Não foi possível processar o pagamento.'],
+          },
+        },
+        statusText: 'Unprocessable Entity',
+        headers: {},
+        config: {} as never,
+      },
+    )
+
+    expect(resolveCheckoutSubmitError(error)).toEqual({
+      kind: 'validation',
+      fieldErrors: { 'holder.email': 'Informe um e-mail válido.' },
+      alertMessage: 'Não foi possível processar o pagamento.',
+    })
+  })
 })
 
 describe('shouldClearCardAfterCheckoutSubmit', () => {

@@ -93,12 +93,24 @@ async function onSubmit(): Promise<void> {
     const resolved = resolveCheckoutSubmitError(error)
     if (resolved.kind === 'validation') {
       fieldErrors.value = resolved.fieldErrors
+      formError.value = resolved.alertMessage ?? null
       return
     }
     formError.value = resolved.message
   } finally {
     submitting.value = false
   }
+}
+
+function billingInputClass(field: string): string {
+  const base = 'mt-1 h-[42px] w-full rounded-lg border px-3 text-sm'
+  return fieldErrors.value[field]
+    ? `${base} border-red-300 focus:border-red-400 focus:ring-red-200`
+    : `${base} border-slate-200`
+}
+
+function billingFieldError(field: string): string | undefined {
+  return fieldErrors.value[field]
 }
 
 function goBack(): void {
@@ -144,8 +156,11 @@ function onCepInput(event: Event): void {
                 v-model="forms.holder.name"
                 type="text"
                 placeholder="Nome do responsável"
-                class="mt-1 h-[42px] w-full rounded-lg border border-slate-200 px-3 text-sm"
+                :class="billingInputClass('holder.name')"
               />
+              <p v-if="billingFieldError('holder.name')" class="mt-1 text-xs text-red-600">
+                {{ billingFieldError('holder.name') }}
+              </p>
             </div>
             <div>
               <label
@@ -159,8 +174,11 @@ function onCepInput(event: Event): void {
                 v-model="forms.holder.email"
                 type="email"
                 placeholder="nome@empresa.com.br"
-                class="mt-1 h-[42px] w-full rounded-lg border border-slate-200 px-3 text-sm"
+                :class="billingInputClass('holder.email')"
               />
+              <p v-if="billingFieldError('holder.email')" class="mt-1 text-xs text-red-600">
+                {{ billingFieldError('holder.email') }}
+              </p>
             </div>
             <div>
               <label
@@ -174,9 +192,12 @@ function onCepInput(event: Event): void {
                 :value="forms.holder.phone"
                 type="tel"
                 placeholder="(00) 00000-0000"
-                class="mt-1 h-[42px] w-full rounded-lg border border-slate-200 px-3 text-sm"
+                :class="billingInputClass('holder.phone')"
                 @input="onPhoneInput"
               />
+              <p v-if="billingFieldError('holder.phone')" class="mt-1 text-xs text-red-600">
+                {{ billingFieldError('holder.phone') }}
+              </p>
             </div>
             <div>
               <label
@@ -190,9 +211,12 @@ function onCepInput(event: Event): void {
                 :value="forms.holder.cpf_cnpj"
                 type="text"
                 placeholder="00.000.000/0000-00"
-                class="mt-1 h-[42px] w-full rounded-lg border border-slate-200 px-3 text-sm"
+                :class="billingInputClass('holder.cpf_cnpj')"
                 @input="onDocInput"
               />
+              <p v-if="billingFieldError('holder.cpf_cnpj')" class="mt-1 text-xs text-red-600">
+                {{ billingFieldError('holder.cpf_cnpj') }}
+              </p>
             </div>
             <div class="sm:col-span-2">
               <label
@@ -221,9 +245,12 @@ function onCepInput(event: Event): void {
                 :value="forms.holder.postal_code"
                 type="text"
                 placeholder="00000-000"
-                class="mt-1 h-[42px] w-full rounded-lg border border-slate-200 px-3 text-sm"
+                :class="billingInputClass('holder.postal_code')"
                 @input="onCepInput"
               />
+              <p v-if="billingFieldError('holder.postal_code')" class="mt-1 text-xs text-red-600">
+                {{ billingFieldError('holder.postal_code') }}
+              </p>
             </div>
             <div>
               <label
@@ -252,8 +279,11 @@ function onCepInput(event: Event): void {
                 v-model="forms.holder.address_number"
                 type="text"
                 placeholder="Número"
-                class="mt-1 h-[42px] w-full rounded-lg border border-slate-200 px-3 text-sm"
+                :class="billingInputClass('holder.address_number')"
               />
+              <p v-if="billingFieldError('holder.address_number')" class="mt-1 text-xs text-red-600">
+                {{ billingFieldError('holder.address_number') }}
+              </p>
             </div>
           </div>
         </article>

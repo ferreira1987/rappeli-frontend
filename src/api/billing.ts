@@ -39,6 +39,7 @@ export async function checkoutSubscription(payload: CheckoutPayload): Promise<Su
     credit_card: {
       ...payload.credit_card,
       number: payload.credit_card.number.replace(/\D/g, ''),
+      expiry_month: payload.credit_card.expiry_month.padStart(2, '0').slice(-2),
     },
   })
   return data
@@ -69,6 +70,7 @@ export async function updateSubscriptionPaymentMethod(
     credit_card: {
       ...payload.credit_card,
       number: payload.credit_card.number.replace(/\D/g, ''),
+      expiry_month: payload.credit_card.expiry_month.padStart(2, '0').slice(-2),
     },
   })
   return data
