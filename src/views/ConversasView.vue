@@ -96,6 +96,7 @@ const {
 const SCROLL_NEAR_BOTTOM_PX = 80
 
 const draft = ref('')
+const threadActionsOpen = ref(false)
 const transferOpen = ref(false)
 const transferNotice = ref<string | null>(null)
 const resolveLoading = ref(false)
@@ -271,6 +272,16 @@ function onComposerKeydown(event: KeyboardEvent): void {
 
 function openTransferModal(): void {
   transferOpen.value = true
+}
+
+function onMobileTransfer(): void {
+  threadActionsOpen.value = false
+  openTransferModal()
+}
+
+function onMobileResolve(): void {
+  threadActionsOpen.value = false
+  void onResolve()
 }
 
 async function loadActivities(conversationId: number): Promise<void> {
@@ -569,13 +580,43 @@ async function onResolve(): Promise<void> {
                 <CheckCircle2 class="h-3.5 w-3.5 text-emerald-600" />
                 Resolver
               </UiButton>
+            </div>
+            <div class="relative sm:hidden">
               <button
                 type="button"
-                class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-brand-gray hover:bg-slate-50"
-                aria-label="Mais opções"
+                class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-brand-gray hover:bg-slate-50"
+                aria-label="Ações da conversa"
+                aria-haspopup="menu"
+                :aria-expanded="threadActionsOpen"
+                @click="threadActionsOpen = !threadActionsOpen"
               >
                 <MoreVertical class="h-4 w-4" />
               </button>
+              <div
+                v-if="threadActionsOpen"
+                class="absolute right-0 z-20 mt-1 min-w-[11rem] overflow-hidden rounded-lg border border-slate-200 bg-white py-1 shadow-lg"
+                role="menu"
+              >
+                <button
+                  type="button"
+                  role="menuitem"
+                  class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-brand-ink hover:bg-slate-50"
+                  @click="onMobileTransfer"
+                >
+                  <ArrowRightLeft class="h-4 w-4 text-brand-indigo" aria-hidden="true" />
+                  Transferir
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-brand-ink hover:bg-slate-50 disabled:opacity-50"
+                  :disabled="resolveLoading"
+                  @click="onMobileResolve"
+                >
+                  <CheckCircle2 class="h-4 w-4 text-emerald-600" aria-hidden="true" />
+                  Resolver
+                </button>
+              </div>
             </div>
           </div>
 
