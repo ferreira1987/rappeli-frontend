@@ -8,12 +8,18 @@ defineProps<{
   subtitle?: string
   breadcrumbs?: { label: string; to?: RouteLocationRaw }[]
   showExampleBadge?: boolean
+  /** Full-bleed inbox layouts: skip page header and fill parent height. */
+  flush?: boolean
 }>()
 </script>
 
 <template>
-  <div class="flex min-h-full flex-col bg-brand-surface">
+  <div
+    class="flex flex-col bg-brand-surface"
+    :class="flush ? 'h-full min-h-0' : 'min-h-full'"
+  >
     <AppPageHeader
+      v-if="!flush"
       :title="title"
       :subtitle="subtitle"
       :breadcrumbs="breadcrumbs"
