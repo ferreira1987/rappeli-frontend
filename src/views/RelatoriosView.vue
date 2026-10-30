@@ -5,6 +5,8 @@ import { computed, onMounted, ref } from 'vue'
 import { downloadReportExport, fetchReport } from '@/api/reports'
 import ExampleFiltersModal from '@/components/app/ExampleFiltersModal.vue'
 import AppPageHeader from '@/components/app/AppPageHeader.vue'
+import UiFilterChip from '@/components/ui/UiFilterChip.vue'
+import UiFilterChipGroup from '@/components/ui/UiFilterChipGroup.vue'
 import AppPageFooter from '@/components/layout/AppPageFooter.vue'
 import { initialsFromName } from '@/composables/useInitials'
 import type { ReportPayload, ReportPeriod } from '@/types/reports'
@@ -132,7 +134,7 @@ async function exportCsv(): Promise<void> {
 </script>
 
 <template>
-  <div class="flex min-h-full flex-col bg-brand-mist">
+  <div class="flex min-h-full flex-col bg-brand-surface">
     <AppPageHeader
       title="Relatórios"
       :breadcrumbs="[{ label: 'Painel', to: '/painel' }, { label: 'Relatórios' }]"
@@ -164,28 +166,20 @@ async function exportCsv(): Promise<void> {
       </template>
     </AppPageHeader>
 
-    <div class="border-b border-slate-200 bg-white px-4 sm:px-6 lg:px-8">
-      <div class="flex gap-6">
-        <button
-          v-for="item in [
-            { key: 'overview', label: 'Visão geral' },
-            { key: 'agent', label: 'Por atendente' },
-            { key: 'campaign', label: 'Por campanha' },
-          ]"
-          :key="item.key"
-          type="button"
-          class="border-b-2 py-3 text-sm font-semibold"
-          :class="
-            tab === item.key
-              ? 'border-brand-indigo text-brand-indigo'
-              : 'border-transparent text-brand-gray hover:text-brand-ink'
-          "
-          @click="tab = item.key as typeof tab"
-        >
-          {{ item.label }}
-        </button>
-      </div>
-    </div>
+    <UiFilterChipGroup label="Relatórios">
+      <UiFilterChip
+        v-for="item in [
+          { key: 'overview', label: 'Visão geral' },
+          { key: 'agent', label: 'Por atendente' },
+          { key: 'campaign', label: 'Por campanha' },
+        ]"
+        :key="item.key"
+        :active="tab === item.key"
+        @click="tab = item.key as typeof tab"
+      >
+        {{ item.label }}
+      </UiFilterChip>
+    </UiFilterChipGroup>
 
     <div class="flex-1 space-y-6 px-4 py-6 sm:px-6 lg:px-8">
       <p v-if="exportMessage" class="text-sm text-brand-indigo" role="status">{{ exportMessage }}</p>

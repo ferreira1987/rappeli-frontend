@@ -33,7 +33,7 @@ defineProps<{
         <slot name="badges" />
       </div>
       <div class="flex flex-wrap items-center gap-2.5">
-        <h1 class="font-display text-xl font-bold tracking-tight text-brand-ink sm:text-2xl">
+        <h1 class="text-xl font-bold tracking-tight text-brand-ink sm:text-2xl">
           {{ title }}
         </h1>
         <ExampleDataBadge v-if="showExampleBadge" />

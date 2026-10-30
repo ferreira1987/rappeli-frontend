@@ -235,7 +235,7 @@ async function onImportFile(event: Event): Promise<void> {
 </script>
 
 <template>
-  <div class="flex min-h-full flex-col bg-brand-mist">
+  <div class="flex min-h-full flex-col bg-brand-surface">
     <AppPageHeader
       title="Contatos"
       subtitle="Organize clientes e importações em um só lugar."

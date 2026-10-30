@@ -9,6 +9,7 @@ import {
 } from '@/api/scheduledMessages'
 import AppPageHeader from '@/components/app/AppPageHeader.vue'
 import AppPageTabs from '@/components/app/AppPageTabs.vue'
+import UiFilterChip from '@/components/ui/UiFilterChip.vue'
 import { panelBreadcrumbs } from '@/constants/panelBreadcrumbs'
 import AppPageFooter from '@/components/layout/AppPageFooter.vue'
 import ExampleFiltersModal from '@/components/app/ExampleFiltersModal.vue'
@@ -111,7 +112,7 @@ async function onDelete(id: number): Promise<void> {
 </script>
 
 <template>
-  <div class="flex min-h-full flex-col bg-brand-mist">
+  <div class="flex min-h-full flex-col bg-brand-surface">
     <AppPageHeader
       title="Mensagens agendadas"
       :breadcrumbs="panelBreadcrumbs({ label: 'Mensagens agendadas' })"
@@ -136,26 +137,21 @@ async function onDelete(id: number): Promise<void> {
     </AppPageHeader>
 
     <AppPageTabs>
-      <button
+      <UiFilterChip
         v-for="item in tabLabels"
         :key="item.key"
-        type="button"
-        class="flex items-center gap-2 border-b-2 py-3 text-sm font-semibold transition"
-        :class="
-          tab === item.key
-            ? 'border-brand-indigo text-brand-indigo'
-            : 'border-transparent text-brand-gray hover:text-brand-ink'
-        "
+        :active="tab === item.key"
         @click="tab = item.key"
       >
         {{ item.label }}
         <span
           v-if="counts[item.key] > 0"
-          class="rounded-full bg-indigo-100 px-2 py-0.5 text-[11px] font-bold text-brand-indigo"
+          class="rounded-full px-1.5 text-[10px] font-bold"
+          :class="tab === item.key ? 'bg-white/20 text-white' : 'bg-brand-mist text-brand-indigo'"
         >
           {{ counts[item.key] }}
         </span>
-      </button>
+      </UiFilterChip>
     </AppPageTabs>
 
     <div class="flex-1 px-4 py-6 sm:px-6 lg:px-8">

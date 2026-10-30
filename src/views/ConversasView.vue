@@ -293,7 +293,7 @@ async function onResolve(): Promise<void> {
 </script>
 
 <template>
-  <div class="flex h-full min-h-0 flex-col bg-brand-mist">
+  <div class="flex h-full min-h-0 flex-col bg-brand-surface">
     <AppPageHeader
       title="Conversas"
       :breadcrumbs="panelBreadcrumbs({ label: 'Conversas' })"

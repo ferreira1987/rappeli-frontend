@@ -129,7 +129,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="flex min-h-full flex-col bg-brand-mist">
+  <div class="flex min-h-full flex-col bg-brand-surface">
     <AppPageHeader title="Painel" :breadcrumbs="panelBreadcrumbs({ label: 'Painel' })">
       <template #actions>
         <RouterLink

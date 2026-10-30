@@ -280,7 +280,7 @@ async function submit(status: 'rascunho' | 'agendada'): Promise<void> {
 </script>
 
 <template>
-  <div class="flex min-h-full flex-col bg-brand-mist">
+  <div class="flex min-h-full flex-col bg-brand-surface">
     <AppPageHeader :title="pageTitle" :breadcrumbs="breadcrumbs">
       <template #actions>
         <button

@@ -2,14 +2,16 @@
 
 @theme {
   --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
-  --font-display: 'Sora', ui-sans-serif, system-ui, sans-serif;
   --color-brand-indigo: #4338ca;
   --color-brand-indigo-hover: #3730a3;
   --color-brand-coral: #ff7a59;
   --color-brand-ink: #1e1b4b;
-  --color-brand-mist: #eef0ff;
+  /** Indigo-50 tint for active nav, chips, highlights */
+  --color-brand-mist: #eef2ff;
   --color-brand-gray: #64748b;
+  /** App canvas background (Stitch v5) */
   --color-brand-surface: #f8fafc;
+  --radius-app: 0.5rem;
 }
 
 @layer base {
@@ -20,22 +22,18 @@
   }
 
   body {
-    @apply bg-brand-mist font-sans text-brand-ink antialiased;
+    @apply bg-brand-surface font-sans text-brand-ink antialiased;
   }
 
   h1,
   h2,
   h3,
   h4 {
-    font-family: var(--font-display);
+    @apply font-sans;
   }
 }
 
 @layer utilities {
-  .font-display {
-    font-family: var(--font-display);
-  }
-
   .scrollbar-none {
     scrollbar-width: none;
     -ms-overflow-style: none;
