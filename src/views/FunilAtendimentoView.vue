@@ -174,7 +174,7 @@ useEscapeKey(
 </script>
 
 <template>
-  <div class="flex min-h-full flex-col bg-brand-mist">
+  <div class="flex min-h-full flex-col bg-brand-surface">
     <AppPageHeader
       title="Funil de atendimento"
       :breadcrumbs="[{ label: 'Painel', to: '/painel' }, { label: 'Funil de atendimento' }]"

@@ -6,7 +6,7 @@ import { panelBreadcrumbs } from '@/constants/panelBreadcrumbs'
 </script>
 
 <template>
-  <div class="flex min-h-full flex-col bg-brand-mist">
+  <div class="flex min-h-full flex-col bg-brand-surface">
     <AppPageHeader
       title="WhatsApp Business"
       subtitle="Conexão do canal com a API oficial da Meta."

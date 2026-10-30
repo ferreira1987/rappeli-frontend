@@ -9,7 +9,7 @@ import { panelBreadcrumbs } from '@/constants/panelBreadcrumbs'
 </script>
 
 <template>
-  <div class="flex min-h-full flex-col bg-brand-mist">
+  <div class="flex min-h-full flex-col bg-brand-surface">
     <AppPageHeader
       title="Editor de automação"
       subtitle="O construtor visual de fluxos ainda não está disponível nesta versão."

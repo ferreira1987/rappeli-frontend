@@ -167,7 +167,7 @@ function maskedCard(sub: Subscription): string {
 </script>
 
 <template>
-  <div class="flex min-h-full flex-col bg-brand-mist">
+  <div class="flex min-h-full flex-col bg-brand-surface">
     <AppPageHeader
       title="Minha assinatura"
       subtitle="Plano, pagamentos e forma de cobrança."

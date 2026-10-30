@@ -32,7 +32,7 @@ watch(
 </script>
 
 <template>
-  <div class="flex h-screen min-h-screen overflow-hidden bg-brand-mist">
+  <div class="flex h-screen min-h-screen overflow-hidden bg-brand-surface">
     <div
       v-show="isOpen"
       class="fixed inset-0 z-40 bg-brand-ink/40 backdrop-blur-[1px] lg:hidden"
@@ -46,7 +46,7 @@ watch(
       <AppMobileTopbar />
       <div
         class="min-h-0 flex-1 overflow-x-hidden overflow-y-auto"
-        :class="isFullBleed ? '' : 'bg-brand-mist'"
+        :class="isFullBleed ? '' : 'bg-brand-surface'"
       >
         <RouterView />
       </div>

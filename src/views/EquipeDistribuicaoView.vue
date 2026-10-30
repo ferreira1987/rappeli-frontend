@@ -19,6 +19,8 @@ import AppConfirmModal from '@/components/app/AppConfirmModal.vue'
 import InviteTeamMemberModal from '@/components/team/InviteTeamMemberModal.vue'
 import SectorFormModal from '@/components/team/SectorFormModal.vue'
 import AppPageHeader from '@/components/app/AppPageHeader.vue'
+import UiFilterChip from '@/components/ui/UiFilterChip.vue'
+import UiFilterChipGroup from '@/components/ui/UiFilterChipGroup.vue'
 import AppPageFooter from '@/components/layout/AppPageFooter.vue'
 import { initialsFromName } from '@/composables/useInitials'
 import { useWhatsAppStore } from '@/stores/whatsapp'
@@ -358,7 +360,7 @@ async function saveDistribution(): Promise<void> {
 </script>
 
 <template>
-  <div class="flex min-h-full flex-col bg-brand-mist">
+  <div class="flex min-h-full flex-col bg-brand-surface">
     <AppPageHeader
       title="Equipe e distribuição"
       :breadcrumbs="[{ label: 'Painel', to: '/painel' }, { label: 'Equipe e distribuição' }]"
@@ -383,27 +385,20 @@ async function saveDistribution(): Promise<void> {
       </template>
     </AppPageHeader>
 
-    <div class="border-b border-slate-200 bg-white px-4 sm:px-6 lg:px-8">
-      <div v-if="loading" class="flex flex-wrap gap-6 py-3">
-        <div v-for="i in 4" :key="i" class="h-8 w-28 animate-pulse rounded-lg bg-slate-100" />
-      </div>
-      <div v-else class="flex flex-wrap gap-6">
-        <button
-          v-for="item in teamTabs"
-          :key="item.key"
-          type="button"
-          class="border-b-2 py-3 text-sm font-semibold transition"
-          :class="
-            tab === item.key
-              ? 'border-brand-indigo text-brand-indigo'
-              : 'border-transparent text-brand-gray hover:text-brand-ink'
-          "
-          @click="tab = item.key"
-        >
-          {{ item.label }}
-        </button>
-      </div>
-    </div>
+    <UiFilterChipGroup label="Seções da equipe">
+      <template v-if="loading">
+        <div v-for="i in 4" :key="i" class="h-9 w-28 animate-pulse rounded-full bg-slate-100" />
+      </template>
+      <UiFilterChip
+        v-for="item in teamTabs"
+        v-else
+        :key="item.key"
+        :active="tab === item.key"
+        @click="tab = item.key"
+      >
+        {{ item.label }}
+      </UiFilterChip>
+    </UiFilterChipGroup>
 
     <div class="flex-1 space-y-6 px-4 py-6 sm:px-6 lg:px-8">
       <p v-if="statusMessage" class="text-sm text-brand-indigo" role="status">{{ statusMessage }}</p>

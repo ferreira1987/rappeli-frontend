@@ -253,7 +253,7 @@ async function onEnroll(): Promise<void> {
 </script>
 
 <template>
-  <div class="flex min-h-full flex-col bg-brand-mist">
+  <div class="flex min-h-full flex-col bg-brand-surface">
     <AppPageHeader :title="sequence?.name ?? 'Sequência'" :breadcrumbs="breadcrumbs" />
 
     <div class="flex-1 space-y-6 px-4 py-6 sm:px-6 lg:px-8">

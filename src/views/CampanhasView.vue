@@ -10,6 +10,7 @@ import AppConfirmModal from '@/components/app/AppConfirmModal.vue'
 import MessageTemplatesPanel from '@/components/message-templates/MessageTemplatesPanel.vue'
 import AppPageHeader from '@/components/app/AppPageHeader.vue'
 import AppPageTabs from '@/components/app/AppPageTabs.vue'
+import UiFilterChip from '@/components/ui/UiFilterChip.vue'
 import { panelBreadcrumbs } from '@/constants/panelBreadcrumbs'
 import AppPageFooter from '@/components/layout/AppPageFooter.vue'
 import type { Campaign, CampaignStatus, Sequence } from '@/types/campaigns'
@@ -170,7 +171,7 @@ async function confirmDeleteCampaign(): Promise<void> {
 </script>
 
 <template>
-  <div class="flex min-h-full flex-col bg-brand-mist">
+  <div class="flex min-h-full flex-col bg-brand-surface">
     <AppPageHeader
       title="Campanhas"
       :breadcrumbs="panelBreadcrumbs({ label: 'Campanhas' })"
@@ -196,33 +197,18 @@ async function confirmDeleteCampaign(): Promise<void> {
     <p v-if="actionMessage" class="mx-4 mt-2 text-sm text-brand-indigo lg:mx-8" role="status">{{ actionMessage }}</p>
 
     <AppPageTabs>
-      <button
-        type="button"
-        class="flex items-center gap-2 border-b-2 py-3 text-sm font-semibold"
-        :class="mainTab === 'campanhas' ? 'border-brand-indigo text-brand-indigo' : 'border-transparent text-brand-gray'"
-        @click="mainTab = 'campanhas'"
-      >
+      <UiFilterChip :active="mainTab === 'campanhas'" @click="mainTab = 'campanhas'">
         Campanhas
-        <span class="rounded-full bg-indigo-100 px-2 py-0.5 text-[11px] font-bold">{{ campaigns.length }}</span>
-      </button>
-      <button
-        type="button"
-        class="flex items-center gap-2 border-b-2 py-3 text-sm font-medium"
-        :class="mainTab === 'sequencias' ? 'border-brand-indigo text-brand-indigo' : 'border-transparent text-brand-gray'"
-        @click="mainTab = 'sequencias'"
-      >
+        <span class="rounded-full px-1.5 text-[10px] font-bold" :class="mainTab === 'campanhas' ? 'bg-white/20' : 'bg-brand-mist text-brand-indigo'">{{ campaigns.length }}</span>
+      </UiFilterChip>
+      <UiFilterChip :active="mainTab === 'sequencias'" @click="mainTab = 'sequencias'">
         Sequências
-        <span class="rounded-full bg-slate-100 px-2 py-0.5 text-[11px]">{{ sequences.length }}</span>
-      </button>
-      <button
-        type="button"
-        class="flex items-center gap-2 border-b-2 py-3 text-sm font-medium"
-        :class="mainTab === 'modelos' ? 'border-brand-indigo text-brand-indigo' : 'border-transparent text-brand-gray'"
-        @click="mainTab = 'modelos'"
-      >
+        <span class="rounded-full px-1.5 text-[10px] font-bold" :class="mainTab === 'sequencias' ? 'bg-white/20' : 'bg-slate-100 text-brand-gray'">{{ sequences.length }}</span>
+      </UiFilterChip>
+      <UiFilterChip :active="mainTab === 'modelos'" @click="mainTab = 'modelos'">
         Modelos de mensagem
-        <span class="rounded-full bg-slate-100 px-2 py-0.5 text-[11px]">{{ templatesCount }}</span>
-      </button>
+        <span class="rounded-full px-1.5 text-[10px] font-bold" :class="mainTab === 'modelos' ? 'bg-white/20' : 'bg-slate-100 text-brand-gray'">{{ templatesCount }}</span>
+      </UiFilterChip>
     </AppPageTabs>
 
     <div class="flex-1 px-4 py-6 sm:px-6 lg:px-8">

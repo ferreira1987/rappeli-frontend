@@ -19,6 +19,7 @@ import KeywordRuleDeleteDialog from '@/components/auto-replies/KeywordRuleDelete
 import KeywordRuleFormModal from '@/components/auto-replies/KeywordRuleFormModal.vue'
 import AppPageHeader from '@/components/app/AppPageHeader.vue'
 import AppPageTabs from '@/components/app/AppPageTabs.vue'
+import UiFilterChip from '@/components/ui/UiFilterChip.vue'
 import AppPageFooter from '@/components/layout/AppPageFooter.vue'
 import { panelBreadcrumbs } from '@/constants/panelBreadcrumbs'
 import type {
@@ -357,7 +358,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="flex min-h-full flex-col bg-brand-mist">
+  <div class="flex min-h-full flex-col bg-brand-surface">
     <AppPageHeader
       title="Respostas automáticas"
       subtitle="Defina textos enviados automaticamente pelo WhatsApp da empresa. As mensagens respeitam o limite da API e podem usar formatação simples (*negrito*, _itálico_)."
@@ -374,21 +375,15 @@ onMounted(() => {
     </AppPageHeader>
 
     <AppPageTabs>
-      <button
-        v-for="tab in tabs"
-        :key="tab.id"
-        type="button"
-        class="inline-flex shrink-0 items-center gap-2 whitespace-nowrap border-b-2 py-3 text-sm font-semibold transition"
-        :class="
-          activeTab === tab.id
-            ? 'border-brand-indigo text-brand-indigo'
-            : 'border-transparent text-brand-gray hover:text-brand-ink'
-        "
-        @click="activeTab = tab.id"
+      <UiFilterChip
+        v-for="tabItem in tabs"
+        :key="tabItem.id"
+        :active="activeTab === tabItem.id"
+        @click="activeTab = tabItem.id"
       >
-        <component :is="tab.icon" class="h-4 w-4" aria-hidden="true" />
-        {{ tabNavLabel(tab) }}
-      </button>
+        <component :is="tabItem.icon" class="h-4 w-4" aria-hidden="true" />
+        {{ tabNavLabel(tabItem) }}
+      </UiFilterChip>
     </AppPageTabs>
 
     <div class="flex-1 space-y-6 px-4 py-6 sm:px-6 lg:px-8">

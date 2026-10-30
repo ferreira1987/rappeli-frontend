@@ -55,7 +55,7 @@ const breadcrumbs = panelBreadcrumbs({ label: 'Campanhas', to: { name: 'campanha
 </script>
 
 <template>
-  <div class="flex min-h-full flex-col bg-brand-mist">
+  <div class="flex min-h-full flex-col bg-brand-surface">
     <AppPageHeader title="Sequências" :breadcrumbs="breadcrumbs">
       <template #actions>
         <button

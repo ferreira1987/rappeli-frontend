@@ -4,7 +4,7 @@ import { RouterLink, useRoute, useRouter } from 'vue-router'
 
 import { fetchPendingTeamInvitations, fetchTeamAgents } from '@/api/team'
 import AppPageHeader from '@/components/app/AppPageHeader.vue'
-import AppPageTabs from '@/components/app/AppPageTabs.vue'
+import UiSubNav from '@/components/ui/UiSubNav.vue'
 import CompanySettingsForm from '@/components/settings/CompanySettingsForm.vue'
 import WhatsAppBusinessSettings from '@/components/settings/WhatsAppBusinessSettings.vue'
 import AppPageFooter from '@/components/layout/AppPageFooter.vue'
@@ -28,6 +28,17 @@ const teamSummaryLoading = ref(false)
 const teamSummaryError = ref<string | null>(null)
 const teamAgentCount = ref<number | null>(null)
 const teamPendingCount = ref<number | null>(null)
+
+const settingsNavItems = computed(() =>
+  SETTINGS_TAB_KEYS.map((key) => ({
+    key,
+    label: settingsTabLabel(key),
+    hint:
+      key === 'equipe' && teamSummaryLine.value && !teamSummaryLoading.value && !teamSummaryError.value
+        ? teamSummaryLine.value
+        : undefined,
+  })),
+)
 
 const teamSummaryLine = computed(() => {
   if (teamAgentCount.value == null) {
@@ -70,7 +81,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="flex min-h-full flex-col bg-brand-mist">
+  <div class="flex min-h-full flex-col bg-brand-surface">
     <AppPageHeader
       title="Configurações"
       subtitle="Gerencie sua conta, equipe, dados fiscais e cobrança."
@@ -78,24 +89,14 @@ onMounted(() => {
     >
     </AppPageHeader>
 
-    <AppPageTabs>
-      <button
-        v-for="tab in SETTINGS_TAB_KEYS"
-        :key="tab"
-        type="button"
-        class="shrink-0 whitespace-nowrap border-b-2 py-3 text-sm font-semibold transition"
-        :class="
-          activeTab === tab
-            ? 'border-brand-indigo text-brand-indigo'
-            : 'border-transparent text-brand-gray hover:text-brand-ink'
-        "
-        @click="selectTab(tab)"
-      >
-        {{ settingsTabLabel(tab) }}
-      </button>
-    </AppPageTabs>
+    <div class="flex min-h-0 flex-1 flex-col lg:flex-row">
+      <UiSubNav
+        :items="settingsNavItems"
+        :active="activeTab"
+        @select="selectTab"
+      />
 
-    <div class="flex-1 space-y-6 px-4 py-6 sm:px-6 lg:px-8">
+      <div class="flex-1 space-y-6 px-4 py-6 sm:px-6 lg:px-8">
       <template v-if="activeTab === 'plano'">
         <section class="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
           <p class="text-xs font-semibold uppercase tracking-wide text-brand-gray">Assinatura</p>
@@ -145,6 +146,7 @@ onMounted(() => {
       </template>
 
       <AppPageFooter />
+      </div>
     </div>
   </div>
 </template>

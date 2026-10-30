@@ -9,7 +9,7 @@ import { panelBreadcrumbs } from '@/constants/panelBreadcrumbs'
 </script>
 
 <template>
-  <div class="flex min-h-full flex-col bg-brand-mist">
+  <div class="flex min-h-full flex-col bg-brand-surface">
     <AppPageHeader
       title="Automações"
       subtitle="Fluxos visuais com gatilhos e ramificações estarão disponíveis em uma próxima versão."
