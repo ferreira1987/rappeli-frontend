@@ -43,7 +43,7 @@ function dayLabel(isoDate: string): string {
           :title="`Enviadas: ${point.outbound}`"
         />
         <div
-          class="w-[42%] rounded-t-md bg-brand-coral/80 transition-all"
+          class="w-[42%] rounded-t-md bg-slate-400 transition-all"
           :style="{ height: barHeight(point.inbound) }"
           :title="`Recebidas: ${point.inbound}`"
         />

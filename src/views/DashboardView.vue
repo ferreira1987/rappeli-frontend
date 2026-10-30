@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import {
+  BarChart3,
   CircleHelp,
   Info,
   Link2,
@@ -17,6 +18,7 @@ import { fetchKeywordRules, fetchOutOfHoursAutoReply, fetchWelcomeAutoReply } fr
 import { fetchDashboardMetrics } from '@/api/dashboard'
 import { fetchInboxConversations } from '@/api/inbox'
 import { fetchPendingTeamInvitations, fetchTeamAgents } from '@/api/team'
+import MessageVolumeChart from '@/components/dashboard/MessageVolumeChart.vue'
 import AppPageShell from '@/components/layout/AppPageShell.vue'
 import AppPageFooter from '@/components/layout/AppPageFooter.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
@@ -215,6 +217,18 @@ function metricPlaceholderLabel(card: MetricCard): string {
   return 'Sem dados ainda'
 }
 
+const volumePeriodLabel = computed(() => {
+  const days = metrics.value?.message_volume?.period_days
+  if (days == null || days <= 0) {
+    return '7 dias'
+  }
+  return days === 1 ? '1 dia' : `${days} dias`
+})
+
+const hasVolumeChart = computed(
+  () => (metrics.value?.message_volume?.points.length ?? 0) > 0,
+)
+
 async function loadOnboardingProgress(): Promise<void> {
   onboardingChecksLoading.value = true
   try {
@@ -353,7 +367,7 @@ onMounted(() => {
                 </UiBadge>
               </div>
               <p class="text-sm text-brand-gray">
-                Vincule o WhatsApp Business da sua clínica para receber e responder mensagens pelo
+                Vincule o WhatsApp Business da sua empresa para receber e responder mensagens pelo
                 painel.
               </p>
             </div>
@@ -425,6 +439,7 @@ onMounted(() => {
         </ol>
 
         <div
+          v-if="!stepWhatsappDone"
           class="flex gap-3 border-t border-slate-100 bg-slate-50/80 px-5 py-4 text-sm text-brand-gray sm:px-6"
         >
           <Info class="mt-0.5 h-4 w-4 shrink-0 text-brand-gray" aria-hidden="true" />
@@ -465,6 +480,55 @@ onMounted(() => {
             </template>
           </UiCard>
         </div>
+
+        <UiCard padding="md" class="mt-4">
+          <div class="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h4 class="text-base font-semibold text-brand-ink">Volume de mensagens</h4>
+              <p class="mt-1 text-sm text-brand-gray">
+                Envio e recebimento ao longo do período.
+              </p>
+            </div>
+            <UiBadge variant="primary" size="md">{{ volumePeriodLabel }}</UiBadge>
+          </div>
+
+          <div class="mt-3 flex flex-wrap items-center gap-4 text-xs text-brand-gray">
+            <span class="inline-flex items-center gap-1.5">
+              <span class="h-2.5 w-2.5 rounded-full bg-brand-indigo" aria-hidden="true" />
+              Enviadas
+            </span>
+            <span class="inline-flex items-center gap-1.5">
+              <span class="h-2.5 w-2.5 rounded-full bg-slate-400" aria-hidden="true" />
+              Recebidas
+            </span>
+          </div>
+
+          <MessageVolumeChart
+            v-if="!metricsLoading && hasVolumeChart && metrics?.message_volume"
+            :volume="metrics.message_volume"
+          />
+
+          <div
+            v-else
+            class="mt-4 flex h-48 flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-slate-200 bg-slate-50 text-center"
+          >
+            <BarChart3 class="h-8 w-8 text-slate-300" aria-hidden="true" />
+            <p class="text-sm font-medium text-brand-ink">
+              {{
+                !whatsappConnected && !metricsLoading
+                  ? 'Aguardando conexão do WhatsApp'
+                  : 'Sem dados para exibir'
+              }}
+            </p>
+            <p class="max-w-sm px-4 text-xs text-brand-gray">
+              {{
+                !whatsappConnected && !metricsLoading
+                  ? 'Conecte o WhatsApp para acompanhar o volume de mensagens enviadas e recebidas.'
+                  : 'O gráfico usa a série message_volume retornada pela API de métricas do painel.'
+              }}
+            </p>
+          </div>
+        </UiCard>
       </section>
 
       <AppPageFooter />
