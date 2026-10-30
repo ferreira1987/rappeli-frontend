@@ -1,8 +1,11 @@
 <script setup lang="ts">
-import { Loader2 } from '@lucide/vue'
+import { Check, CloudUpload, ImageIcon, Loader2 } from '@lucide/vue'
 import { computed, onMounted, ref } from 'vue'
 
 import { fetchCompany, updateCompany } from '@/api/company'
+import UiButton from '@/components/ui/UiButton.vue'
+import UiCard from '@/components/ui/UiCard.vue'
+import UiInput from '@/components/ui/UiInput.vue'
 import { useAuthStore } from '@/stores/auth'
 import { isCompanyAdministrator } from '@/utils/authRole'
 import { isValidBrazilianDocument, maskCpfCnpj } from '@/utils/brazilianDocument'
@@ -24,12 +27,13 @@ const phone = ref('')
 const logoUrl = ref<string | null>(null)
 const logoFile = ref<File | null>(null)
 const logoPreview = ref<string | null>(null)
+const logoDragActive = ref(false)
+
+const logoInputRef = ref<HTMLInputElement | null>(null)
 
 const canEdit = computed(() => isCompanyAdministrator(auth.user))
 
-const readOnlyClass = computed(() =>
-  canEdit.value ? '' : 'cursor-not-allowed bg-slate-50 text-brand-gray',
-)
+const displayedLogo = computed(() => logoPreview.value ?? logoUrl.value)
 
 onMounted(() => {
   void (async () => {
@@ -45,10 +49,10 @@ async function load(): Promise<void> {
   loadError.value = null
   try {
     const company = await fetchCompany()
-    name.value = company.name
-    cnpj.value = company.cnpj ? maskCpfCnpj(company.cnpj) : ''
-    phone.value = company.phone ? maskPhoneBr(company.phone) : ''
-    logoUrl.value = company.logo_url
+    name.value = company?.name ?? ''
+    cnpj.value = company?.cnpj ? maskCpfCnpj(company.cnpj) : ''
+    phone.value = company?.phone ? maskPhoneBr(company.phone) : ''
+    logoUrl.value = company?.logo_url ?? null
   } catch (error) {
     loadError.value = getErrorMessage(error)
   } finally {
@@ -56,34 +60,69 @@ async function load(): Promise<void> {
   }
 }
 
-function onCnpjInput(event: Event): void {
+function onNameUpdate(value: string): void {
+  name.value = value
+  delete fieldErrors.value.name
+}
+
+function onCnpjUpdate(value: string): void {
   if (!canEdit.value) {
     return
   }
-  cnpj.value = maskCpfCnpj((event.target as HTMLInputElement).value)
+  cnpj.value = maskCpfCnpj(value)
   delete fieldErrors.value.cnpj
 }
 
-function onPhoneInput(event: Event): void {
+function onPhoneUpdate(value: string): void {
   if (!canEdit.value) {
     return
   }
-  phone.value = maskPhoneBr((event.target as HTMLInputElement).value)
+  phone.value = maskPhoneBr(value)
   delete fieldErrors.value.phone
 }
 
-function onLogoChange(event: Event): void {
+function applyLogoFile(file: File | null): void {
   if (!canEdit.value) {
     return
   }
-  const input = event.target as HTMLInputElement
-  const file = input.files?.[0] ?? null
   logoFile.value = file
   if (logoPreview.value) {
     URL.revokeObjectURL(logoPreview.value)
   }
   logoPreview.value = file ? URL.createObjectURL(file) : null
   delete fieldErrors.value.logo
+}
+
+function onLogoChange(event: Event): void {
+  const input = event.target as HTMLInputElement
+  applyLogoFile(input.files?.[0] ?? null)
+}
+
+function openLogoPicker(): void {
+  logoInputRef.value?.click()
+}
+
+function onLogoDrop(event: DragEvent): void {
+  event.preventDefault()
+  logoDragActive.value = false
+  if (!canEdit.value) {
+    return
+  }
+  const file = event.dataTransfer?.files?.[0] ?? null
+  if (file && file.type.startsWith('image/')) {
+    applyLogoFile(file)
+  }
+}
+
+function onLogoDragOver(event: DragEvent): void {
+  event.preventDefault()
+  if (canEdit.value) {
+    logoDragActive.value = true
+  }
+}
+
+function onLogoDragLeave(): void {
+  logoDragActive.value = false
 }
 
 function validateClient(): boolean {
@@ -124,7 +163,7 @@ async function onSubmit(): Promise<void> {
       phone: phone.value,
       logo: logoFile.value,
     })
-    logoUrl.value = updated.logo_url
+    logoUrl.value = updated?.logo_url ?? null
     logoFile.value = null
     if (logoPreview.value) {
       URL.revokeObjectURL(logoPreview.value)
@@ -142,15 +181,13 @@ async function onSubmit(): Promise<void> {
     saving.value = false
   }
 }
-
-const displayedLogo = computed(() => logoPreview.value ?? logoUrl.value)
 </script>
 
 <template>
-  <section class="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
-    <h2 class="font-display text-lg font-semibold text-brand-ink">Dados da empresa</h2>
+  <UiCard padding="lg">
+    <h2 class="text-lg font-semibold text-brand-ink">Dados da empresa</h2>
     <p class="mt-2 text-sm text-brand-gray">
-      Nome, CNPJ, telefone e logotipo usados no painel e nas comunicações com clientes.
+      Nome, CNPJ, telefone e logotipo usados no painel e nas comunicações.
     </p>
     <p v-if="!loading && !canEdit" class="mt-3 text-sm text-brand-gray">
       Apenas administradores podem editar estes dados. Você está visualizando em modo leitura.
@@ -162,7 +199,10 @@ const displayedLogo = computed(() => logoPreview.value ?? logoUrl.value)
       <div class="h-10 animate-pulse rounded-lg bg-slate-100" />
     </div>
 
-    <p v-else-if="loadError" class="mt-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+    <p
+      v-else-if="loadError"
+      class="mt-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+    >
       {{ loadError }}
       <button type="button" class="ml-2 font-semibold underline" @click="load">Tentar novamente</button>
     </p>
@@ -170,102 +210,136 @@ const displayedLogo = computed(() => logoPreview.value ?? logoUrl.value)
     <form v-else class="mt-6 space-y-5" @submit.prevent="onSubmit">
       <p
         v-if="successMessage"
-        class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900"
+        class="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900"
         role="status"
       >
         {{ successMessage }}
       </p>
       <p
         v-if="submitError"
-        class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+        class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
         role="alert"
       >
         {{ submitError }}
       </p>
 
       <div>
-        <label for="company-name" class="text-xs font-semibold uppercase tracking-wide text-brand-gray">Nome</label>
-        <input
-          id="company-name"
-          v-model="name"
-          type="text"
-          autocomplete="organization"
-          class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
-          :class="[readOnlyClass, fieldErrors.name ? 'border-red-300' : '']"
-          :readonly="!canEdit"
-          @input="delete fieldErrors.name"
-        />
+        <label for="company-name" class="text-sm font-medium text-brand-ink">Nome da empresa</label>
+        <div class="mt-1.5">
+          <UiInput
+            id="company-name"
+            :model-value="name"
+            autocomplete="organization"
+            :readonly="!canEdit"
+            :invalid="Boolean(fieldErrors.name)"
+            @update:model-value="onNameUpdate"
+          />
+        </div>
         <p v-if="fieldErrors.name" class="mt-1 text-xs text-red-600">{{ fieldErrors.name }}</p>
       </div>
 
       <div class="grid gap-5 sm:grid-cols-2">
         <div>
-          <label for="company-cnpj" class="text-xs font-semibold uppercase tracking-wide text-brand-gray">CNPJ</label>
-          <input
-            id="company-cnpj"
-            :value="cnpj"
-            type="text"
-            inputmode="numeric"
-            autocomplete="off"
-            placeholder="00.000.000/0000-00"
-            class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
-            :class="[readOnlyClass, fieldErrors.cnpj ? 'border-red-300' : '']"
-            :readonly="!canEdit"
-            @input="onCnpjInput"
-          />
+          <label for="company-cnpj" class="text-sm font-medium text-brand-ink">CNPJ</label>
+          <div class="mt-1.5">
+            <UiInput
+              id="company-cnpj"
+              :model-value="cnpj"
+              inputmode="numeric"
+              autocomplete="off"
+              placeholder="00.000.000/0000-00"
+              :readonly="!canEdit"
+              :invalid="Boolean(fieldErrors.cnpj)"
+              @update:model-value="onCnpjUpdate"
+            />
+          </div>
           <p v-if="fieldErrors.cnpj" class="mt-1 text-xs text-red-600">{{ fieldErrors.cnpj }}</p>
         </div>
         <div>
-          <label for="company-phone" class="text-xs font-semibold uppercase tracking-wide text-brand-gray"
-            >Telefone</label
-          >
-          <input
-            id="company-phone"
-            :value="phone"
-            type="tel"
-            inputmode="tel"
-            autocomplete="tel"
-            placeholder="(00) 00000-0000"
-            class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
-            :class="[readOnlyClass, fieldErrors.phone ? 'border-red-300' : '']"
-            :readonly="!canEdit"
-            @input="onPhoneInput"
-          />
+          <label for="company-phone" class="text-sm font-medium text-brand-ink">Telefone de contato</label>
+          <div class="mt-1.5">
+            <UiInput
+              id="company-phone"
+              :model-value="phone"
+              type="tel"
+              inputmode="tel"
+              autocomplete="tel"
+              placeholder="(00) 00000-0000"
+              :readonly="!canEdit"
+              :invalid="Boolean(fieldErrors.phone)"
+              @update:model-value="onPhoneUpdate"
+            />
+          </div>
           <p v-if="fieldErrors.phone" class="mt-1 text-xs text-red-600">{{ fieldErrors.phone }}</p>
         </div>
       </div>
 
       <div>
-        <label for="company-logo" class="text-xs font-semibold uppercase tracking-wide text-brand-gray">Logotipo</label>
-        <div class="mt-2 flex flex-wrap items-center gap-4">
+        <span class="text-sm font-medium text-brand-ink">Logotipo</span>
+        <div class="mt-2 flex flex-col gap-4 sm:flex-row sm:items-stretch">
           <div
-            v-if="displayedLogo"
-            class="flex h-16 w-16 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-brand-mist"
+            class="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-brand-surface"
           >
-            <img :src="displayedLogo" alt="" class="max-h-full max-w-full object-contain" />
+            <img
+              v-if="displayedLogo"
+              :src="displayedLogo"
+              alt=""
+              class="max-h-full max-w-full object-contain"
+            />
+            <div v-else class="flex flex-col items-center gap-1 px-1 text-center">
+              <ImageIcon class="h-5 w-5 text-brand-gray" aria-hidden="true" />
+              <span class="text-[10px] font-medium text-brand-gray">Sem logo</span>
+            </div>
           </div>
-          <input
-            v-if="canEdit"
-            id="company-logo"
-            type="file"
-            accept="image/png,image/jpeg,image/webp,image/svg+xml"
-            class="text-sm text-brand-gray file:mr-3 file:rounded-lg file:border-0 file:bg-brand-mist file:px-3 file:py-2 file:text-sm file:font-semibold file:text-brand-indigo"
-            @change="onLogoChange"
-          />
+
+          <div
+            class="flex min-h-[5rem] flex-1 flex-wrap items-center justify-between gap-3 rounded-lg border border-dashed px-4 py-3 transition-colors"
+            :class="
+              logoDragActive
+                ? 'border-brand-indigo bg-brand-mist'
+                : 'border-slate-300 bg-brand-surface'
+            "
+            @dragover="onLogoDragOver"
+            @dragleave="onLogoDragLeave"
+            @drop="onLogoDrop"
+          >
+            <div class="flex min-w-0 items-start gap-3">
+              <CloudUpload class="mt-0.5 h-5 w-5 shrink-0 text-brand-gray" aria-hidden="true" />
+              <div class="min-w-0 text-sm">
+                <p class="font-medium text-brand-ink">Arraste o logo ou escolha um arquivo</p>
+                <p class="mt-0.5 text-xs text-brand-gray">Formatos aceitos: PNG, JPG ou SVG até 2MB</p>
+              </div>
+            </div>
+            <UiButton
+              v-if="canEdit"
+              type="button"
+              variant="secondary"
+              size="sm"
+              class="shrink-0"
+              @click="openLogoPicker"
+            >
+              Selecionar
+            </UiButton>
+            <input
+              v-if="canEdit"
+              ref="logoInputRef"
+              type="file"
+              accept="image/png,image/jpeg,image/webp,image/svg+xml"
+              class="sr-only"
+              @change="onLogoChange"
+            />
+          </div>
         </div>
         <p v-if="fieldErrors.logo" class="mt-1 text-xs text-red-600">{{ fieldErrors.logo }}</p>
       </div>
 
-      <div v-if="canEdit" class="flex justify-end pt-2">
-        <button
-          type="submit"
-          class="inline-flex items-center gap-2 rounded-xl bg-brand-indigo px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-60"
-          :disabled="saving"
-        >
+      <div v-if="canEdit" class="flex justify-end border-t border-slate-100 pt-5">
+        <UiButton type="submit" :disabled="saving">
           <Loader2 v-if="saving" class="h-4 w-4 animate-spin" aria-hidden="true" />
+          <Check v-else class="h-4 w-4" aria-hidden="true" />
           Salvar alterações
-        </button>
+        </UiButton>
       </div>
     </form>
-  </section>
+  </UiCard>
 </template>

@@ -10,6 +10,8 @@ import {
 } from '@/api/whatsapp'
 import WhatsAppDisconnectDialog from '@/components/whatsapp/WhatsAppDisconnectDialog.vue'
 import WhatsAppPinModal from '@/components/whatsapp/WhatsAppPinModal.vue'
+import UiButton from '@/components/ui/UiButton.vue'
+import UiCard from '@/components/ui/UiCard.vue'
 import { useWhatsAppEmbeddedSignup } from '@/composables/useWhatsAppEmbeddedSignup'
 import { useWhatsAppStore } from '@/stores/whatsapp'
 import type { ConnectWhatsAppPayload, WhatsAppAccount } from '@/types/whatsapp'
@@ -127,8 +129,8 @@ onMounted(() => {
 </script>
 
 <template>
-  <section class="rounded-2xl border border-slate-200/80 bg-white shadow-sm">
-    <div class="border-b border-slate-100 px-6 py-5">
+  <UiCard padding="none" class="overflow-hidden">
+    <div class="border-b border-slate-100 px-5 py-5 sm:px-6">
       <div class="flex flex-wrap items-start justify-between gap-4">
         <div class="flex items-start gap-3">
           <div
@@ -157,7 +159,7 @@ onMounted(() => {
       </div>
     </div>
 
-    <div class="px-6 py-6">
+    <div class="px-5 py-6 sm:px-6">
       <div v-if="loading" class="flex items-center justify-center py-12">
         <Loader2 class="h-7 w-7 animate-spin text-brand-indigo" aria-label="Carregando" />
       </div>
@@ -203,14 +205,15 @@ onMounted(() => {
           </div>
         </dl>
 
-        <button
+        <UiButton
           type="button"
-          class="mt-8 inline-flex items-center gap-2 rounded-xl border border-red-200 bg-white px-4 py-2.5 text-sm font-semibold text-red-700 hover:bg-red-50"
+          variant="danger"
+          class="mt-8"
           @click="disconnectDialogOpen = true"
         >
           <Unplug class="h-4 w-4" aria-hidden="true" />
           Desconectar
-        </button>
+        </UiButton>
       </template>
 
       <template v-else>
@@ -218,20 +221,20 @@ onMounted(() => {
           Nenhum número vinculado. Use o cadastro incorporado da Meta para conectar sua conta do
           WhatsApp Business de forma segura.
         </p>
-        <button
+        <UiButton
           type="button"
-          class="mt-6 inline-flex items-center gap-2 rounded-xl bg-brand-indigo px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-brand-indigo-hover disabled:opacity-60"
+          class="mt-6"
           :disabled="launching"
           @click="onConnectClick()"
         >
           <Loader2 v-if="launching" class="h-4 w-4 animate-spin" aria-hidden="true" />
           Conectar WhatsApp
-        </button>
+        </UiButton>
       </template>
 
       <p v-if="actionError" class="mt-4 text-sm text-red-600" role="alert">{{ actionError }}</p>
     </div>
-  </section>
+  </UiCard>
 
   <WhatsAppPinModal
     :open="pinModalOpen"
