@@ -8,13 +8,18 @@ const props = withDefaults(
     type?: 'text' | 'search' | 'email' | 'password' | 'tel' | 'number'
     placeholder?: string
     disabled?: boolean
+    readonly?: boolean
     autocomplete?: string
+    inputmode?: 'text' | 'numeric' | 'tel' | 'email' | 'decimal' | 'search'
     inputClass?: string
+    invalid?: boolean
   }>(),
   {
     modelValue: '',
     type: 'text',
     disabled: false,
+    readonly: false,
+    invalid: false,
   },
 )
 
@@ -44,9 +49,16 @@ function onInput(event: Event): void {
       :type="type"
       :placeholder="placeholder"
       :disabled="disabled"
+      :readonly="readonly"
       :autocomplete="autocomplete"
-      class="w-full rounded-lg border border-slate-200 bg-white py-2 text-sm text-brand-ink placeholder:text-brand-gray/80 focus:border-brand-indigo focus:outline-none focus:ring-2 focus:ring-brand-indigo/20 disabled:cursor-not-allowed disabled:bg-slate-50"
-      :class="[$slots.leading ? 'pl-9 pr-3' : 'px-3', inputClass]"
+      :inputmode="inputmode"
+      :aria-invalid="invalid || undefined"
+      class="w-full rounded-lg border bg-white py-2 text-sm text-brand-ink placeholder:text-brand-gray/80 focus:border-brand-indigo focus:outline-none focus:ring-2 focus:ring-brand-indigo/20 disabled:cursor-not-allowed disabled:bg-slate-50 read-only:cursor-default read-only:bg-slate-50"
+      :class="[
+        $slots.leading ? 'pl-9 pr-3' : 'px-3',
+        invalid ? 'border-red-300' : 'border-slate-200',
+        inputClass,
+      ]"
       @input="onInput"
     />
   </div>

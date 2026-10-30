@@ -1,3 +1,7 @@
+import type { RouteLocationRaw } from 'vue-router'
+
+import type { PanelBreadcrumb } from '@/constants/panelBreadcrumbs'
+
 export type SettingsTabKey = 'empresa' | 'equipe' | 'plano' | 'whatsapp'
 
 const TAB_LABELS: Record<SettingsTabKey, string> = {
@@ -32,3 +36,11 @@ export function settingsTabLabel(tab: SettingsTabKey): string {
 }
 
 export const SETTINGS_TAB_KEYS: SettingsTabKey[] = ['empresa', 'equipe', 'plano', 'whatsapp']
+
+export function settingsSectionBreadcrumbs(sectionLabel: string): PanelBreadcrumb[] {
+  const configuracoesTo: RouteLocationRaw = { name: 'configuracoes' }
+  return [
+    { label: 'Configurações', to: configuracoesTo },
+    { label: sectionLabel },
+  ]
+}
