@@ -24,25 +24,25 @@ function avatarInitials(contact: Conversation['contact']): string | null {
   if (!contactHasDisplayName(contact)) {
     return null
   }
-  return initialsFromName(contact.display_name)
+  return initialsFromName(contact?.display_name)
 }
 </script>
 
 <template>
   <button
     type="button"
-    class="relative w-full p-3.5 text-left transition"
+    class="relative w-full border-b border-slate-100 px-3.5 py-3 text-left transition-colors"
     :class="
       selected
-        ? 'border-l-4 border-brand-indigo bg-brand-mist/60'
-        : 'border-l-4 border-transparent hover:bg-slate-50'
+        ? 'border-l-[3px] border-l-brand-indigo bg-brand-mist/70 pl-[calc(0.875rem-3px)]'
+        : 'border-l-[3px] border-l-transparent hover:bg-slate-50'
     "
     @click="$emit('select')"
   >
     <div class="flex items-start justify-between gap-2">
       <div class="flex min-w-0 items-start gap-2.5">
         <div
-          class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-mist text-sm font-bold text-brand-indigo"
+          class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-indigo-100 bg-brand-mist text-sm font-bold text-brand-indigo"
         >
           <User v-if="avatarInitials(conversation.contact) == null" class="h-5 w-5" aria-hidden="true" />
           <span v-else>{{ avatarInitials(conversation.contact) }}</span>
@@ -64,33 +64,33 @@ function avatarInitials(contact: Conversation['contact']): string | null {
           {{ formatRelativeConversationTime(conversation.last_message_at) }}
         </span>
         <span
-          v-if="conversation.unread_count > 0"
-          class="inline-flex min-w-[1.25rem] items-center justify-center rounded-full bg-brand-indigo px-1.5 py-0.5 text-[10px] font-bold leading-none text-white"
+          v-if="(conversation.unread_count ?? 0) > 0"
+          class="inline-flex min-h-5 min-w-5 items-center justify-center rounded-full bg-brand-indigo px-1.5 text-[10px] font-bold leading-none text-white"
         >
-          {{ conversation.unread_count > 99 ? '99+' : conversation.unread_count }}
+          {{ (conversation.unread_count ?? 0) > 99 ? '99+' : conversation.unread_count }}
         </span>
       </div>
     </div>
     <div
-      v-if="conversation.last_message && conversation.last_message.body"
+      v-if="conversation.last_message?.body"
       class="mt-2 flex items-center gap-1.5 text-xs text-brand-gray"
     >
       <span class="inline-flex shrink-0 items-center gap-0.5">
         <Bot
-          v-if="conversation.last_message.is_automated"
+          v-if="conversation.last_message?.is_automated"
           class="h-3.5 w-3.5 text-brand-indigo"
           aria-hidden="true"
         />
         <MessageStatusIcon
-          v-if="conversation.last_message.direction === 'outbound'"
-          :status="conversation.last_message.status"
-          :delivered-at="conversation.last_message.delivered_at"
-          :read-at="conversation.last_message.read_at"
-          :failed-at="conversation.last_message.failed_at"
-          :failure-reason="conversation.last_message.failure_reason"
+          v-if="conversation.last_message?.direction === 'outbound'"
+          :status="conversation.last_message?.status"
+          :delivered-at="conversation.last_message?.delivered_at"
+          :read-at="conversation.last_message?.read_at"
+          :failed-at="conversation.last_message?.failed_at"
+          :failure-reason="conversation.last_message?.failure_reason"
         />
       </span>
-      <p class="line-clamp-2 min-w-0 flex-1">{{ conversation.last_message.body }}</p>
+      <p class="line-clamp-2 min-w-0 flex-1">{{ conversation.last_message?.body }}</p>
     </div>
   </button>
 </template>
