@@ -33,6 +33,21 @@ export interface ReportCampaignRow {
   failed_count?: number
 }
 
+/** Série diária opcional retornada pela API de relatórios. */
+export interface ReportConversationVolumePoint {
+  date: string
+  conversations_handled?: number
+  conversations_resolved?: number
+  conversations_started?: number
+  handled?: number
+  resolved?: number
+}
+
+export interface ReportConversationVolume {
+  period_days?: number
+  points?: ReportConversationVolumePoint[]
+}
+
 export interface ReportPayload {
   period: string
   meta?: {
@@ -41,4 +56,5 @@ export interface ReportPayload {
   kpis: ReportKpis
   agents: ReportAgentRow[]
   campaigns: ReportCampaignRow[]
+  conversation_volume?: ReportConversationVolume | null
 }
