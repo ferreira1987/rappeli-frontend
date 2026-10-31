@@ -47,6 +47,6 @@
   .onboarding-action-bar-scroll select,
   .onboarding-action-bar-scroll textarea {
     scroll-margin-top: 1rem;
-    scroll-margin-bottom: 9rem;
+    scroll-margin-bottom: var(--onboarding-action-bar-scroll-margin, calc(10.25rem + 16px));
   }
 }

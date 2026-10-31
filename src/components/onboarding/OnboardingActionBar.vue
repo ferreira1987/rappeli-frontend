@@ -1,5 +1,10 @@
 <script setup lang="ts">
 import { ArrowLeft, ArrowRight } from '@lucide/vue'
+import { onMounted, onUnmounted, ref } from 'vue'
+
+const ACTION_BAR_HEIGHT_VAR = '--onboarding-action-bar-height'
+const ACTION_BAR_SCROLL_MARGIN_VAR = '--onboarding-action-bar-scroll-margin'
+const ACTION_BAR_CLEARANCE_GAP_PX = 16
 
 defineProps<{
   primaryLabel: string
@@ -14,10 +19,46 @@ const emit = defineEmits<{
   back: []
   primary: []
 }>()
+
+const barRef = ref<HTMLElement | null>(null)
+let resizeObserver: ResizeObserver | null = null
+
+function syncActionBarOffset(height: number): void {
+  const scrollMargin = height + ACTION_BAR_CLEARANCE_GAP_PX
+  document.documentElement.style.setProperty(ACTION_BAR_HEIGHT_VAR, `${height}px`)
+  document.documentElement.style.setProperty(ACTION_BAR_SCROLL_MARGIN_VAR, `${scrollMargin}px`)
+}
+
+function clearActionBarOffset(): void {
+  document.documentElement.style.removeProperty(ACTION_BAR_HEIGHT_VAR)
+  document.documentElement.style.removeProperty(ACTION_BAR_SCROLL_MARGIN_VAR)
+}
+
+onMounted(() => {
+  const el = barRef.value
+  if (!el || typeof ResizeObserver === 'undefined') {
+    return
+  }
+
+  const measure = (): void => {
+    syncActionBarOffset(el.getBoundingClientRect().height)
+  }
+
+  resizeObserver = new ResizeObserver(measure)
+  resizeObserver.observe(el)
+  measure()
+})
+
+onUnmounted(() => {
+  resizeObserver?.disconnect()
+  resizeObserver = null
+  clearActionBarOffset()
+})
 </script>
 
 <template>
   <aside
+    ref="barRef"
     class="sticky bottom-0 z-40 border-t border-slate-200 bg-white py-4 shadow-lg"
     aria-label="Ações do checkout"
     data-onboarding-action-bar
