@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Clock, Hand, Loader2, MessageSquareReply, Plus, Tags } from '@lucide/vue'
+import { Check, Clock, Key, Loader2, MessageSquareReply, Plus, Sparkles } from '@lucide/vue'
 import { computed, onMounted, ref } from 'vue'
 
 import { fetchCsrfCookie } from '@/api/auth'
@@ -17,10 +17,13 @@ import FormSwitch from '@/components/auto-replies/FormSwitch.vue'
 import MessageFieldMeta from '@/components/auto-replies/MessageFieldMeta.vue'
 import KeywordRuleDeleteDialog from '@/components/auto-replies/KeywordRuleDeleteDialog.vue'
 import KeywordRuleFormModal from '@/components/auto-replies/KeywordRuleFormModal.vue'
-import AppPageHeader from '@/components/app/AppPageHeader.vue'
-import AppPageTabs from '@/components/app/AppPageTabs.vue'
-import UiFilterChip from '@/components/ui/UiFilterChip.vue'
 import AppPageFooter from '@/components/layout/AppPageFooter.vue'
+import AppPageShell from '@/components/layout/AppPageShell.vue'
+import UiBadge from '@/components/ui/UiBadge.vue'
+import UiButton from '@/components/ui/UiButton.vue'
+import UiCard from '@/components/ui/UiCard.vue'
+import UiInput from '@/components/ui/UiInput.vue'
+import UiSubNav from '@/components/ui/UiSubNav.vue'
 import { panelBreadcrumbs } from '@/constants/panelBreadcrumbs'
 import type {
   BusinessHourSlot,
@@ -31,7 +34,10 @@ import type {
 } from '@/types/autoReplies'
 import { AutoRepliesParseError } from '@/api/autoRepliesParsing'
 import { getErrorMessage, getValidationErrors } from '@/utils/errors'
+import { pluralizePt } from '@/utils/pluralize'
 import { BRAZIL_TIMEZONE_IDS, formatTimezoneLabel } from '@/utils/timezoneLabels'
+
+type SectionKey = 'welcome' | 'out-of-hours' | 'keywords'
 
 function formatLoadError(error: unknown): string {
   if (error instanceof AutoRepliesParseError) {
@@ -40,13 +46,38 @@ function formatLoadError(error: unknown): string {
   return getErrorMessage(error)
 }
 
-const tabs = [
-  { id: 'welcome' as const, label: 'Boas-vindas', icon: Hand },
-  { id: 'out-of-hours' as const, label: 'Fora do horário', icon: Clock },
-  { id: 'keywords' as const, label: 'Palavras-chave', icon: Tags },
-]
+function cloneWelcome(payload: WelcomeAutoReply): WelcomeAutoReply {
+  return {
+    enabled: payload.enabled,
+    message: payload.message,
+    inactivity_hours: payload.inactivity_hours,
+    updated_at: payload.updated_at,
+  }
+}
 
-const activeTab = ref<(typeof tabs)[number]['id']>('welcome')
+function cloneOutOfHours(payload: OutOfHoursAutoReply): OutOfHoursAutoReply {
+  return {
+    enabled: payload.enabled,
+    timezone: payload.timezone,
+    message: payload.message,
+    cooldown_minutes: payload.cooldown_minutes,
+    business_hours: payload.business_hours.map((slot) => ({ ...slot })),
+    updated_at: payload.updated_at,
+  }
+}
+
+const headerBreadcrumbs = panelBreadcrumbs(
+  { label: 'Automação' },
+  { label: 'Respostas automáticas' },
+)
+
+const SECTION_ICONS = {
+  welcome: Sparkles,
+  'out-of-hours': Clock,
+  keywords: Key,
+} as const
+
+const activeSection = ref<SectionKey>('welcome')
 
 const welcome = ref<WelcomeAutoReply>({
   enabled: false,
@@ -54,6 +85,8 @@ const welcome = ref<WelcomeAutoReply>({
   inactivity_hours: null,
   updated_at: null,
 })
+const welcomeBaseline = ref<WelcomeAutoReply | null>(null)
+
 const outOfHours = ref<OutOfHoursAutoReply>({
   enabled: false,
   timezone: 'America/Sao_Paulo',
@@ -62,6 +95,8 @@ const outOfHours = ref<OutOfHoursAutoReply>({
   business_hours: [],
   updated_at: null,
 })
+const outOfHoursBaseline = ref<OutOfHoursAutoReply | null>(null)
+
 const keywordRules = ref<KeywordRule[]>([])
 
 const welcomeLoading = ref(true)
@@ -105,13 +140,22 @@ const sortedKeywordRules = computed(() =>
 
 const keywordRulesCount = computed(() => keywordRules.value.length)
 
-function tabNavLabel(tab: (typeof tabs)[number]): string {
-  if (tab.id === 'keywords') {
-    const n = keywordRulesCount.value
-    return n === 1 ? 'Palavras-chave · 1 regra' : `Palavras-chave · ${n} regras`
-  }
-  return tab.label
-}
+const sectionNavItems = computed(() => {
+  const count = keywordRulesCount.value
+  const rulesHint =
+    count > 0 ? pluralizePt(count, 'regra') : undefined
+
+  return [
+    { key: 'welcome' as const, label: 'Boas-vindas', icon: SECTION_ICONS.welcome },
+    { key: 'out-of-hours' as const, label: 'Fora do horário', icon: SECTION_ICONS['out-of-hours'] },
+    {
+      key: 'keywords' as const,
+      label: 'Palavras-chave',
+      icon: SECTION_ICONS.keywords,
+      hint: rulesHint,
+    },
+  ]
+})
 
 const welcomeMessageDraft = computed({
   get: () => welcome.value.message ?? '',
@@ -198,6 +242,7 @@ async function loadWelcome(): Promise<void> {
   welcomeLoadError.value = null
   try {
     welcome.value = await fetchWelcomeAutoReply()
+    welcomeBaseline.value = cloneWelcome(welcome.value)
   } catch (error) {
     welcomeLoadError.value = formatLoadError(error)
   } finally {
@@ -210,6 +255,7 @@ async function loadOutOfHours(): Promise<void> {
   outOfHoursLoadError.value = null
   try {
     outOfHours.value = await fetchOutOfHoursAutoReply()
+    outOfHoursBaseline.value = cloneOutOfHours(outOfHours.value)
   } catch (error) {
     outOfHoursLoadError.value = formatLoadError(error)
   } finally {
@@ -229,6 +275,24 @@ async function loadKeywordRules(): Promise<void> {
   }
 }
 
+function onCancelWelcome(): void {
+  if (welcomeBaseline.value) {
+    welcome.value = cloneWelcome(welcomeBaseline.value)
+  }
+  welcomeFormError.value = null
+  welcomeFieldErrors.value = {}
+  welcomeSuccess.value = null
+}
+
+function onCancelOutOfHours(): void {
+  if (outOfHoursBaseline.value) {
+    outOfHours.value = cloneOutOfHours(outOfHoursBaseline.value)
+  }
+  outOfHoursFormError.value = null
+  outOfHoursFieldErrors.value = {}
+  outOfHoursSuccess.value = null
+}
+
 async function onSaveWelcome(): Promise<void> {
   welcomeFormError.value = null
   welcomeSuccess.value = null
@@ -239,7 +303,8 @@ async function onSaveWelcome(): Promise<void> {
   try {
     await fetchCsrfCookie()
     welcome.value = await updateWelcomeAutoReply(welcome.value)
-    welcomeSuccess.value = 'Salvo'
+    welcomeBaseline.value = cloneWelcome(welcome.value)
+    welcomeSuccess.value = 'Alterações salvas.'
   } catch (error) {
     welcomeFieldErrors.value = getValidationErrors(error) ?? {}
     welcomeFormError.value = getErrorMessage(error)
@@ -258,7 +323,8 @@ async function onSaveOutOfHours(): Promise<void> {
   try {
     await fetchCsrfCookie()
     outOfHours.value = await updateOutOfHoursAutoReply(outOfHours.value)
-    outOfHoursSuccess.value = 'Salvo'
+    outOfHoursBaseline.value = cloneOutOfHours(outOfHours.value)
+    outOfHoursSuccess.value = 'Alterações salvas.'
   } catch (error) {
     outOfHoursFieldErrors.value = getValidationErrors(error) ?? {}
     outOfHoursFormError.value = getErrorMessage(error)
@@ -350,6 +416,10 @@ async function toggleRuleActive(rule: KeywordRule): Promise<void> {
   }
 }
 
+function selectSection(key: SectionKey): void {
+  activeSection.value = key
+}
+
 onMounted(() => {
   void loadWelcome()
   void loadOutOfHours()
@@ -358,357 +428,400 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="flex min-h-full flex-col bg-brand-surface">
-    <AppPageHeader
-      title="Respostas automáticas"
-      subtitle="Defina textos enviados automaticamente pelo WhatsApp da empresa. As mensagens respeitam o limite da API e podem usar formatação simples (*negrito*, _itálico_)."
-      :breadcrumbs="panelBreadcrumbs({ label: 'Respostas automáticas' })"
-    >
-      <template #badges>
-        <span
-          class="inline-flex items-center gap-1 rounded-full bg-brand-mist px-2.5 py-1 text-xs font-medium text-brand-indigo"
-        >
-          <MessageSquareReply class="h-3.5 w-3.5" aria-hidden="true" />
-          Atendimento automático
-        </span>
-      </template>
-    </AppPageHeader>
+  <AppPageShell
+    title="Respostas automáticas"
+    subtitle="Defina textos enviados automaticamente pelo WhatsApp da empresa."
+    :breadcrumbs="headerBreadcrumbs"
+  >
+    <template #badges>
+      <UiBadge variant="primary" size="md" class="gap-1">
+        <MessageSquareReply class="h-3.5 w-3.5" aria-hidden="true" />
+        Atendimento automático
+      </UiBadge>
+    </template>
 
-    <AppPageTabs>
-      <UiFilterChip
-        v-for="tabItem in tabs"
-        :key="tabItem.id"
-        :active="activeTab === tabItem.id"
-        @click="activeTab = tabItem.id"
-      >
-        <component :is="tabItem.icon" class="h-4 w-4" aria-hidden="true" />
-        {{ tabNavLabel(tabItem) }}
-      </UiFilterChip>
-    </AppPageTabs>
+    <div class="flex min-h-0 flex-1 flex-col lg:flex-row">
+      <div class="flex min-w-0 flex-1 flex-col">
+        <div class="flex-1 space-y-6 px-4 py-6 sm:px-6 lg:px-8">
+          <UiCard padding="none" class="overflow-hidden lg:flex lg:min-h-[520px]">
+            <UiSubNav
+              :items="sectionNavItems"
+              :active="activeSection"
+              @select="selectSection"
+            />
 
-    <div class="flex-1 space-y-6 px-4 py-6 sm:px-6 lg:px-8">
-      <section v-show="activeTab === 'welcome'" class="rounded-2xl border border-slate-200/80 bg-white shadow-sm">
-        <div class="border-b border-slate-100 px-5 py-5 sm:px-6">
-          <h2 class="font-display text-lg font-semibold text-brand-ink">Boas-vindas</h2>
-          <p class="mt-1 text-sm text-brand-gray">
-            Envie uma mensagem quando o cliente entrar em contato após um período sem conversa.
-          </p>
-        </div>
-
-        <div v-if="welcomeLoading" class="flex items-center justify-center gap-2 px-6 py-16 text-sm text-brand-gray">
-          <Loader2 class="h-5 w-5 animate-spin" aria-hidden="true" />
-          Carregando…
-        </div>
-        <div v-else-if="welcomeLoadError" class="px-6 py-8">
-          <p class="text-sm text-red-600" role="alert">{{ welcomeLoadError }}</p>
-          <button
-            type="button"
-            class="mt-4 rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-brand-ink hover:bg-slate-50"
-            @click="loadWelcome"
-          >
-            Tentar novamente
-          </button>
-        </div>
-        <form v-else class="space-y-6 px-5 py-6 sm:px-6" @submit.prevent="onSaveWelcome">
-          <FormSwitch
-            v-model="welcome.enabled"
-            label="Ativar boas-vindas"
-            description="Quando ligado, clientes elegíveis recebem a mensagem configurada."
-          />
-
-          <MessageFieldMeta
-            id="welcome-message"
-            v-model="welcomeMessageDraft"
-            label="Mensagem"
-            :error="welcomeFieldErrors.message ?? null"
-            placeholder="Olá! Obrigado por entrar em contato. Em breve nossa equipe responde."
-          />
-
-          <div class="max-w-md space-y-3">
-            <label class="flex cursor-pointer items-start gap-2 text-sm text-brand-ink">
-              <input
-                v-model="welcomeUsesInactivity"
-                type="checkbox"
-                class="mt-0.5 h-4 w-4 rounded border-slate-300 text-brand-indigo focus:ring-brand-indigo"
-              />
-              <span>
-                <span class="font-medium">Reenviar após inatividade</span>
-                <span class="mt-0.5 block text-xs text-brand-gray">
-                  Se desligado, a boas-vindas é enviada apenas na primeira mensagem da conversa.
-                </span>
-              </span>
-            </label>
-            <div v-if="welcomeUsesInactivity">
-              <label class="text-sm font-medium text-brand-ink" for="welcome-inactivity">
-                Horas de inatividade
-              </label>
-              <input
-                id="welcome-inactivity"
-                v-model.number="welcome.inactivity_hours"
-                type="number"
-                min="1"
-                max="720"
-                step="1"
-                class="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-brand-ink focus:border-brand-indigo focus:outline-none focus:ring-2 focus:ring-brand-indigo/20"
-              />
-              <p v-if="welcomeFieldErrors.inactivity_hours" class="mt-1 text-xs text-red-600">
-                {{ welcomeFieldErrors.inactivity_hours }}
-              </p>
-            </div>
-          </div>
-
-          <p v-if="welcomeFormError" class="text-sm text-red-600" role="alert">{{ welcomeFormError }}</p>
-          <p v-if="welcomeSuccess" class="text-sm text-emerald-700" role="status">{{ welcomeSuccess }}</p>
-
-          <div class="flex justify-end border-t border-slate-100 pt-4">
-            <button
-              type="submit"
-              class="inline-flex items-center justify-center gap-2 rounded-xl bg-brand-indigo px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-indigo-hover disabled:opacity-50"
-              :disabled="welcomeSaving"
-            >
-              <Loader2 v-if="welcomeSaving" class="h-4 w-4 animate-spin" aria-hidden="true" />
-              {{ welcomeSaving ? 'Salvando…' : 'Salvar boas-vindas' }}
-            </button>
-          </div>
-        </form>
-      </section>
-
-      <section
-        v-show="activeTab === 'out-of-hours'"
-        class="rounded-2xl border border-slate-200/80 bg-white shadow-sm"
-      >
-        <div class="border-b border-slate-100 px-5 py-5 sm:px-6">
-          <h2 class="font-display text-lg font-semibold text-brand-ink">Fora do horário</h2>
-          <p class="mt-1 text-sm text-brand-gray">
-            Responda automaticamente quando a mensagem chegar fora do expediente configurado.
-          </p>
-        </div>
-
-        <div
-          v-if="outOfHoursLoading"
-          class="flex items-center justify-center gap-2 px-6 py-16 text-sm text-brand-gray"
-        >
-          <Loader2 class="h-5 w-5 animate-spin" aria-hidden="true" />
-          Carregando…
-        </div>
-        <div v-else-if="outOfHoursLoadError" class="px-6 py-8">
-          <p class="text-sm text-red-600" role="alert">{{ outOfHoursLoadError }}</p>
-          <button
-            type="button"
-            class="mt-4 rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-brand-ink hover:bg-slate-50"
-            @click="loadOutOfHours"
-          >
-            Tentar novamente
-          </button>
-        </div>
-        <form v-else class="space-y-6 px-5 py-6 sm:px-6" @submit.prevent="onSaveOutOfHours">
-          <FormSwitch
-            v-model="outOfHours.enabled"
-            label="Ativar resposta fora do horário"
-            description="Mensagens recebidas fora do expediente disparam a resposta automática."
-          />
-
-          <div class="grid gap-4 sm:grid-cols-2">
-            <div>
-              <label class="text-sm font-medium text-brand-ink" for="ooh-timezone">Fuso horário</label>
-              <select
-                id="ooh-timezone"
-                v-model="outOfHours.timezone"
-                class="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-brand-ink focus:border-brand-indigo focus:outline-none focus:ring-2 focus:ring-brand-indigo/20"
-              >
-                <option v-for="tz in timezoneOptions" :key="tz" :value="tz">{{ formatTimezoneLabel(tz) }}</option>
-              </select>
-              <p v-if="outOfHoursFieldErrors.timezone" class="mt-1 text-xs text-red-600">
-                {{ outOfHoursFieldErrors.timezone }}
-              </p>
-            </div>
-            <div>
-              <label class="text-sm font-medium text-brand-ink" for="ooh-cooldown">Intervalo mínimo (minutos)</label>
-              <input
-                id="ooh-cooldown"
-                v-model.number="outOfHours.cooldown_minutes"
-                type="number"
-                min="5"
-                max="1440"
-                step="1"
-                class="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-brand-ink focus:border-brand-indigo focus:outline-none focus:ring-2 focus:ring-brand-indigo/20"
-              />
-              <p class="mt-1 text-xs text-brand-gray">
-                Entre 5 e 1440 minutos entre respostas automáticas na mesma conversa.
-              </p>
-              <p v-if="outOfHoursFieldErrors.cooldown_minutes" class="mt-1 text-xs text-red-600">
-                {{ outOfHoursFieldErrors.cooldown_minutes }}
-              </p>
-            </div>
-          </div>
-
-          <MessageFieldMeta
-            id="ooh-message"
-            v-model="outOfHoursMessageDraft"
-            label="Mensagem"
-            :error="outOfHoursFieldErrors.message ?? null"
-            placeholder="Recebemos sua mensagem fora do nosso horário. Retornaremos em breve."
-          />
-
-          <div>
-            <p class="text-sm font-medium text-brand-ink">Horário por dia da semana</p>
-            <p class="mt-1 text-xs text-brand-gray">
-              Defina o expediente em que a equipe está disponível. Fora desses intervalos, a resposta automática
-              pode ser enviada.
-            </p>
-            <p v-if="outOfHoursFieldErrors.business_hours" class="mt-2 text-xs text-red-600">
-              {{ outOfHoursFieldErrors.business_hours }}
-            </p>
-            <ul class="mt-4 space-y-3">
-              <li
-                v-for="slot in outOfHours.business_hours"
-                :key="slot.day_of_week"
-                class="flex flex-col gap-3 rounded-xl border border-slate-100 bg-slate-50/60 p-3 sm:flex-row sm:items-center"
-              >
-                <label class="flex min-w-[7rem] items-center gap-2 text-sm font-medium text-brand-ink sm:w-36">
-                  <input
-                    type="checkbox"
-                    class="h-4 w-4 rounded border-slate-300 text-brand-indigo focus:ring-brand-indigo"
-                    :checked="!slot.is_closed"
-                    @change="setBusinessDayOpen(slot, ($event.target as HTMLInputElement).checked)"
-                  />
-                  {{ weekdayLabels[slot.day_of_week] }}
-                </label>
-                <div class="flex flex-1 flex-wrap items-center gap-2">
-                  <input
-                    v-model="slot.opens_at"
-                    type="time"
-                    class="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm text-brand-ink disabled:opacity-50"
-                    :disabled="slot.is_closed"
-                  />
-                  <span class="text-xs text-brand-gray">até</span>
-                  <input
-                    v-model="slot.closes_at"
-                    type="time"
-                    class="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm text-brand-ink disabled:opacity-50"
-                    :disabled="slot.is_closed"
-                  />
+            <div class="min-w-0 flex-1 border-t border-slate-100 lg:border-t-0">
+              <section v-show="activeSection === 'welcome'" class="flex h-full flex-col">
+                <div
+                  v-if="welcomeLoading"
+                  class="flex flex-1 items-center justify-center gap-2 px-6 py-16 text-sm text-brand-gray"
+                >
+                  <Loader2 class="h-5 w-5 animate-spin" aria-hidden="true" />
+                  Carregando…
                 </div>
-              </li>
-            </ul>
-          </div>
+                <div v-else-if="welcomeLoadError" class="px-6 py-8">
+                  <p class="text-sm text-red-600" role="alert">{{ welcomeLoadError }}</p>
+                  <UiButton variant="secondary" class="mt-4" @click="loadWelcome">
+                    Tentar novamente
+                  </UiButton>
+                </div>
+                <form v-else class="flex min-h-0 flex-1 flex-col" @submit.prevent="onSaveWelcome">
+                  <div class="space-y-6 px-5 py-6 sm:px-6">
+                    <div
+                      class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"
+                    >
+                      <div>
+                        <h2 class="text-lg font-semibold text-brand-ink">Mensagem de boas-vindas</h2>
+                        <p class="mt-1 text-sm text-brand-gray">
+                          Envie uma mensagem quando o cliente entrar em contato após um período sem conversa.
+                        </p>
+                      </div>
+                      <FormSwitch
+                        v-model="welcome.enabled"
+                        label="Ativado"
+                        description="Quando ligado, clientes elegíveis recebem a mensagem configurada."
+                        class="sm:max-w-xs"
+                      />
+                    </div>
 
-          <p v-if="outOfHoursFormError" class="text-sm text-red-600" role="alert">{{ outOfHoursFormError }}</p>
-          <p v-if="outOfHoursSuccess" class="text-sm text-emerald-700" role="status">{{ outOfHoursSuccess }}</p>
+                    <MessageFieldMeta
+                      id="welcome-message"
+                      v-model="welcomeMessageDraft"
+                      label="Mensagem"
+                      layout="panel"
+                      :error="welcomeFieldErrors.message ?? null"
+                      placeholder="Olá! Obrigado por entrar em contato. Em breve nossa equipe responde."
+                    />
 
-          <div class="flex justify-end border-t border-slate-100 pt-4">
-            <button
-              type="submit"
-              class="inline-flex items-center justify-center gap-2 rounded-xl bg-brand-indigo px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-indigo-hover disabled:opacity-50"
-              :disabled="outOfHoursSaving"
-            >
-              <Loader2 v-if="outOfHoursSaving" class="h-4 w-4 animate-spin" aria-hidden="true" />
-              {{ outOfHoursSaving ? 'Salvando…' : 'Salvar fora do horário' }}
-            </button>
-          </div>
-        </form>
-      </section>
+                    <div class="rounded-lg border border-slate-200 bg-slate-50/60 p-4">
+                      <label class="flex cursor-pointer items-start gap-3 text-sm text-brand-ink">
+                        <input
+                          v-model="welcomeUsesInactivity"
+                          type="checkbox"
+                          class="mt-0.5 h-4 w-4 rounded border-slate-300 text-brand-indigo focus:ring-brand-indigo"
+                        />
+                        <span>
+                          <span class="font-medium">Reenviar após inatividade</span>
+                          <span class="mt-0.5 block text-xs text-brand-gray">
+                            Se desligado, a boas-vindas é enviada apenas na primeira mensagem da conversa.
+                          </span>
+                        </span>
+                      </label>
+                      <div
+                        v-if="welcomeUsesInactivity"
+                        class="mt-4 flex flex-wrap items-center gap-2 sm:pl-7"
+                      >
+                        <label class="text-sm font-medium text-brand-ink" for="welcome-inactivity">
+                          Horas de inatividade:
+                        </label>
+                        <input
+                          id="welcome-inactivity"
+                          v-model.number="welcome.inactivity_hours"
+                          type="number"
+                          min="1"
+                          max="720"
+                          step="1"
+                          class="w-20 rounded-lg border border-slate-200 px-3 py-2 text-sm text-brand-ink focus:border-brand-indigo focus:outline-none focus:ring-2 focus:ring-brand-indigo/20"
+                          :class="welcomeFieldErrors.inactivity_hours ? 'border-red-300' : ''"
+                        />
+                        <span class="text-sm text-brand-gray">horas</span>
+                      </div>
+                      <p v-if="welcomeFieldErrors.inactivity_hours" class="mt-2 text-xs text-red-600 sm:pl-7">
+                        {{ welcomeFieldErrors.inactivity_hours }}
+                      </p>
+                    </div>
 
-      <section v-show="activeTab === 'keywords'" class="space-y-4">
-        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h2 class="font-display text-lg font-semibold text-brand-ink">Palavras-chave</h2>
-            <p class="mt-1 text-sm text-brand-gray">
-              Crie respostas automáticas quando a mensagem do cliente corresponder a uma palavra ou frase.
-            </p>
-          </div>
-          <button
-            type="button"
-            class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-brand-indigo px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-indigo-hover sm:w-auto"
-            @click="openCreateRule"
-          >
-            <Plus class="h-4 w-4" aria-hidden="true" />
-            Nova regra
-          </button>
-        </div>
+                    <p v-if="welcomeFormError" class="text-sm text-red-600" role="alert">
+                      {{ welcomeFormError }}
+                    </p>
+                  </div>
 
-        <p v-if="keywordsActionError" class="text-sm text-red-600" role="alert">{{ keywordsActionError }}</p>
-        <p v-if="keywordsSuccess" class="text-sm text-emerald-700" role="status">{{ keywordsSuccess }}</p>
-
-        <div
-          v-if="keywordsLoading"
-          class="flex items-center justify-center gap-2 rounded-2xl border border-slate-200/80 bg-white py-16 text-sm text-brand-gray shadow-sm"
-        >
-          <Loader2 class="h-5 w-5 animate-spin" aria-hidden="true" />
-          Carregando regras…
-        </div>
-        <div
-          v-else-if="keywordsLoadError"
-          class="rounded-2xl border border-slate-200/80 bg-white px-6 py-8 shadow-sm"
-        >
-          <p class="text-sm text-red-600" role="alert">{{ keywordsLoadError }}</p>
-          <button
-            type="button"
-            class="mt-4 rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-brand-ink hover:bg-slate-50"
-            @click="loadKeywordRules"
-          >
-            Tentar novamente
-          </button>
-        </div>
-        <div
-          v-else-if="sortedKeywordRules.length === 0"
-          class="rounded-2xl border border-dashed border-slate-200 bg-white px-6 py-12 text-center shadow-sm"
-        >
-          <p class="font-medium text-brand-ink">Nenhuma regra cadastrada</p>
-          <p class="mt-1 text-sm text-brand-gray">Adicione palavras-chave para responder perguntas frequentes.</p>
-        </div>
-        <ul v-else class="space-y-3">
-          <li
-            v-for="rule in sortedKeywordRules"
-            :key="rule.id"
-            class="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm sm:p-5"
-          >
-            <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-              <div class="min-w-0 flex-1">
-                <div class="flex flex-wrap items-center gap-2">
-                  <p class="font-display font-semibold text-brand-ink">{{ rule.keyword }}</p>
-                  <span
-                    class="rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide"
-                    :class="rule.is_active ? 'bg-emerald-50 text-emerald-800' : 'bg-slate-100 text-brand-gray'"
+                  <div
+                    class="mt-auto flex flex-col gap-3 border-t border-slate-100 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6"
                   >
-                    {{ rule.is_active ? 'Ativa' : 'Inativa' }}
-                  </span>
-                  <span class="rounded-full bg-brand-mist px-2 py-0.5 text-[10px] font-medium text-brand-indigo">
-                    {{ rule.match_type === 'exact' ? 'Texto exato' : 'Contém' }}
-                  </span>
-                  <span class="text-[10px] font-medium text-brand-gray">Prioridade {{ rule.priority }}</span>
-                </div>
-                <p class="mt-2 line-clamp-3 text-sm text-brand-gray">{{ rule.response_body }}</p>
-              </div>
-              <div class="flex flex-wrap gap-2 sm:shrink-0">
-                <button
-                  type="button"
-                  class="rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-medium text-brand-ink hover:bg-slate-50"
-                  @click="toggleRuleActive(rule)"
-                >
-                  {{ rule.is_active ? 'Desativar' : 'Ativar' }}
-                </button>
-                <button
-                  type="button"
-                  class="rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-medium text-brand-ink hover:bg-slate-50"
-                  @click="openEditRule(rule)"
-                >
-                  Editar
-                </button>
-                <button
-                  type="button"
-                  class="rounded-xl border border-red-200 px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-50"
-                  @click="openDeleteRule(rule)"
-                >
-                  Excluir
-                </button>
-              </div>
-            </div>
-          </li>
-        </ul>
-      </section>
+                    <p
+                      v-if="welcomeSuccess"
+                      class="inline-flex items-center gap-2 text-sm text-emerald-700"
+                      role="status"
+                    >
+                      <Check class="h-4 w-4 shrink-0" aria-hidden="true" />
+                      {{ welcomeSuccess }}
+                    </p>
+                    <span v-else class="hidden text-sm text-brand-gray sm:inline" aria-hidden="true" />
+                    <div class="flex flex-wrap justify-end gap-2 sm:ml-auto">
+                      <UiButton type="button" variant="secondary" @click="onCancelWelcome">
+                        Cancelar
+                      </UiButton>
+                      <UiButton type="submit" :disabled="welcomeSaving">
+                        <Loader2
+                          v-if="welcomeSaving"
+                          class="h-4 w-4 animate-spin"
+                          aria-hidden="true"
+                        />
+                        {{ welcomeSaving ? 'Salvando…' : 'Salvar boas-vindas' }}
+                      </UiButton>
+                    </div>
+                  </div>
+                </form>
+              </section>
 
-      <AppPageFooter />
+              <section v-show="activeSection === 'out-of-hours'" class="flex h-full flex-col">
+                <div
+                  v-if="outOfHoursLoading"
+                  class="flex flex-1 items-center justify-center gap-2 px-6 py-16 text-sm text-brand-gray"
+                >
+                  <Loader2 class="h-5 w-5 animate-spin" aria-hidden="true" />
+                  Carregando…
+                </div>
+                <div v-else-if="outOfHoursLoadError" class="px-6 py-8">
+                  <p class="text-sm text-red-600" role="alert">{{ outOfHoursLoadError }}</p>
+                  <UiButton variant="secondary" class="mt-4" @click="loadOutOfHours">
+                    Tentar novamente
+                  </UiButton>
+                </div>
+                <form v-else class="flex min-h-0 flex-1 flex-col" @submit.prevent="onSaveOutOfHours">
+                  <div class="space-y-6 px-5 py-6 sm:px-6">
+                    <div
+                      class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"
+                    >
+                      <div>
+                        <h2 class="text-lg font-semibold text-brand-ink">Fora do horário</h2>
+                        <p class="mt-1 text-sm text-brand-gray">
+                          Responda automaticamente quando a mensagem chegar fora do expediente configurado.
+                        </p>
+                      </div>
+                      <FormSwitch
+                        v-model="outOfHours.enabled"
+                        label="Ativado"
+                        description="Mensagens recebidas fora do expediente disparam a resposta automática."
+                        class="sm:max-w-xs"
+                      />
+                    </div>
+
+                    <div class="grid gap-4 sm:grid-cols-2">
+                      <div>
+                        <label class="text-sm font-medium text-brand-ink" for="ooh-timezone">
+                          Fuso horário
+                        </label>
+                        <select
+                          id="ooh-timezone"
+                          v-model="outOfHours.timezone"
+                          class="mt-1.5 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-brand-ink focus:border-brand-indigo focus:outline-none focus:ring-2 focus:ring-brand-indigo/20"
+                        >
+                          <option v-for="tz in timezoneOptions" :key="tz" :value="tz">
+                            {{ formatTimezoneLabel(tz) }}
+                          </option>
+                        </select>
+                        <p v-if="outOfHoursFieldErrors.timezone" class="mt-1 text-xs text-red-600">
+                          {{ outOfHoursFieldErrors.timezone }}
+                        </p>
+                      </div>
+                      <div>
+                        <label class="text-sm font-medium text-brand-ink" for="ooh-cooldown">
+                          Intervalo mínimo (minutos)
+                        </label>
+                        <UiInput
+                          id="ooh-cooldown"
+                          :model-value="String(outOfHours.cooldown_minutes ?? '')"
+                          type="number"
+                          inputmode="numeric"
+                          class="mt-1.5"
+                          :invalid="Boolean(outOfHoursFieldErrors.cooldown_minutes)"
+                          @update:model-value="
+                            outOfHours.cooldown_minutes =
+                              $event === '' ? 0 : Number.parseInt($event, 10)
+                          "
+                        />
+                        <p class="mt-1 text-xs text-brand-gray">
+                          Entre 5 e 1440 minutos entre respostas automáticas na mesma conversa.
+                        </p>
+                        <p v-if="outOfHoursFieldErrors.cooldown_minutes" class="mt-1 text-xs text-red-600">
+                          {{ outOfHoursFieldErrors.cooldown_minutes }}
+                        </p>
+                      </div>
+                    </div>
+
+                    <MessageFieldMeta
+                      id="ooh-message"
+                      v-model="outOfHoursMessageDraft"
+                      label="Mensagem"
+                      layout="panel"
+                      :error="outOfHoursFieldErrors.message ?? null"
+                      placeholder="Recebemos sua mensagem fora do nosso horário. Retornaremos em breve."
+                    />
+
+                    <div>
+                      <p class="text-sm font-medium text-brand-ink">Horário por dia da semana</p>
+                      <p class="mt-1 text-xs text-brand-gray">
+                        Defina o expediente em que a equipe está disponível. Fora desses intervalos, a resposta
+                        automática pode ser enviada.
+                      </p>
+                      <p v-if="outOfHoursFieldErrors.business_hours" class="mt-2 text-xs text-red-600">
+                        {{ outOfHoursFieldErrors.business_hours }}
+                      </p>
+                      <ul class="mt-4 space-y-3">
+                        <li
+                          v-for="slot in outOfHours.business_hours"
+                          :key="slot.day_of_week"
+                          class="flex flex-col gap-3 rounded-lg border border-slate-100 bg-slate-50/60 p-3 sm:flex-row sm:items-center"
+                        >
+                          <label
+                            class="flex min-w-[7rem] items-center gap-2 text-sm font-medium text-brand-ink sm:w-36"
+                          >
+                            <input
+                              type="checkbox"
+                              class="h-4 w-4 rounded border-slate-300 text-brand-indigo focus:ring-brand-indigo"
+                              :checked="!slot.is_closed"
+                              @change="setBusinessDayOpen(slot, ($event.target as HTMLInputElement).checked)"
+                            />
+                            {{ weekdayLabels[slot.day_of_week] }}
+                          </label>
+                          <div class="flex flex-1 flex-wrap items-center gap-2">
+                            <input
+                              v-model="slot.opens_at"
+                              type="time"
+                              class="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm text-brand-ink disabled:opacity-50"
+                              :disabled="slot.is_closed"
+                            />
+                            <span class="text-xs text-brand-gray">até</span>
+                            <input
+                              v-model="slot.closes_at"
+                              type="time"
+                              class="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm text-brand-ink disabled:opacity-50"
+                              :disabled="slot.is_closed"
+                            />
+                          </div>
+                        </li>
+                      </ul>
+                    </div>
+
+                    <p v-if="outOfHoursFormError" class="text-sm text-red-600" role="alert">
+                      {{ outOfHoursFormError }}
+                    </p>
+                  </div>
+
+                  <div
+                    class="mt-auto flex flex-col gap-3 border-t border-slate-100 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6"
+                  >
+                    <p
+                      v-if="outOfHoursSuccess"
+                      class="inline-flex items-center gap-2 text-sm text-emerald-700"
+                      role="status"
+                    >
+                      <Check class="h-4 w-4 shrink-0" aria-hidden="true" />
+                      {{ outOfHoursSuccess }}
+                    </p>
+                    <span v-else class="hidden text-sm text-brand-gray sm:inline" aria-hidden="true" />
+                    <div class="flex flex-wrap justify-end gap-2 sm:ml-auto">
+                      <UiButton type="button" variant="secondary" @click="onCancelOutOfHours">
+                        Cancelar
+                      </UiButton>
+                      <UiButton type="submit" :disabled="outOfHoursSaving">
+                        <Loader2
+                          v-if="outOfHoursSaving"
+                          class="h-4 w-4 animate-spin"
+                          aria-hidden="true"
+                        />
+                        {{ outOfHoursSaving ? 'Salvando…' : 'Salvar fora do horário' }}
+                      </UiButton>
+                    </div>
+                  </div>
+                </form>
+              </section>
+
+              <section v-show="activeSection === 'keywords'" class="px-5 py-6 sm:px-6">
+                <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <h2 class="text-lg font-semibold text-brand-ink">Palavras-chave</h2>
+                    <p class="mt-1 text-sm text-brand-gray">
+                      Crie respostas automáticas quando a mensagem do cliente corresponder a uma palavra ou frase.
+                    </p>
+                  </div>
+                  <UiButton class="w-full shrink-0 sm:w-auto" @click="openCreateRule">
+                    <Plus class="h-4 w-4" aria-hidden="true" />
+                    Nova regra
+                  </UiButton>
+                </div>
+
+                <p v-if="keywordsActionError" class="mt-4 text-sm text-red-600" role="alert">
+                  {{ keywordsActionError }}
+                </p>
+                <p v-if="keywordsSuccess" class="mt-4 text-sm text-emerald-700" role="status">
+                  {{ keywordsSuccess }}
+                </p>
+
+                <div
+                  v-if="keywordsLoading"
+                  class="mt-6 flex items-center justify-center gap-2 rounded-lg border border-slate-200 py-16 text-sm text-brand-gray"
+                >
+                  <Loader2 class="h-5 w-5 animate-spin" aria-hidden="true" />
+                  Carregando regras…
+                </div>
+                <div
+                  v-else-if="keywordsLoadError"
+                  class="mt-6 rounded-lg border border-slate-200 px-6 py-8"
+                >
+                  <p class="text-sm text-red-600" role="alert">{{ keywordsLoadError }}</p>
+                  <UiButton variant="secondary" class="mt-4" @click="loadKeywordRules">
+                    Tentar novamente
+                  </UiButton>
+                </div>
+                <div
+                  v-else-if="sortedKeywordRules.length === 0"
+                  class="mt-6 rounded-lg border border-dashed border-slate-200 px-6 py-12 text-center"
+                >
+                  <p class="font-medium text-brand-ink">Nenhuma regra cadastrada</p>
+                  <p class="mt-1 text-sm text-brand-gray">
+                    Adicione palavras-chave para responder perguntas frequentes.
+                  </p>
+                </div>
+                <ul v-else class="mt-6 space-y-3">
+                  <li
+                    v-for="rule in sortedKeywordRules"
+                    :key="rule.id"
+                    class="rounded-lg border border-slate-200 p-4 sm:p-5"
+                  >
+                    <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                      <div class="min-w-0 flex-1">
+                        <div class="flex flex-wrap items-center gap-2">
+                          <p class="font-semibold text-brand-ink">{{ rule.keyword }}</p>
+                          <UiBadge :variant="rule.is_active ? 'success' : 'neutral'" size="md">
+                            {{ rule.is_active ? 'Ativa' : 'Inativa' }}
+                          </UiBadge>
+                          <UiBadge variant="primary" size="sm">
+                            {{ rule.match_type === 'exact' ? 'Texto exato' : 'Contém' }}
+                          </UiBadge>
+                          <span class="text-xs font-medium text-brand-gray">
+                            Prioridade {{ rule.priority }}
+                          </span>
+                        </div>
+                        <p class="mt-2 line-clamp-3 text-sm text-brand-gray">{{ rule.response_body }}</p>
+                      </div>
+                      <div class="flex flex-wrap gap-2 sm:shrink-0">
+                        <UiButton variant="secondary" size="sm" @click="toggleRuleActive(rule)">
+                          {{ rule.is_active ? 'Desativar' : 'Ativar' }}
+                        </UiButton>
+                        <UiButton variant="secondary" size="sm" @click="openEditRule(rule)">
+                          Editar
+                        </UiButton>
+                        <UiButton variant="danger" size="sm" @click="openDeleteRule(rule)">
+                          Excluir
+                        </UiButton>
+                      </div>
+                    </div>
+                  </li>
+                </ul>
+              </section>
+            </div>
+          </UiCard>
+
+          <p class="text-xs text-brand-gray">
+            As mensagens respeitam o limite da API e podem usar formatação simples (*negrito*, _itálico_).
+          </p>
+
+          <AppPageFooter />
+        </div>
+      </div>
     </div>
 
     <KeywordRuleFormModal
@@ -727,5 +840,5 @@ onMounted(() => {
       @close="deleteDialogOpen = false"
       @confirm="onConfirmDeleteRule"
     />
-  </div>
+  </AppPageShell>
 </template>
