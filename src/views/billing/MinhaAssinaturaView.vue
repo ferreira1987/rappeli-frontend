@@ -265,14 +265,11 @@ function requestCancel(): void {
 function maskedCard(sub: Subscription): string {
   const digits = sub.payment_method.last_digits
   const brand = sub.payment_method.brand
-  if (!digits && !brand) {
-    return ''
-  }
   if (!digits) {
-    return brand ?? 'Cartão cadastrado'
+    return 'Cartão cadastrado'
   }
   const label = brand ?? 'Cartão'
-  return `${label} terminado em •••• ${digits}`
+  return `${label} •••• ${digits}`
 }
 
 const showRegisteredCard = computed(() => {
@@ -377,93 +374,130 @@ const showRegisteredCard = computed(() => {
             </RouterLink>
           </UiCard>
 
-          <UiCard v-else padding="lg">
-            <div class="flex flex-wrap items-start justify-between gap-4 border-b border-slate-100 pb-5">
-              <div class="min-w-0">
-                <div class="flex flex-wrap items-center gap-3">
-                  <h2 class="text-xl font-bold text-brand-ink">
-                    {{ subscription.plan_name }}
-                  </h2>
-                  <UiBadge v-if="subscription.status === 'ACTIVE'" variant="success" size="md">
-                    <span class="mr-1.5 inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden="true" />
-                    Ativa
-                  </UiBadge>
-                  <UiBadge v-else variant="neutral" size="md">
-                    {{ subscriptionStatusLabel(subscription.status) }}
-                  </UiBadge>
+          <div v-else class="grid gap-6 lg:grid-cols-12 lg:items-start">
+            <div class="space-y-6 lg:col-span-8">
+              <UiCard padding="lg">
+                <div class="flex flex-wrap items-start justify-between gap-4 border-b border-slate-100 pb-5">
+                  <div class="min-w-0">
+                    <div class="flex flex-wrap items-center gap-3">
+                      <h2 class="text-xl font-bold text-brand-ink">
+                        {{ subscription.plan_name }}
+                      </h2>
+                      <UiBadge v-if="subscription.status === 'ACTIVE'" variant="success" size="md">
+                        <span
+                          class="mr-1.5 inline-block h-1.5 w-1.5 rounded-full bg-emerald-500"
+                          aria-hidden="true"
+                        />
+                        Ativa
+                      </UiBadge>
+                      <UiBadge v-else variant="neutral" size="md">
+                        {{ subscriptionStatusLabel(subscription.status) }}
+                      </UiBadge>
+                    </div>
+                    <p v-if="subscription.modality_label" class="mt-2 text-sm text-brand-gray">
+                      {{ subscription.modality_label }}
+                    </p>
+                  </div>
+                  <div class="text-right">
+                    <p class="text-2xl font-bold text-brand-ink">
+                      {{ formatPlanAmountCompact(subscription.value) }}
+                      <span class="text-sm font-semibold text-brand-gray">
+                        / {{ billingCycleLabel(subscription.cycle).toLowerCase() }}
+                      </span>
+                    </p>
+                    <p v-if="subscription.status === 'ACTIVE'" class="mt-1 text-xs text-brand-gray">
+                      Renovação automática
+                    </p>
+                  </div>
                 </div>
-                <p v-if="subscription.modality_label" class="mt-2 text-sm text-brand-gray">
-                  {{ subscription.modality_label }}
-                </p>
-              </div>
-              <div class="text-right">
-                <p class="text-2xl font-bold text-brand-ink">
-                  {{ formatPlanAmountCompact(subscription.value) }}
-                  <span class="text-sm font-semibold text-brand-gray">
-                    / {{ billingCycleLabel(subscription.cycle).toLowerCase() }}
-                  </span>
-                </p>
-                <p v-if="subscription.status === 'ACTIVE'" class="mt-1 text-xs text-brand-gray">
-                  Renovação automática
-                </p>
-              </div>
-            </div>
 
-            <ul class="mt-6 grid gap-4 sm:grid-cols-2">
-              <li
-                v-if="formatBillingDateShort(subscription.next_due_date)"
-                class="flex gap-3 rounded-lg border border-slate-100 bg-brand-surface px-4 py-3"
-              >
-                <Calendar class="mt-0.5 h-5 w-5 shrink-0 text-brand-indigo" aria-hidden="true" />
-                <div>
-                  <p class="text-xs font-semibold text-brand-gray">Próxima cobrança</p>
-                  <p class="mt-0.5 text-sm font-semibold text-brand-ink">
-                    {{ formatBillingDateShort(subscription.next_due_date) }}
-                  </p>
+                <ul class="mt-6 grid gap-4 sm:grid-cols-2">
+                  <li
+                    v-if="formatBillingDateShort(subscription.next_due_date)"
+                    class="flex gap-3 rounded-lg border border-slate-100 bg-brand-surface px-4 py-3"
+                  >
+                    <Calendar class="mt-0.5 h-5 w-5 shrink-0 text-brand-indigo" aria-hidden="true" />
+                    <div>
+                      <p class="text-xs font-semibold text-brand-gray">Próxima cobrança</p>
+                      <p class="mt-0.5 text-sm font-semibold text-brand-ink">
+                        {{ formatBillingDateShort(subscription.next_due_date) }}
+                      </p>
+                    </div>
+                  </li>
+                  <li
+                    v-if="showRegisteredCard"
+                    class="flex gap-3 rounded-lg border border-slate-100 bg-brand-surface px-4 py-3"
+                  >
+                    <CreditCard class="mt-0.5 h-5 w-5 shrink-0 text-brand-indigo" aria-hidden="true" />
+                    <div>
+                      <p class="text-xs font-semibold text-brand-gray">Cartão cadastrado</p>
+                      <p class="mt-0.5 text-sm font-semibold text-brand-ink">
+                        {{ maskedCard(subscription) }}
+                      </p>
+                    </div>
+                  </li>
+                </ul>
+
+                <section
+                  class="mt-6 rounded-lg border border-slate-100 bg-brand-surface p-4"
+                  aria-labelledby="plan-included-heading"
+                >
+                  <h3
+                    id="plan-included-heading"
+                    class="text-[11px] font-semibold uppercase tracking-wider text-brand-gray"
+                  >
+                    O que está incluído
+                  </h3>
+                  <dl class="mt-4 grid gap-4 sm:grid-cols-2 text-sm">
+                    <div>
+                      <dt class="text-[11px] font-semibold uppercase tracking-wider text-brand-gray">
+                        Franquia de mensagens
+                      </dt>
+                      <dd class="mt-1 font-semibold text-brand-ink">Conforme plano contratado</dd>
+                    </div>
+                    <div>
+                      <dt class="text-[11px] font-semibold uppercase tracking-wider text-brand-gray">
+                        Atendentes
+                      </dt>
+                      <dd class="mt-1 font-semibold text-brand-indigo">Usuários ilimitados</dd>
+                    </div>
+                    <div>
+                      <dt class="text-[11px] font-semibold uppercase tracking-wider text-brand-gray">
+                        Excedente
+                      </dt>
+                      <dd class="mt-1 font-semibold text-brand-ink">R$ 0,05 por mensagem</dd>
+                    </div>
+                  </dl>
+                </section>
+
+                <div class="mt-6 flex flex-wrap items-center gap-3">
+                  <RouterLink :to="{ name: 'assinatura-planos' }" class="inline-flex">
+                    <UiButton>Alterar plano</UiButton>
+                  </RouterLink>
+                  <UiButton
+                    v-if="subscription.status !== 'CANCELED'"
+                    variant="outline"
+                    @click="openCardForm"
+                  >
+                    Atualizar cartão
+                  </UiButton>
+                  <UiButton
+                    v-if="subscription.status !== 'CANCELED'"
+                    variant="ghost"
+                    class="ml-auto text-red-600 hover:bg-red-50 hover:text-red-700"
+                    :disabled="cancelLoading"
+                    @click="requestCancel"
+                  >
+                    <Loader2 v-if="cancelLoading" class="h-4 w-4 animate-spin" aria-hidden="true" />
+                    Cancelar assinatura
+                  </UiButton>
                 </div>
-              </li>
-              <li
-                v-if="showRegisteredCard"
-                class="flex gap-3 rounded-lg border border-slate-100 bg-brand-surface px-4 py-3"
-              >
-                <CreditCard class="mt-0.5 h-5 w-5 shrink-0 text-brand-indigo" aria-hidden="true" />
-                <div>
-                  <p class="text-xs font-semibold text-brand-gray">Cartão cadastrado</p>
-                  <p class="mt-0.5 text-sm font-semibold text-brand-ink">
-                    {{ maskedCard(subscription) }}
-                  </p>
-                </div>
-              </li>
-            </ul>
+                <p v-if="subscription.status !== 'CANCELED'" class="mt-3 text-xs text-brand-gray">
+                  O cancelamento é imediato e interrompe novas cobranças recorrentes.
+                </p>
+              </UiCard>
 
-            <div class="mt-6 flex flex-wrap items-center gap-3">
-              <RouterLink :to="{ name: 'assinatura-planos' }" class="inline-flex">
-                <UiButton>Alterar plano</UiButton>
-              </RouterLink>
-              <UiButton
-                v-if="subscription.status !== 'CANCELED'"
-                variant="outline"
-                @click="openCardForm"
-              >
-                Atualizar cartão
-              </UiButton>
-              <UiButton
-                v-if="subscription.status !== 'CANCELED'"
-                variant="ghost"
-                class="ml-auto text-red-600 hover:bg-red-50 hover:text-red-700"
-                :disabled="cancelLoading"
-                @click="requestCancel"
-              >
-                <Loader2 v-if="cancelLoading" class="h-4 w-4 animate-spin" aria-hidden="true" />
-                Cancelar assinatura
-              </UiButton>
-            </div>
-            <p v-if="subscription.status !== 'CANCELED'" class="mt-3 text-xs text-brand-gray">
-              O cancelamento é imediato e interrompe novas cobranças recorrentes.
-            </p>
-          </UiCard>
-
-          <section class="space-y-4">
+              <section class="space-y-4">
             <div>
               <h2 class="text-lg font-semibold text-brand-ink">Histórico de faturas</h2>
               <p class="mt-1 text-sm text-brand-gray">
@@ -534,7 +568,42 @@ const showRegisteredCard = computed(() => {
                 </tr>
               </tbody>
             </UiTable>
-          </section>
+              </section>
+            </div>
+
+            <aside class="lg:col-span-4">
+              <UiCard padding="md">
+                <div class="flex items-center justify-between">
+                  <h2 class="text-sm font-semibold text-brand-ink">Forma de pagamento</h2>
+                  <CreditCard class="h-4 w-4 text-brand-gray" aria-hidden="true" />
+                </div>
+                <div
+                  class="mt-4 rounded-lg border border-slate-200 bg-brand-surface p-4"
+                >
+                  <div
+                    class="flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-brand-gray"
+                  >
+                    <span>Cartão de cobrança</span>
+                    <span class="text-brand-ink">
+                      {{ subscription.payment_method.brand ?? 'Cartão' }}
+                    </span>
+                  </div>
+                  <p class="mt-3 font-mono text-base tracking-widest text-brand-ink">
+                    •••• •••• •••• {{ subscription.payment_method.last_digits ?? '••••' }}
+                  </p>
+                </div>
+                <p class="mt-3 text-xs text-brand-gray">{{ maskedCard(subscription) }}</p>
+                <UiButton
+                  v-if="subscription.status !== 'CANCELED'"
+                  variant="secondary"
+                  class="mt-4 w-full"
+                  @click="openCardForm"
+                >
+                  Atualizar cartão
+                </UiButton>
+              </UiCard>
+            </aside>
+          </div>
 
           <AppPageFooter />
         </div>
