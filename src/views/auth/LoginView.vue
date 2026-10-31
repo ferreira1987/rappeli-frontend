@@ -5,6 +5,7 @@ import { RouterLink, useRoute, useRouter } from 'vue-router'
 
 import AuthMarketingPanel from '@/components/auth/AuthMarketingPanel.vue'
 import AuthPageChrome from '@/components/auth/AuthPageChrome.vue'
+import RappeliLogo from '@/components/brand/RappeliLogo.vue'
 import { UiButton, UiCard, UiInput } from '@/components/ui'
 import { useAuthStore } from '@/stores/auth'
 
@@ -50,6 +51,16 @@ async function onSubmit(): Promise<void> {
       </header>
 
       <div class="flex flex-1 flex-col justify-center px-6 pb-6 sm:px-10 lg:px-12">
+        <div class="mx-auto mb-6 flex w-full max-w-[420px] items-center gap-3 lg:hidden">
+          <RappeliLogo mode="symbol" class="h-9 w-9 shrink-0" />
+          <div>
+            <span class="block font-display text-xl font-bold leading-none tracking-tight text-slate-900">
+              Rappeli
+            </span>
+            <span class="mt-1 block text-xs text-slate-500">Mensagens &amp; automações</span>
+          </div>
+        </div>
+
         <UiCard
           :bordered="false"
           padding="none"

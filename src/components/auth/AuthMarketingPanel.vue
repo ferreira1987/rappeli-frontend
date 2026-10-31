@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { Check } from '@lucide/vue'
 
+import RappeliLogo from '@/components/brand/RappeliLogo.vue'
+
 const featureItems = [
   {
     title: 'Lembretes automáticos',
@@ -26,10 +28,9 @@ const featureItems = [
   >
     <header class="flex items-center gap-3">
       <div
-        class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white font-display text-xl font-bold leading-none text-[#4338CA]"
-        aria-hidden="true"
+        class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/20 bg-white/10"
       >
-        r
+        <RappeliLogo mode="symbol" class="h-5 w-5" />
       </div>
       <div>
         <span class="block font-display text-2xl font-bold leading-none tracking-tight text-white">
