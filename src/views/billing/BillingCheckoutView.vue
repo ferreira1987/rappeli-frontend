@@ -179,8 +179,8 @@ function onPhoneInput(value: string): void {
             </div>
 
             <div class="space-y-4 p-6">
-              <div class="grid gap-4 sm:grid-cols-2">
-                <div class="space-y-1.5">
+              <div class="grid grid-cols-1 gap-4 sm:grid-cols-12">
+                <div class="space-y-1.5 sm:col-span-6">
                   <label for="bill-name" class="text-xs font-medium text-slate-700">
                     Nome completo
                   </label>
@@ -196,7 +196,7 @@ function onPhoneInput(value: string): void {
                     {{ billingFieldError('holder.name') }}
                   </p>
                 </div>
-                <div class="space-y-1.5">
+                <div class="space-y-1.5 sm:col-span-6">
                   <label for="bill-email" class="text-xs font-medium text-slate-700"> E-mail </label>
                   <UiInput
                     id="bill-email"
@@ -210,7 +210,7 @@ function onPhoneInput(value: string): void {
                     {{ billingFieldError('holder.email') }}
                   </p>
                 </div>
-                <div class="space-y-1.5">
+                <div class="space-y-1.5 sm:col-span-6">
                   <label for="bill-phone" class="text-xs font-medium text-slate-700">
                     WhatsApp
                   </label>
@@ -228,7 +228,7 @@ function onPhoneInput(value: string): void {
                     {{ billingFieldError('holder.phone') }}
                   </p>
                 </div>
-                <div class="space-y-1.5">
+                <div class="space-y-1.5 sm:col-span-6">
                   <label for="bill-doc" class="text-xs font-medium text-slate-700">
                     CPF ou CNPJ
                   </label>
@@ -245,7 +245,7 @@ function onPhoneInput(value: string): void {
                     {{ billingFieldError('holder.cpf_cnpj') }}
                   </p>
                 </div>
-                <div class="space-y-1.5 sm:col-span-2">
+                <div class="space-y-1.5 sm:col-span-12">
                   <label for="legal-name" class="text-xs font-medium text-slate-700">
                     Razão social
                   </label>
@@ -256,7 +256,7 @@ function onPhoneInput(value: string): void {
                     placeholder="Razão social ou nome fantasia"
                   />
                 </div>
-                <div class="space-y-1.5 sm:col-span-4 lg:col-span-4">
+                <div class="space-y-1.5 sm:col-span-4">
                   <label for="cep" class="text-xs font-medium text-slate-700"> CEP </label>
                   <UiInput
                     id="cep"
@@ -272,7 +272,7 @@ function onPhoneInput(value: string): void {
                     {{ billingFieldError('holder.postal_code') }}
                   </p>
                 </div>
-                <div class="space-y-1.5 sm:col-span-5 lg:col-span-5">
+                <div class="space-y-1.5 sm:col-span-5">
                   <label for="street" class="text-xs font-medium text-slate-700"> Endereço </label>
                   <UiInput
                     id="street"
@@ -281,7 +281,7 @@ function onPhoneInput(value: string): void {
                     placeholder="Rua, avenida ou logradouro"
                   />
                 </div>
-                <div class="space-y-1.5 sm:col-span-3 lg:col-span-3">
+                <div class="space-y-1.5 sm:col-span-3">
                   <label for="number" class="text-xs font-medium text-slate-700"> Número </label>
                   <UiInput
                     id="number"

@@ -30,11 +30,7 @@ const wrapperClass = computed(() => {
   <component :is="placement === 'sidebar' ? 'aside' : 'section'" :class="wrapperClass">
     <div :class="placement === 'sidebar' ? 'flex flex-col space-y-8' : 'flex flex-col space-y-6'">
       <div class="flex items-center gap-3">
-        <div
-          class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/20 bg-white/10"
-        >
-          <RappeliLogo mode="symbol" class="h-5 w-5" />
-        </div>
+        <RappeliLogo mode="symbol" class="h-10 w-10 shrink-0" />
         <div>
           <span class="block font-display text-2xl font-bold leading-none tracking-tight text-white">
             Rappeli

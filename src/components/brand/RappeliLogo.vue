@@ -32,8 +32,9 @@ const horizontalSrc = (variant: 'light' | 'dark') =>
   <img
     v-else
     src="/brand/rappeli-A-simbolo.svg"
-    alt=""
-    class="h-9 w-9 shrink-0"
+    alt="Rappeli"
+    class="h-9 w-9 shrink-0 object-contain"
+    :class="$props.class"
     width="36"
     height="36"
   />
