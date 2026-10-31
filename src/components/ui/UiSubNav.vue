@@ -2,8 +2,10 @@
 import type { Component } from 'vue'
 
 defineProps<{
-  items: { key: T; label: string; hint?: string; icon?: Component }[]
+  items: { key: T; label: string; hint?: string; icon?: Component; count?: number | string }[]
   active: T
+  /** Sidebar section heading (desktop). Defaults to Preferências. */
+  sectionLabel?: string
 }>()
 
 const emit = defineEmits<{
@@ -21,13 +23,13 @@ function onSelect(key: T): void {
     aria-label="Seções"
   >
     <p class="mb-3 hidden px-2 text-[10px] font-semibold uppercase tracking-wider text-brand-gray lg:block">
-      Preferências
+      {{ sectionLabel ?? 'Preferências' }}
     </p>
     <ul class="flex flex-col gap-1">
       <li v-for="item in items" :key="item.key" class="min-w-0">
         <button
           type="button"
-          class="flex w-full items-start gap-2.5 rounded-lg px-2.5 py-2.5 text-left text-sm font-medium transition-colors"
+          class="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2.5 text-left text-sm font-medium transition-colors"
           :class="
             active === item.key
               ? 'bg-brand-mist text-brand-indigo'
@@ -48,6 +50,13 @@ function onSelect(key: T): void {
             <span v-if="item.hint" class="mt-0.5 block truncate text-xs font-normal text-brand-gray">
               {{ item.hint }}
             </span>
+          </span>
+          <span
+            v-if="item.count != null && item.count !== ''"
+            class="shrink-0 tabular-nums text-xs font-semibold"
+            :class="active === item.key ? 'text-brand-indigo' : 'text-brand-gray'"
+          >
+            {{ item.count }}
           </span>
         </button>
       </li>

@@ -91,6 +91,15 @@ export async function inviteTeamMember(payload: TeamInvitationPayload): Promise<
   return unwrapData<TeamInvitationCreated>(data)
 }
 
+export async function cancelTeamInvitation(id: number): Promise<void> {
+  await http.delete(`/api/team/invitations/${id}`)
+}
+
+export async function resendTeamInvitation(id: number): Promise<TeamInvitationCreated> {
+  const { data } = await http.post<unknown>(`/api/team/invitations/${id}/resend`)
+  return unwrapData<TeamInvitationCreated>(data)
+}
+
 export async function acceptTeamInvitation(payload: AcceptTeamInvitationPayload): Promise<User> {
   await fetchCsrfCookie()
   const { data } = await http.post<{ user: User }>('/api/team/invitations/accept', {
