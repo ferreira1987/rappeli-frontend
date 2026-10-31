@@ -16,6 +16,7 @@ import {
 import { useCheckoutFlowStore } from '@/stores/checkoutFlow'
 import type { BillingCycle, BillingModality, BillingPlanItem, BillingPlansResponse } from '@/types/billing'
 import { formatPlanAmountCompact, billingCycleLabel } from '@/utils/billingFormat'
+import { resolveActiveSubscriptionRedirect } from '@/utils/billingCheckoutGuard'
 import { getErrorMessage } from '@/utils/errors'
 
 const router = useRouter()
@@ -176,6 +177,12 @@ function priceBlock(plan: BillingPlanItem) {
 }
 
 function continueToPayment(): void {
+  if (activeSubscriptionTier.value != null) {
+    checkoutFlow.clearCheckoutPlan()
+    void router.push(resolveActiveSubscriptionRedirect('planos'))
+    return
+  }
+
   const plan = selectedPlan.value
   if (!plan || !catalog.value) {
     return
