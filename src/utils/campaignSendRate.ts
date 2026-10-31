@@ -47,3 +47,25 @@ export function campaignSendRatePayloadValue(formValue: string): string {
 
   return trimmed.toLowerCase()
 }
+
+export function campaignSendRateMessagesPerMinute(formValue: string): number {
+  const normalized = formValue.trim().toLowerCase()
+  if (normalized === '1/s') return 60
+  if (normalized === '2/s') return 120
+  if (normalized === '5/m') return 5
+  if (normalized === '20/m') return 20
+  if (normalized === '60/m') return 60
+  return 5
+}
+
+export function estimateCampaignSendDurationMinutes(
+  recipientCount: number,
+  formSendRate: string,
+): number | null {
+  if (!Number.isFinite(recipientCount) || recipientCount <= 0) {
+    return null
+  }
+  const perMinute = campaignSendRateMessagesPerMinute(formSendRate)
+  if (perMinute <= 0) return null
+  return Math.max(1, Math.ceil(recipientCount / perMinute))
+}

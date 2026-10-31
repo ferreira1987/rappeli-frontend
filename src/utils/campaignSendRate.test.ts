@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import {
   campaignSendRateOptionsForForm,
   campaignSendRatePayloadValue,
+  estimateCampaignSendDurationMinutes,
   normalizeCampaignSendRateForForm,
 } from '@/utils/campaignSendRate'
 
@@ -46,5 +47,16 @@ describe('campaignSendRatePayloadValue', () => {
   it('sends lowercase rate strings', () => {
     expect(campaignSendRatePayloadValue('1/S')).toBe('1/s')
     expect(campaignSendRatePayloadValue('60/m')).toBe('60/m')
+  })
+})
+
+describe('estimateCampaignSendDurationMinutes', () => {
+  it('returns null without recipients', () => {
+    expect(estimateCampaignSendDurationMinutes(0, 'default')).toBeNull()
+  })
+
+  it('estimates duration from send rate', () => {
+    expect(estimateCampaignSendDurationMinutes(60, '60/m')).toBe(1)
+    expect(estimateCampaignSendDurationMinutes(1480, '60/m')).toBe(25)
   })
 })
