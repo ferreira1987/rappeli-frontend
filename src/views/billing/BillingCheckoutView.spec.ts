@@ -110,6 +110,55 @@ describe('BillingCheckoutView subscription guard', () => {
     expect(document.body.textContent).not.toContain('Finalizar contratação')
   })
 
+  it('never renders checkout form while ACTIVE redirect is pending', async () => {
+    let resolveReplace!: () => void
+    replace.mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveReplace = resolve
+        }),
+    )
+    vi.mocked(fetchCurrentSubscription).mockResolvedValue(activeSubscription())
+
+    const pinia = createPinia()
+    setActivePinia(pinia)
+    const checkoutFlow = useCheckoutFlowStore()
+    checkoutFlow.setPlanSelection({
+      modality: 'included',
+      tier: 'profissional',
+      cycle: 'YEARLY',
+      planId: 'plan-1',
+      planName: 'Profissional',
+      amount: 3970,
+      modalityLabel: 'Mensagens incluídas',
+    })
+
+    const wrapper = mount(BillingCheckoutView, {
+      global: {
+        plugins: [pinia],
+        stubs: {
+          OnboardingShell: shellStub,
+          OnboardingActionBar: true,
+          BillingCheckoutForms: true,
+          UiCard: { template: '<div><slot /></div>' },
+          UiBadge: true,
+          UiInput: true,
+        },
+      },
+    })
+
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Verificando assinatura')
+    expect(wrapper.text()).not.toContain('Finalizar contratação')
+
+    resolveReplace()
+    await flushPromises()
+
+    expect(wrapper.text()).not.toContain('Finalizar contratação')
+    expect(wrapper.text()).toContain('Verificando assinatura')
+  })
+
   it('shows checkout form when there is no subscription', async () => {
     vi.mocked(fetchCurrentSubscription).mockResolvedValue(null)
 

@@ -83,17 +83,21 @@ onMounted(async () => {
   }
 
   checkingSubscription.value = true
+  let redirectingForActiveSubscription = false
   try {
     const subscription = await fetchCurrentSubscription()
     if (shouldBlockCheckoutForSubscription(subscription)) {
       checkoutFlow.clearCheckoutPlan()
-      void router.replace(resolveActiveSubscriptionRedirect('checkout'))
+      redirectingForActiveSubscription = true
+      await router.replace(resolveActiveSubscriptionRedirect('checkout'))
       return
     }
   } catch {
     // Falha na checagem não impede quem ainda não tem assinatura.
   } finally {
-    checkingSubscription.value = false
+    if (!redirectingForActiveSubscription) {
+      checkingSubscription.value = false
+    }
   }
 
   if (auth.user) {
