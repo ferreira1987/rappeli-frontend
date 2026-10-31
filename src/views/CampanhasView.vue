@@ -1,32 +1,37 @@
 <script setup lang="ts">
-import { GitBranch, Loader2, Plus, Search } from '@lucide/vue'
-import { computed, onMounted, ref } from 'vue'
-import { RouterLink } from 'vue-router'
+import { GitBranch, Loader2, Megaphone, Plus, Search } from '@lucide/vue'
+import { computed, onMounted, ref, watch } from 'vue'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
 
 import { fetchCampaigns, deleteCampaign, sendCampaignNow } from '@/api/campaigns'
-import { fetchMessageTemplatesList } from '@/api/messageTemplates'
-import { fetchSequences } from '@/api/sequences'
 import AppConfirmModal from '@/components/app/AppConfirmModal.vue'
 import MessageTemplatesPanel from '@/components/message-templates/MessageTemplatesPanel.vue'
-import AppPageHeader from '@/components/app/AppPageHeader.vue'
-import AppPageTabs from '@/components/app/AppPageTabs.vue'
-import UiFilterChip from '@/components/ui/UiFilterChip.vue'
-import { panelBreadcrumbs } from '@/constants/panelBreadcrumbs'
 import AppPageFooter from '@/components/layout/AppPageFooter.vue'
-import type { Campaign, CampaignStatus, Sequence } from '@/types/campaigns'
-import { formatCampaignDeliverySummary } from '@/utils/campaignDeliveryCounts'
+import AppPageShell from '@/components/layout/AppPageShell.vue'
+import UiBadge from '@/components/ui/UiBadge.vue'
+import UiButton from '@/components/ui/UiButton.vue'
+import UiCard from '@/components/ui/UiCard.vue'
+import UiFilterChip from '@/components/ui/UiFilterChip.vue'
+import UiInput from '@/components/ui/UiInput.vue'
+import UiTable from '@/components/ui/UiTable.vue'
+import { panelBreadcrumbs } from '@/constants/panelBreadcrumbs'
+import type { Campaign, CampaignStatus } from '@/types/campaigns'
+import { formatCampaignListEnvioLine } from '@/utils/campaignDeliveryCounts'
 import { getErrorMessage } from '@/utils/errors'
-import { pluralizePt } from '@/utils/pluralize'
+import { pluralWordPt } from '@/utils/pluralize'
 
-const mainTab = ref<'campanhas' | 'sequencias' | 'modelos'>('campanhas')
+const PAGE_SIZE = 10
+
+const route = useRoute()
+const router = useRouter()
+
 const statusChip = ref<CampaignStatus | 'all'>('all')
 const search = ref('')
+const page = ref(1)
 const loading = ref(true)
 const error = ref<string | null>(null)
 
 const campaigns = ref<Campaign[]>([])
-const sequences = ref<Sequence[]>([])
-const templatesCount = ref(0)
 const sendingId = ref<number | null>(null)
 const actionMessage = ref<string | null>(null)
 const sendConfirmOpen = ref(false)
@@ -34,6 +39,18 @@ const campaignPendingSend = ref<Campaign | null>(null)
 const deleteConfirmOpen = ref(false)
 const campaignPendingDelete = ref<Campaign | null>(null)
 const deleteSubmitting = ref(false)
+
+const showModelosPanel = computed(() => route.query.secao === 'modelos')
+
+const headerBreadcrumbs = panelBreadcrumbs({ label: 'Automação' }, { label: 'Campanhas' })
+
+const statusFilterOptions = [
+  { id: 'all' as const, label: 'Todas' },
+  { id: 'rascunho' as const, label: 'Rascunho' },
+  { id: 'agendada' as const, label: 'Agendada' },
+  { id: 'enviando' as const, label: 'Enviando' },
+  { id: 'concluida' as const, label: 'Concluída' },
+]
 
 const deleteConfirmMessage = computed(() => {
   if (!campaignPendingDelete.value) return ''
@@ -57,6 +74,37 @@ const filteredCampaigns = computed(() => {
   return list
 })
 
+const totalFiltered = computed(() => filteredCampaigns.value.length)
+
+const totalPages = computed(() => Math.max(1, Math.ceil(totalFiltered.value / PAGE_SIZE)))
+
+const paginatedCampaigns = computed(() => {
+  const start = (page.value - 1) * PAGE_SIZE
+  return filteredCampaigns.value.slice(start, start + PAGE_SIZE)
+})
+
+const paginationFrom = computed(() => {
+  if (!totalFiltered.value) return 0
+  return (page.value - 1) * PAGE_SIZE + 1
+})
+
+const paginationTo = computed(() => {
+  if (!totalFiltered.value) return 0
+  return Math.min(page.value * PAGE_SIZE, totalFiltered.value)
+})
+
+const paginationWord = computed(() => pluralWordPt(totalFiltered.value, 'campanha'))
+
+watch([statusChip, search], () => {
+  page.value = 1
+})
+
+watch(totalPages, (pages) => {
+  if (page.value > pages) {
+    page.value = pages
+  }
+})
+
 function statusLabel(status: CampaignStatus): string {
   const map: Record<CampaignStatus, string> = {
     enviando: 'Enviando',
@@ -67,27 +115,26 @@ function statusLabel(status: CampaignStatus): string {
   return map[status]
 }
 
-function statusClass(status: CampaignStatus): string {
-  const map: Record<CampaignStatus, string> = {
-    enviando: 'bg-orange-50 text-orange-700 border-orange-200',
-    agendada: 'bg-blue-50 text-blue-700 border-blue-200',
-    concluida: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-    rascunho: 'bg-slate-50 text-slate-600 border-slate-200',
+function statusBadgeVariant(status: CampaignStatus): 'neutral' | 'primary' | 'success' | 'warning' {
+  const map: Record<CampaignStatus, 'neutral' | 'primary' | 'success' | 'warning'> = {
+    enviando: 'warning',
+    agendada: 'primary',
+    concluida: 'success',
+    rascunho: 'neutral',
   }
   return map[status]
 }
 
-function countStatus(status: CampaignStatus): number {
-  return campaigns.value.filter((c) => c.status === status).length
+function templateModelLabel(campaign: Campaign): string {
+  const name = campaign.template?.name?.trim()
+  return name ? `Modelo ${name}` : 'Sem template'
 }
 
-async function loadAll(): Promise<void> {
+async function loadCampaigns(): Promise<void> {
   loading.value = true
   error.value = null
   try {
-    const [c, s] = await Promise.all([fetchCampaigns(), fetchSequences()])
-    campaigns.value = c
-    sequences.value = s
+    campaigns.value = await fetchCampaigns()
   } catch (err) {
     error.value = getErrorMessage(err)
   } finally {
@@ -95,19 +142,17 @@ async function loadAll(): Promise<void> {
   }
 }
 
-async function loadTemplatesCount(): Promise<void> {
-  try {
-    const result = await fetchMessageTemplatesList()
-    templatesCount.value = result.templates.length
-  } catch {
-    // Contador da aba Modelos é informativo; falha silenciosa.
-  }
+onMounted(() => {
+  void loadCampaigns()
+})
+
+function openModelosPanel(): void {
+  void router.push({ name: 'campanhas', query: { secao: 'modelos' } })
 }
 
-onMounted(() => {
-  void loadAll()
-  void loadTemplatesCount()
-})
+function closeModelosPanel(): void {
+  void router.push({ name: 'campanhas' })
+}
 
 function requestSendNow(campaign: Campaign): void {
   campaignPendingSend.value = campaign
@@ -124,7 +169,7 @@ async function confirmSendNow(): Promise<void> {
     actionMessage.value = result.queued
       ? `Campanha enfileirada para envio (status: ${result.status}).`
       : `Campanha atualizada (status: ${result.status}).`
-    await loadAll()
+    await loadCampaigns()
     sendConfirmOpen.value = false
     campaignPendingSend.value = null
   } catch (err) {
@@ -146,6 +191,14 @@ function canDeleteCampaign(campaign: Campaign): boolean {
   return campaign.status === 'rascunho' || campaign.status === 'agendada'
 }
 
+function canViewDetails(campaign: Campaign): boolean {
+  return campaign.status === 'concluida'
+}
+
+function canViewProgress(campaign: Campaign): boolean {
+  return campaign.status === 'enviando'
+}
+
 function requestDeleteCampaign(campaign: Campaign): void {
   campaignPendingDelete.value = campaign
   deleteConfirmOpen.value = true
@@ -161,166 +214,224 @@ async function confirmDeleteCampaign(): Promise<void> {
     actionMessage.value = 'Campanha excluída.'
     deleteConfirmOpen.value = false
     campaignPendingDelete.value = null
-    await loadAll()
+    await loadCampaigns()
   } catch (err) {
     actionMessage.value = getErrorMessage(err)
   } finally {
     deleteSubmitting.value = false
   }
 }
+
+function goToPreviousPage(): void {
+  page.value = Math.max(1, page.value - 1)
+}
+
+function goToNextPage(): void {
+  page.value = Math.min(totalPages.value, page.value + 1)
+}
 </script>
 
 <template>
-  <div class="flex min-h-full flex-col bg-brand-surface">
-    <AppPageHeader
-      title="Campanhas"
-      :breadcrumbs="panelBreadcrumbs({ label: 'Campanhas' })"
-    >
-      <template #actions>
-        <RouterLink
-          :to="{ name: 'campanhas-sequencias' }"
-          class="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-brand-ink hover:bg-slate-50"
-        >
-          <GitBranch class="h-4 w-4 text-brand-gray" />
+  <AppPageShell
+    title="Campanhas"
+    subtitle="Crie e gerencie disparos de mensagens em massa para seus contatos."
+    :breadcrumbs="headerBreadcrumbs"
+  >
+    <template #actions>
+      <RouterLink :to="{ name: 'campanhas-sequencias' }" class="inline-flex">
+        <UiButton variant="secondary">
+          <GitBranch class="h-4 w-4 text-brand-gray" aria-hidden="true" />
           Sequências
-        </RouterLink>
-        <RouterLink
-          :to="{ name: 'campanhas-nova' }"
-          class="inline-flex items-center gap-2 rounded-lg bg-brand-indigo px-4 py-2 text-sm font-semibold text-white hover:bg-brand-indigo-hover"
-        >
-          <Plus class="h-4 w-4" />
+        </UiButton>
+      </RouterLink>
+      <RouterLink :to="{ name: 'campanhas-nova' }" class="inline-flex">
+        <UiButton>
+          <Plus class="h-4 w-4" aria-hidden="true" />
           Nova campanha
-        </RouterLink>
-      </template>
-    </AppPageHeader>
+        </UiButton>
+      </RouterLink>
+    </template>
 
-    <p v-if="actionMessage" class="mx-4 mt-2 text-sm text-brand-indigo lg:mx-8" role="status">{{ actionMessage }}</p>
+    <div class="flex min-h-0 flex-1 flex-col space-y-6 px-4 py-6 sm:px-6 lg:px-8">
+      <p v-if="actionMessage" class="text-sm text-brand-indigo" role="status">{{ actionMessage }}</p>
 
-    <AppPageTabs>
-      <UiFilterChip :active="mainTab === 'campanhas'" @click="mainTab = 'campanhas'">
-        Campanhas
-        <span class="rounded-full px-1.5 text-[10px] font-bold" :class="mainTab === 'campanhas' ? 'bg-white/20' : 'bg-brand-mist text-brand-indigo'">{{ campaigns.length }}</span>
-      </UiFilterChip>
-      <UiFilterChip :active="mainTab === 'sequencias'" @click="mainTab = 'sequencias'">
-        Sequências
-        <span class="rounded-full px-1.5 text-[10px] font-bold" :class="mainTab === 'sequencias' ? 'bg-white/20' : 'bg-slate-100 text-brand-gray'">{{ sequences.length }}</span>
-      </UiFilterChip>
-      <UiFilterChip :active="mainTab === 'modelos'" @click="mainTab = 'modelos'">
-        Modelos de mensagem
-        <span class="rounded-full px-1.5 text-[10px] font-bold" :class="mainTab === 'modelos' ? 'bg-white/20' : 'bg-slate-100 text-brand-gray'">{{ templatesCount }}</span>
-      </UiFilterChip>
-    </AppPageTabs>
-
-    <div class="flex-1 px-4 py-6 sm:px-6 lg:px-8">
       <div v-if="loading" class="flex justify-center py-16">
-        <Loader2 class="h-8 w-8 animate-spin text-brand-indigo" aria-label="Carregando" />
+        <Loader2 class="h-8 w-8 animate-spin text-brand-indigo" aria-label="Carregando campanhas" />
       </div>
-      <div v-else-if="error" class="rounded-xl border border-red-200 bg-red-50 p-6 text-center">
+
+      <div v-else-if="error" class="rounded-lg border border-red-200 bg-red-50 p-6 text-center">
         <p class="text-sm text-red-800">{{ error }}</p>
-        <button type="button" class="mt-3 rounded-lg bg-brand-indigo px-4 py-2 text-sm font-semibold text-white" @click="loadAll">
-          Tentar novamente
-        </button>
+        <UiButton class="mt-3" @click="loadCampaigns">Tentar novamente</UiButton>
       </div>
+
+      <template v-else-if="showModelosPanel">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <h2 class="text-base font-semibold text-brand-ink">Modelos de mensagem</h2>
+          <UiButton variant="secondary" size="sm" @click="closeModelosPanel">Voltar para campanhas</UiButton>
+        </div>
+        <MessageTemplatesPanel />
+      </template>
 
       <template v-else>
-        <div v-if="mainTab === 'campanhas'" class="space-y-4">
-          <div class="flex flex-wrap items-center gap-3">
-            <div class="relative min-w-[200px] flex-1">
-              <Search class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-gray" />
-              <input
-                v-model="search"
-                type="search"
-                placeholder="Buscar campanha…"
-                class="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm"
-              />
-            </div>
-            <div class="flex flex-wrap gap-2">
-              <button
-                v-for="chip in ['all', 'rascunho', 'agendada', 'enviando', 'concluida'] as const"
-                :key="chip"
-                type="button"
-                class="rounded-full border px-3 py-1 text-xs font-semibold"
-                :class="statusChip === chip ? 'border-brand-indigo bg-brand-mist text-brand-indigo' : 'border-slate-200 text-brand-gray'"
-                @click="statusChip = chip"
+        <UiCard padding="none" class="overflow-hidden">
+          <div class="space-y-4 border-b border-slate-100 px-4 py-4 sm:px-5">
+            <UiInput
+              v-model="search"
+              type="search"
+              placeholder="Buscar campanha..."
+              class="min-w-0 w-full"
+              input-class="w-full"
+            >
+              <template #leading>
+                <Search class="h-4 w-4" aria-hidden="true" />
+              </template>
+            </UiInput>
+
+            <div class="flex flex-wrap gap-2" role="group" aria-label="Filtrar campanhas por status">
+              <UiFilterChip
+                v-for="option in statusFilterOptions"
+                :key="option.id"
+                :active="statusChip === option.id"
+                @click="statusChip = option.id"
               >
-                {{ chip === 'all' ? 'Todas' : statusLabel(chip) }}
-                <span v-if="chip !== 'all'">({{ countStatus(chip) }})</span>
+                {{ option.label }}
+              </UiFilterChip>
+            </div>
+
+            <div class="flex flex-wrap gap-x-4 gap-y-1 text-sm font-semibold">
+              <RouterLink :to="{ name: 'campanhas-sequencias' }" class="text-brand-indigo hover:underline">
+                Ver sequências
+              </RouterLink>
+              <button type="button" class="text-brand-indigo hover:underline" @click="openModelosPanel">
+                Modelos de mensagem
               </button>
             </div>
           </div>
-          <ul class="divide-y divide-slate-100 rounded-xl border border-slate-200 bg-white shadow-xs">
-            <li v-for="campaign in filteredCampaigns" :key="campaign.id" class="flex flex-wrap items-center justify-between gap-3 px-4 py-4">
-              <div>
-                <p class="font-semibold text-brand-ink">{{ campaign.name }}</p>
-                <p class="text-xs text-brand-gray">
-                  {{ campaign.template?.name ?? 'Sem template' }} ·
-                  {{ formatCampaignDeliverySummary(campaign) }}
-                </p>
-              </div>
-              <div class="flex flex-wrap items-center gap-2">
-                <RouterLink
-                  v-if="canEditCampaign(campaign)"
-                  :to="{ name: 'campanhas-editar', params: { id: campaign.id } }"
-                  class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-brand-ink hover:bg-brand-mist"
-                >
-                  Editar
-                </RouterLink>
-                <button
-                  v-if="canSendNow(campaign)"
-                  type="button"
-                  class="rounded-lg border border-brand-indigo bg-white px-3 py-1.5 text-xs font-semibold text-brand-indigo hover:bg-brand-mist disabled:opacity-60"
-                  :disabled="sendingId === campaign.id"
-                  @click="requestSendNow(campaign)"
-                >
-                  {{ sendingId === campaign.id ? 'Enviando…' : 'Enviar agora' }}
-                </button>
-                <button
-                  v-if="canDeleteCampaign(campaign)"
-                  type="button"
-                  class="rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-50 disabled:opacity-60"
-                  :disabled="deleteSubmitting"
-                  @click="requestDeleteCampaign(campaign)"
-                >
-                  Excluir
-                </button>
-                <span class="rounded-full border px-2 py-0.5 text-[11px] font-semibold" :class="statusClass(campaign.status)">
-                  {{ statusLabel(campaign.status) }}
-                </span>
-              </div>
-            </li>
-            <li v-if="!filteredCampaigns.length" class="px-4 py-8 text-center text-sm text-brand-gray">
-              Nenhuma campanha encontrada.
-            </li>
-          </ul>
-        </div>
 
-        <div v-if="mainTab === 'sequencias'" class="rounded-xl border border-slate-200 bg-white p-4 shadow-xs">
-          <p class="text-sm text-brand-gray">
-            {{
-              pluralizePt(sequences.length, 'sequência', {
-                one: 'sequência cadastrada',
-                other: 'sequências cadastradas',
-              })
-            }}.
-          </p>
-          <ul class="mt-4 divide-y divide-slate-100">
-            <li v-for="seq in sequences" :key="seq.id" class="py-3">
-              <RouterLink :to="{ name: 'campanhas-sequencia-detalhe', params: { id: seq.id } }" class="font-semibold text-brand-indigo hover:underline">
-                {{ seq.name }}
-              </RouterLink>
-              <p class="text-xs text-brand-gray">{{ seq.contacts_in_progress }} em andamento</p>
-            </li>
-            <li v-if="!sequences.length" class="py-6 text-center text-sm text-brand-gray">Nenhuma sequência.</li>
-          </ul>
-        </div>
+          <UiTable class="rounded-none border-0">
+            <thead>
+              <tr>
+                <th scope="col">Campanha</th>
+                <th scope="col">Modelo / envio</th>
+                <th scope="col">Status</th>
+                <th scope="col" class="text-right">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="campaign in paginatedCampaigns" :key="campaign.id">
+                <td>
+                  <div class="flex items-center gap-3">
+                    <span
+                      class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-mist text-brand-indigo"
+                      aria-hidden="true"
+                    >
+                      <Megaphone class="h-4 w-4" />
+                    </span>
+                    <span class="font-semibold text-brand-ink">{{ campaign.name }}</span>
+                  </div>
+                </td>
+                <td class="text-sm text-brand-gray">
+                  <span class="text-brand-ink">{{ templateModelLabel(campaign) }}</span>
+                  <span aria-hidden="true"> · </span>
+                  <span>{{ formatCampaignListEnvioLine(campaign) }}</span>
+                </td>
+                <td>
+                  <UiBadge :variant="statusBadgeVariant(campaign.status)" size="md">
+                    <span
+                      v-if="campaign.status === 'enviando'"
+                      class="mr-1.5 inline-block h-1.5 w-1.5 rounded-full bg-amber-500"
+                      aria-hidden="true"
+                    />
+                    {{ statusLabel(campaign.status) }}
+                  </UiBadge>
+                </td>
+                <td class="text-right">
+                  <div class="flex flex-wrap items-center justify-end gap-x-3 gap-y-1 text-sm font-semibold">
+                    <RouterLink
+                      v-if="canViewDetails(campaign)"
+                      :to="{ name: 'campanhas-editar', params: { id: campaign.id } }"
+                      class="text-brand-indigo hover:underline"
+                    >
+                      Ver detalhes
+                    </RouterLink>
+                    <RouterLink
+                      v-if="canViewProgress(campaign)"
+                      :to="{ name: 'campanhas-editar', params: { id: campaign.id } }"
+                      class="text-brand-indigo hover:underline"
+                    >
+                      Ver progresso
+                    </RouterLink>
+                    <RouterLink
+                      v-if="canEditCampaign(campaign)"
+                      :to="{ name: 'campanhas-editar', params: { id: campaign.id } }"
+                      class="text-brand-indigo hover:underline"
+                    >
+                      Editar
+                    </RouterLink>
+                    <button
+                      v-if="canSendNow(campaign)"
+                      type="button"
+                      class="text-brand-indigo hover:underline disabled:opacity-60"
+                      :disabled="sendingId === campaign.id"
+                      @click="requestSendNow(campaign)"
+                    >
+                      {{ sendingId === campaign.id ? 'Enviando…' : 'Enviar agora' }}
+                    </button>
+                    <button
+                      v-if="canDeleteCampaign(campaign)"
+                      type="button"
+                      class="text-red-600 hover:underline disabled:opacity-60"
+                      :disabled="deleteSubmitting"
+                      @click="requestDeleteCampaign(campaign)"
+                    >
+                      Excluir
+                    </button>
+                  </div>
+                </td>
+              </tr>
+              <tr v-if="!paginatedCampaigns.length">
+                <td colspan="4" class="py-10 text-center text-sm text-brand-gray">
+                  Nenhuma campanha encontrada.
+                </td>
+              </tr>
+            </tbody>
+          </UiTable>
 
-        <MessageTemplatesPanel
-          v-if="mainTab === 'modelos'"
-          @update:count="templatesCount = $event"
-        />
+          <div
+            class="flex flex-col gap-3 border-t border-slate-100 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5"
+          >
+            <p class="text-sm text-brand-gray">
+              Exibindo
+              <span class="font-medium text-brand-ink">{{ paginationFrom }}</span>
+              –
+              <span class="font-medium text-brand-ink">{{ paginationTo }}</span>
+              de
+              <span class="font-medium text-brand-ink">{{ totalFiltered }}</span>
+              {{ paginationWord }}
+            </p>
+            <div class="flex items-center gap-2">
+              <UiButton
+                variant="secondary"
+                size="sm"
+                :disabled="page <= 1 || !totalFiltered"
+                @click="goToPreviousPage"
+              >
+                Anterior
+              </UiButton>
+              <UiButton
+                variant="secondary"
+                size="sm"
+                :disabled="page >= totalPages || !totalFiltered"
+                @click="goToNextPage"
+              >
+                Próxima
+              </UiButton>
+            </div>
+          </div>
+        </UiCard>
       </template>
 
-      <AppPageFooter />
+      <AppPageFooter class="mt-auto" />
     </div>
 
     <AppConfirmModal
@@ -343,5 +454,5 @@ async function confirmDeleteCampaign(): Promise<void> {
       @close="deleteConfirmOpen = false"
       @confirm="confirmDeleteCampaign"
     />
-  </div>
+  </AppPageShell>
 </template>

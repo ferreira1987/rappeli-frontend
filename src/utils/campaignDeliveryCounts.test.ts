@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest'
 
-import { formatCampaignDeliverySummary } from '@/utils/campaignDeliveryCounts'
+import {
+  formatCampaignDeliverySummary,
+  formatCampaignListEnvioLine,
+} from '@/utils/campaignDeliveryCounts'
+import type { Campaign } from '@/types/campaigns'
 
 describe('formatCampaignDeliverySummary', () => {
   it('lists sent, delivered, read and failed counts', () => {
@@ -22,5 +26,33 @@ describe('formatCampaignDeliverySummary', () => {
         read_count: 3,
       }),
     ).toBe('10 enviadas · 10 entregues · 3 lidas · 0 falhas')
+  })
+})
+
+describe('formatCampaignListEnvioLine', () => {
+  const base: Pick<Campaign, 'status' | 'sent_count' | 'scheduled_at'> = {
+    status: 'rascunho',
+    sent_count: 0,
+    scheduled_at: null,
+  }
+
+  it('describes envio by status', () => {
+    expect(formatCampaignListEnvioLine({ ...base, status: 'concluida', sent_count: 120 })).toBe(
+      '120 enviados',
+    )
+    expect(formatCampaignListEnvioLine({ ...base, status: 'rascunho' })).toBe('0 disparos')
+    expect(formatCampaignListEnvioLine({ ...base, status: 'enviando', sent_count: 5 })).toBe(
+      'Enviando para contatos',
+    )
+  })
+
+  it('formats scheduled campaigns with locale datetime when possible', () => {
+    expect(
+      formatCampaignListEnvioLine({
+        ...base,
+        status: 'agendada',
+        scheduled_at: '2026-11-01T14:30:00.000Z',
+      }),
+    ).toMatch(/^Agendada para /)
   })
 })
