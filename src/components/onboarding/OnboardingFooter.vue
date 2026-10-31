@@ -1,10 +1,22 @@
 <script setup lang="ts">
+withDefaults(
+  defineProps<{
+    muted?: boolean
+  }>(),
+  {
+    muted: false,
+  },
+)
+
 const termsUrl = 'https://rappeli.com.br/termos'
 const privacyUrl = 'https://rappeli.com.br/privacidade'
 </script>
 
 <template>
-  <footer class="border-t border-slate-200 bg-white py-4">
+  <footer
+    class="border-t border-slate-200 py-4"
+    :class="muted ? 'bg-[#F8FAFC]' : 'bg-white'"
+  >
     <div
       class="mx-auto flex max-w-6xl flex-col items-center justify-between gap-2 px-4 text-sm text-slate-500 sm:flex-row md:px-8"
     >

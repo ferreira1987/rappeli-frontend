@@ -1,10 +1,16 @@
 <script setup lang="ts">
-import { Check } from '@lucide/vue'
+import { Check, ChevronRight } from '@lucide/vue'
 import { computed } from 'vue'
 
-const props = defineProps<{
-  currentStep: 1 | 2 | 3 | 4
-}>()
+const props = withDefaults(
+  defineProps<{
+    currentStep: 1 | 2 | 3 | 4
+    variant?: 'default' | 'inline-v5'
+  }>(),
+  {
+    variant: 'default',
+  },
+)
 
 const steps = [
   { n: 1, label: 'Cadastro' },
@@ -23,7 +29,43 @@ const completedTrackRatio = computed(() => {
 </script>
 
 <template>
-  <nav aria-label="Progresso da contratação" class="w-full">
+  <nav
+    v-if="variant === 'inline-v5'"
+    aria-label="Progresso da contratação"
+    class="w-full overflow-x-auto"
+  >
+    <ol class="flex min-w-max items-center justify-center gap-1 sm:gap-2">
+      <template v-for="(step, index) in steps" :key="step.n">
+        <li
+          class="flex flex-col items-center px-1 sm:px-2"
+          :class="step.n === currentStep ? 'text-[#4338CA]' : 'text-slate-400'"
+        >
+          <span
+            class="flex items-center gap-1.5 text-xs font-medium sm:text-sm"
+            :class="step.n === currentStep ? 'font-semibold text-[#4338CA]' : 'text-slate-500'"
+          >
+            <span
+              class="tabular-nums"
+              :class="step.n === currentStep ? 'font-bold' : 'font-medium'"
+            >
+              {{ step.n }}
+            </span>
+            {{ step.label }}
+          </span>
+          <span
+            class="mt-1.5 block h-0.5 w-full min-w-[3.5rem] rounded-full sm:min-w-[4.5rem]"
+            :class="step.n === currentStep ? 'bg-[#4338CA]' : 'bg-transparent'"
+            aria-hidden="true"
+          />
+        </li>
+        <li v-if="index < steps.length - 1" class="flex shrink-0 items-center pb-3 text-slate-300">
+          <ChevronRight class="h-4 w-4" aria-hidden="true" />
+        </li>
+      </template>
+    </ol>
+  </nav>
+
+  <nav v-else aria-label="Progresso da contratação" class="w-full">
     <div class="relative mx-auto max-w-[720px]">
       <ol class="relative grid grid-cols-4">
         <!-- Connector track sits behind circles, vertically centered on 28px nodes -->

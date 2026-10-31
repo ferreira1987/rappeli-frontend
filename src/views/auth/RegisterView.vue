@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { Eye, EyeOff, Handshake, LockOpen, Share2, Users } from '@lucide/vue'
+import { ArrowRight, Eye, EyeOff, Handshake, LockOpen, Share2, Users } from '@lucide/vue'
 import { ref } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 
-import OnboardingActionBar from '@/components/onboarding/OnboardingActionBar.vue'
 import OnboardingShell from '@/components/onboarding/OnboardingShell.vue'
+import { UiButton, UiCard, UiInput } from '@/components/ui'
 import { useAuthStore } from '@/stores/auth'
 import { useCheckoutFlowStore } from '@/stores/checkoutFlow'
 import { maskPhoneBr } from '@/utils/billingFormat'
@@ -28,18 +28,13 @@ const fieldErrors = ref<Record<string, string>>({})
 const termsUrl = 'https://rappeli.com.br/termos'
 const privacyUrl = 'https://rappeli.com.br/privacidade'
 
-function inputClass(field: string): string {
-  return fieldErrors.value[field]
-    ? 'border-red-300 focus:border-red-400 focus:ring-red-200'
-    : 'border-slate-200 focus:border-brand-indigo focus:ring-brand-indigo'
-}
-
 function clearFieldError(field: string): void {
   delete fieldErrors.value[field]
 }
 
-function onWhatsappInput(event: Event): void {
-  whatsapp.value = maskPhoneBr((event.target as HTMLInputElement).value)
+function onWhatsappInput(value: string): void {
+  whatsapp.value = maskPhoneBr(value)
+  clearFieldError('business_whatsapp')
 }
 
 async function onSubmit(): Promise<void> {
@@ -85,21 +80,20 @@ async function onSubmit(): Promise<void> {
 </script>
 
 <template>
-  <OnboardingShell :step="1">
-    <div class="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
-      <section
-        class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm lg:col-span-7 md:p-8"
-      >
-        <div class="mb-6">
-          <h1 class="text-2xl font-extrabold tracking-tight text-brand-ink sm:text-3xl">
-            Crie sua conta
-          </h1>
-          <p class="mt-1 text-sm text-brand-gray">
+  <OnboardingShell :step="1" shell-variant="cadastro-v5">
+    <UiCard
+      padding="none"
+      class="overflow-hidden rounded-2xl border border-slate-200/90 shadow-sm"
+    >
+      <div class="p-6 sm:p-8">
+        <header class="mb-6">
+          <h1 class="text-2xl font-bold tracking-tight text-slate-900">Crie sua conta</h1>
+          <p class="mt-2 text-sm leading-relaxed text-slate-500">
             Preencha os dados abaixo para iniciar sua configuração no Rappeli.
           </p>
-        </div>
+        </header>
 
-        <form id="register-form" class="space-y-4" novalidate @submit.prevent="onSubmit">
+        <form id="register-form" class="space-y-5" novalidate @submit.prevent="onSubmit">
           <p
             v-if="formError"
             class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
@@ -108,126 +102,113 @@ async function onSubmit(): Promise<void> {
             {{ formError }}
           </p>
 
-          <div>
-            <label
-              for="name"
-              class="text-[11px] font-semibold uppercase tracking-wide text-brand-gray"
-            >
-              Nome completo
-            </label>
-            <input
+          <div class="space-y-1.5">
+            <label for="name" class="text-sm font-medium text-slate-700"> Nome completo </label>
+            <UiInput
               id="name"
               v-model="name"
               type="text"
               autocomplete="name"
-              placeholder="Seu nome completo"
-              class="mt-1 h-[42px] w-full rounded-lg border px-3 text-sm outline-none ring-0 focus:ring-2"
-              :class="inputClass('name')"
-              @input="clearFieldError('name')"
+              placeholder="Ex: Marina Silva"
+              :invalid="Boolean(fieldErrors.name)"
+              @update:model-value="clearFieldError('name')"
             />
-            <p v-if="fieldErrors.name" class="mt-1 text-xs text-red-600">{{ fieldErrors.name }}</p>
+            <p v-if="fieldErrors.name" class="text-xs text-red-600">{{ fieldErrors.name }}</p>
           </div>
 
-          <div>
-            <label
-              for="email"
-              class="text-[11px] font-semibold uppercase tracking-wide text-brand-gray"
-            >
+          <div class="space-y-1.5">
+            <label for="email" class="text-sm font-medium text-slate-700">
               E-mail de trabalho *
             </label>
-            <input
+            <UiInput
               id="email"
               v-model="email"
               type="email"
               autocomplete="email"
-              placeholder="nome@empresa.com.br"
-              class="mt-1 h-[42px] w-full rounded-lg border px-3 text-sm outline-none ring-0 focus:ring-2"
-              :class="inputClass('email')"
-              @input="clearFieldError('email')"
+              placeholder="nome@suaempresa.com.br"
+              :invalid="Boolean(fieldErrors.email)"
+              @update:model-value="clearFieldError('email')"
             />
-            <p v-if="fieldErrors.email" class="mt-1 text-xs text-red-600">
-              {{ fieldErrors.email }}
-            </p>
+            <p v-if="fieldErrors.email" class="text-xs text-red-600">{{ fieldErrors.email }}</p>
           </div>
 
-          <div>
-            <div class="mb-1 flex items-center justify-between">
-              <label
-                for="password"
-                class="text-[11px] font-semibold uppercase tracking-wide text-brand-gray"
-              >
-                Senha *
-              </label>
-              <span class="text-xs text-slate-400">Mínimo de 8 caracteres</span>
-            </div>
+          <div class="space-y-1.5">
+            <label for="password" class="text-sm font-medium text-slate-700"> Senha * </label>
             <div class="relative">
-              <input
+              <UiInput
                 id="password"
                 v-model="password"
                 :type="showPassword ? 'text' : 'password'"
                 autocomplete="new-password"
-                minlength="8"
+                :minlength="8"
                 placeholder="Crie uma senha segura"
-                class="h-[42px] w-full rounded-lg border bg-slate-50 px-3.5 pr-10 text-sm outline-none ring-0 focus:bg-white focus:ring-2"
-                :class="inputClass('password')"
-                @input="clearFieldError('password')"
+                input-class="pr-10"
+                :invalid="Boolean(fieldErrors.password)"
+                @update:model-value="clearFieldError('password')"
               />
               <button
                 type="button"
-                class="absolute inset-y-0 right-0 flex items-center px-3 text-slate-400"
+                class="absolute inset-y-0 right-0 flex items-center px-3 text-slate-400 hover:text-slate-600"
                 :aria-label="showPassword ? 'Ocultar senha' : 'Mostrar senha'"
                 @click="showPassword = !showPassword"
               >
-                <EyeOff v-if="showPassword" class="h-4 w-4" />
-                <Eye v-else class="h-4 w-4" />
+                <EyeOff v-if="showPassword" class="h-4 w-4" aria-hidden="true" />
+                <Eye v-else class="h-4 w-4" aria-hidden="true" />
               </button>
             </div>
-            <p v-if="fieldErrors.password" class="mt-1 text-xs text-red-600">
+            <p class="text-xs text-slate-400">Mínimo de 8 caracteres</p>
+            <p v-if="fieldErrors.password" class="text-xs text-red-600">
               {{ fieldErrors.password }}
             </p>
           </div>
 
-          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-              <label
-                for="company"
-                class="text-[11px] font-semibold uppercase tracking-wide text-brand-gray"
-              >
-                Nome da empresa / clínica *
-              </label>
-              <input
-                id="company"
-                v-model="companyName"
-                type="text"
-                placeholder="Ex: Clínica Sorriso & Saúde"
-                class="mt-1 h-[42px] w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 text-sm outline-none focus:border-brand-indigo focus:bg-white focus:ring-2 focus:ring-brand-indigo/20"
-              />
-            </div>
+          <div class="space-y-1.5">
+            <label for="company" class="text-sm font-medium text-slate-700">
+              Nome da empresa / clínica *
+            </label>
+            <UiInput
+              id="company"
+              v-model="companyName"
+              type="text"
+              placeholder="Ex: Clínica São Lucas"
+              :invalid="Boolean(fieldErrors.company_name)"
+              @update:model-value="clearFieldError('company_name')"
+            />
+            <p v-if="fieldErrors.company_name" class="text-xs text-red-600">
+              {{ fieldErrors.company_name }}
+            </p>
+          </div>
 
-            <div>
-              <label
-                for="whatsapp"
-                class="text-[11px] font-semibold uppercase tracking-wide text-brand-gray"
+          <div class="space-y-1.5">
+            <label for="whatsapp" class="text-sm font-medium text-slate-700"> WhatsApp * </label>
+            <div class="flex overflow-hidden rounded-lg border border-slate-200 focus-within:border-[#4338CA] focus-within:ring-2 focus-within:ring-[#4338CA]/20">
+              <span
+                class="inline-flex shrink-0 items-center border-r border-slate-200 bg-slate-50 px-3 text-sm font-medium text-slate-600"
+                aria-hidden="true"
               >
-                WhatsApp *
-              </label>
+                +55
+              </span>
               <input
                 id="whatsapp"
                 :value="whatsapp"
                 type="tel"
                 autocomplete="tel"
-                placeholder="(11) 98765-4321"
-                class="mt-1 h-[42px] w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 text-sm outline-none focus:border-brand-indigo focus:bg-white focus:ring-2 focus:ring-brand-indigo/20"
-                @input="onWhatsappInput"
+                placeholder="(11) 99999-9999"
+                class="min-w-0 flex-1 border-0 bg-white px-3 py-2 text-sm text-brand-ink placeholder:text-brand-gray/80 focus:outline-none focus:ring-0"
+                :class="fieldErrors.business_whatsapp ? 'bg-red-50/30' : ''"
+                @input="onWhatsappInput(($event.target as HTMLInputElement).value)"
               />
             </div>
+            <p v-if="fieldErrors.business_whatsapp" class="text-xs text-red-600">
+              {{ fieldErrors.business_whatsapp }}
+            </p>
           </div>
 
-          <label class="flex cursor-pointer items-start gap-2 text-sm text-brand-gray">
+          <label class="flex cursor-pointer items-start gap-2.5 text-sm leading-snug text-slate-600">
             <input
               v-model="acceptedTerms"
               type="checkbox"
-              class="mt-1 h-4 w-4 rounded border-slate-300 text-brand-indigo"
+              class="mt-0.5 h-4 w-4 shrink-0 rounded border-slate-300 text-[#4338CA] focus:ring-[#4338CA]"
               @change="clearFieldError('terms_accepted')"
             />
             <span>
@@ -236,7 +217,7 @@ async function onSubmit(): Promise<void> {
                 :href="termsUrl"
                 target="_blank"
                 rel="noopener noreferrer"
-                class="font-semibold text-brand-indigo hover:underline"
+                class="font-semibold text-[#4338CA] hover:underline"
               >
                 Termos de Uso
               </a>
@@ -245,108 +226,118 @@ async function onSubmit(): Promise<void> {
                 :href="privacyUrl"
                 target="_blank"
                 rel="noopener noreferrer"
-                class="font-semibold text-brand-indigo hover:underline"
+                class="font-semibold text-[#4338CA] hover:underline"
               >
-                Política de Privacidade </a
-              >.
+                Política de Privacidade
+              </a>
+              .
             </span>
           </label>
           <p v-if="fieldErrors.terms_accepted" class="text-xs text-red-600">
             {{ fieldErrors.terms_accepted }}
           </p>
-
-          <p class="border-t border-slate-200 pt-6 text-sm text-brand-gray">
-            Já tem conta?
-            <RouterLink
-              :to="{ name: 'login' }"
-              class="font-semibold text-brand-indigo hover:underline"
-            >
-              Entrar
-            </RouterLink>
-          </p>
         </form>
-      </section>
+      </div>
 
-      <section
-        class="flex flex-col justify-between rounded-2xl bg-brand-indigo p-6 text-white shadow-sm lg:col-span-5 md:p-8 lg:p-10"
-        style="background-color: #4338ca"
+      <footer
+        class="flex flex-col-reverse items-stretch justify-between gap-4 border-t border-slate-200 bg-slate-50/50 px-6 py-4 sm:flex-row sm:items-center sm:px-8"
       >
-        <div>
-          <p
-            class="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-white/90"
+        <p class="text-sm text-slate-600">
+          Já tem conta?
+          <RouterLink
+            :to="{ name: 'login' }"
+            class="font-semibold text-[#4338CA] hover:underline"
+          >
+            Entrar
+          </RouterLink>
+        </p>
+        <UiButton
+          type="button"
+          variant="primary"
+          size="lg"
+          class="!bg-[#4338CA] hover:!bg-brand-indigo-hover"
+          :disabled="auth.loading"
+          @click="onSubmit"
+        >
+          {{ auth.loading ? 'Aguarde…' : 'Continuar' }}
+          <ArrowRight v-if="!auth.loading" class="h-4 w-4" aria-hidden="true" />
+        </UiButton>
+      </footer>
+    </UiCard>
+
+    <details class="mt-8 rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <summary
+        class="cursor-pointer list-none px-6 py-4 text-sm font-semibold text-slate-700 marker:content-none [&::-webkit-details-marker]:hidden"
+      >
+        <span class="inline-flex items-center gap-2">
+          <span
+            class="inline-flex items-center gap-1.5 rounded-full bg-[#4338CA]/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-[#4338CA]"
           >
             Vantagens do ecossistema
-          </p>
-          <h2 class="mt-4 text-2xl font-bold tracking-tight">Por que escolher o Rappeli</h2>
-          <ul class="mt-6 space-y-3.5">
-            <li class="flex gap-3.5 rounded-xl border border-white/10 bg-white/10 p-4">
-              <div
-                class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/15 text-white"
-              >
-                <Share2 class="h-5 w-5" aria-hidden="true" />
-              </div>
-              <div>
-                <p class="text-sm font-bold">API Oficial WhatsApp</p>
-                <p class="mt-0.5 text-xs leading-relaxed text-white/80">
-                  Conexão oficial Cloud API sem risco de bloqueio e com estabilidade profissional.
-                </p>
-              </div>
-            </li>
-            <li class="flex gap-3.5 rounded-xl border border-white/10 bg-white/10 p-4">
-              <div
-                class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/15 text-white"
-              >
-                <Users class="h-5 w-5" aria-hidden="true" />
-              </div>
-              <div>
-                <p class="text-sm font-bold">Usuários ilimitados</p>
-                <p class="mt-0.5 text-xs leading-relaxed text-white/80">
-                  Toda a sua equipe na mesma conta sem custos adicionais por operador.
-                </p>
-              </div>
-            </li>
-            <li class="flex gap-3.5 rounded-xl border border-white/10 bg-white/10 p-4">
-              <div
-                class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/15 text-white"
-              >
-                <Handshake class="h-5 w-5" aria-hidden="true" />
-              </div>
-              <div>
-                <p class="text-sm font-bold">Implantação inclusa</p>
-                <p class="mt-0.5 text-xs leading-relaxed text-white/80">
-                  Acompanhamento humanizado na configuração inicial sem taxa extra.
-                </p>
-              </div>
-            </li>
-            <li class="flex gap-3.5 rounded-xl border border-white/10 bg-white/10 p-4">
-              <div
-                class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/15 text-white"
-              >
-                <LockOpen class="h-5 w-5" aria-hidden="true" />
-              </div>
-              <div>
-                <p class="text-sm font-bold">Sem fidelidade</p>
-                <p class="mt-0.5 text-xs leading-relaxed text-white/80">
-                  Altere de plano ou cancele sua assinatura a qualquer momento com 1 clique.
-                </p>
-              </div>
-            </li>
-          </ul>
-        </div>
-        <p class="mt-8 flex items-center justify-between border-t border-white/15 pt-6 text-xs text-white/75">
+          </span>
+          Por que escolher o Rappeli
+        </span>
+      </summary>
+      <div class="border-t border-slate-100 px-6 pb-6 pt-2">
+        <ul class="mt-4 space-y-3">
+          <li class="flex gap-3 rounded-xl border border-slate-100 bg-slate-50/80 p-4">
+            <div
+              class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#4338CA] text-white"
+            >
+              <Share2 class="h-5 w-5" aria-hidden="true" />
+            </div>
+            <div>
+              <p class="text-sm font-bold text-slate-900">API Oficial WhatsApp</p>
+              <p class="mt-0.5 text-xs leading-relaxed text-slate-600">
+                Conexão oficial Cloud API sem risco de bloqueio e com estabilidade profissional.
+              </p>
+            </div>
+          </li>
+          <li class="flex gap-3 rounded-xl border border-slate-100 bg-slate-50/80 p-4">
+            <div
+              class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#4338CA] text-white"
+            >
+              <Users class="h-5 w-5" aria-hidden="true" />
+            </div>
+            <div>
+              <p class="text-sm font-bold text-slate-900">Usuários ilimitados</p>
+              <p class="mt-0.5 text-xs leading-relaxed text-slate-600">
+                Toda a sua equipe na mesma conta sem custos adicionais por operador.
+              </p>
+            </div>
+          </li>
+          <li class="flex gap-3 rounded-xl border border-slate-100 bg-slate-50/80 p-4">
+            <div
+              class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#4338CA] text-white"
+            >
+              <Handshake class="h-5 w-5" aria-hidden="true" />
+            </div>
+            <div>
+              <p class="text-sm font-bold text-slate-900">Implantação inclusa</p>
+              <p class="mt-0.5 text-xs leading-relaxed text-slate-600">
+                Acompanhamento humanizado na configuração inicial sem taxa extra.
+              </p>
+            </div>
+          </li>
+          <li class="flex gap-3 rounded-xl border border-slate-100 bg-slate-50/80 p-4">
+            <div
+              class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#4338CA] text-white"
+            >
+              <LockOpen class="h-5 w-5" aria-hidden="true" />
+            </div>
+            <div>
+              <p class="text-sm font-bold text-slate-900">Sem fidelidade</p>
+              <p class="mt-0.5 text-xs leading-relaxed text-slate-600">
+                Altere de plano ou cancele sua assinatura a qualquer momento com 1 clique.
+              </p>
+            </div>
+          </li>
+        </ul>
+        <p class="mt-6 flex flex-col gap-2 border-t border-slate-200 pt-4 text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between">
           <span>Criptografia de ponta a ponta</span>
           <span>Suporte em português</span>
         </p>
-      </section>
-    </div>
-
-    <template #action-bar>
-      <OnboardingActionBar
-        :show-back="false"
-        primary-label="Continuar"
-        :primary-loading="auth.loading"
-        @primary="onSubmit"
-      />
-    </template>
+      </div>
+    </details>
   </OnboardingShell>
 </template>

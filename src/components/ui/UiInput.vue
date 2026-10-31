@@ -13,6 +13,7 @@ const props = withDefaults(
     inputmode?: 'text' | 'numeric' | 'tel' | 'email' | 'decimal' | 'search'
     inputClass?: string
     invalid?: boolean
+    minlength?: number
   }>(),
   {
     modelValue: '',
@@ -52,6 +53,7 @@ function onInput(event: Event): void {
       :readonly="readonly"
       :autocomplete="autocomplete"
       :inputmode="inputmode"
+      :minlength="minlength"
       :aria-invalid="invalid || undefined"
       class="w-full rounded-lg border bg-white py-2 text-sm text-brand-ink placeholder:text-brand-gray/80 focus:border-brand-indigo focus:outline-none focus:ring-2 focus:ring-brand-indigo/20 disabled:cursor-not-allowed disabled:bg-slate-50 read-only:cursor-default read-only:bg-slate-50"
       :class="[
