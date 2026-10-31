@@ -36,7 +36,7 @@ withDefaults(
     <main
       class="mx-auto w-full flex-1 px-4 md:px-8"
       :class="[
-        shellVariant === 'cadastro-v5' ? 'max-w-[560px] py-6 sm:py-8' : 'max-w-6xl py-8',
+        shellVariant === 'cadastro-v5' ? 'max-w-6xl py-6 sm:py-8' : 'max-w-6xl py-8',
         wide && shellVariant !== 'cadastro-v5' ? 'max-w-7xl' : '',
       ]"
     >

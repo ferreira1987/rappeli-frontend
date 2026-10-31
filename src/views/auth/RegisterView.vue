@@ -81,10 +81,11 @@ async function onSubmit(): Promise<void> {
 
 <template>
   <OnboardingShell :step="1" shell-variant="cadastro-v5">
-    <UiCard
-      padding="none"
-      class="overflow-hidden rounded-2xl border border-slate-200/90 shadow-sm"
-    >
+    <div class="grid grid-cols-1 items-start gap-6 lg:grid-cols-12 lg:gap-8">
+      <UiCard
+        padding="none"
+        class="overflow-hidden rounded-2xl border border-slate-200/90 shadow-sm lg:col-span-7"
+      >
       <div class="p-6 sm:p-8">
         <header class="mb-6">
           <h1 class="text-2xl font-bold tracking-tight text-slate-900">Crie sua conta</h1>
@@ -263,26 +264,24 @@ async function onSubmit(): Promise<void> {
           <ArrowRight v-if="!auth.loading" class="h-4 w-4" aria-hidden="true" />
         </UiButton>
       </footer>
-    </UiCard>
+      </UiCard>
 
-    <details class="mt-8 rounded-2xl border border-slate-200 bg-white shadow-sm">
-      <summary
-        class="cursor-pointer list-none px-6 py-4 text-sm font-semibold text-slate-700 marker:content-none [&::-webkit-details-marker]:hidden"
+      <UiCard
+        padding="lg"
+        class="rounded-2xl border border-slate-200/90 bg-brand-mist/40 shadow-sm lg:col-span-5 lg:self-stretch"
       >
-        <span class="inline-flex items-center gap-2">
-          <span
-            class="inline-flex items-center gap-1.5 rounded-full bg-[#4338CA]/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-[#4338CA]"
-          >
-            Vantagens do ecossistema
-          </span>
+        <p
+          class="inline-flex items-center gap-1.5 rounded-full border border-[#4338CA]/15 bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-[#4338CA]"
+        >
+          Vantagens do ecossistema
+        </p>
+        <h2 class="mt-4 text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
           Por que escolher o Rappeli
-        </span>
-      </summary>
-      <div class="border-t border-slate-100 px-6 pb-6 pt-2">
-        <ul class="mt-4 space-y-3">
-          <li class="flex gap-3 rounded-xl border border-slate-100 bg-slate-50/80 p-4">
+        </h2>
+        <ul class="mt-6 space-y-3">
+          <li class="flex gap-3.5 rounded-xl border border-slate-200/80 bg-white p-4">
             <div
-              class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#4338CA] text-white"
+              class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-mist text-[#4338CA]"
             >
               <Share2 class="h-5 w-5" aria-hidden="true" />
             </div>
@@ -293,9 +292,9 @@ async function onSubmit(): Promise<void> {
               </p>
             </div>
           </li>
-          <li class="flex gap-3 rounded-xl border border-slate-100 bg-slate-50/80 p-4">
+          <li class="flex gap-3.5 rounded-xl border border-slate-200/80 bg-white p-4">
             <div
-              class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#4338CA] text-white"
+              class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-mist text-[#4338CA]"
             >
               <Users class="h-5 w-5" aria-hidden="true" />
             </div>
@@ -306,9 +305,9 @@ async function onSubmit(): Promise<void> {
               </p>
             </div>
           </li>
-          <li class="flex gap-3 rounded-xl border border-slate-100 bg-slate-50/80 p-4">
+          <li class="flex gap-3.5 rounded-xl border border-slate-200/80 bg-white p-4">
             <div
-              class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#4338CA] text-white"
+              class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-mist text-[#4338CA]"
             >
               <Handshake class="h-5 w-5" aria-hidden="true" />
             </div>
@@ -319,9 +318,9 @@ async function onSubmit(): Promise<void> {
               </p>
             </div>
           </li>
-          <li class="flex gap-3 rounded-xl border border-slate-100 bg-slate-50/80 p-4">
+          <li class="flex gap-3.5 rounded-xl border border-slate-200/80 bg-white p-4">
             <div
-              class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#4338CA] text-white"
+              class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-mist text-[#4338CA]"
             >
               <LockOpen class="h-5 w-5" aria-hidden="true" />
             </div>
@@ -333,11 +332,13 @@ async function onSubmit(): Promise<void> {
             </div>
           </li>
         </ul>
-        <p class="mt-6 flex flex-col gap-2 border-t border-slate-200 pt-4 text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between">
+        <p
+          class="mt-8 flex flex-col gap-2 border-t border-slate-200/80 pt-6 text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between"
+        >
           <span>Criptografia de ponta a ponta</span>
           <span>Suporte em português</span>
         </p>
-      </div>
-    </details>
+      </UiCard>
+    </div>
   </OnboardingShell>
 </template>
