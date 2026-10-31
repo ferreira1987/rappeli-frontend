@@ -1,10 +1,30 @@
-import { inject, onMounted, onUnmounted, provide, ref, type InjectionKey, type Ref } from 'vue'
+import { inject, onMounted, onUnmounted, provide, ref, watch, type InjectionKey, type Ref } from 'vue'
+
+const SIDEBAR_COLLAPSED_STORAGE_KEY = 'rappeli-app-sidebar-collapsed'
+
+function readSidebarCollapsedFromStorage(): boolean {
+  try {
+    return window.localStorage.getItem(SIDEBAR_COLLAPSED_STORAGE_KEY) === '1'
+  } catch {
+    return false
+  }
+}
+
+function writeSidebarCollapsedToStorage(collapsed: boolean): void {
+  try {
+    window.localStorage.setItem(SIDEBAR_COLLAPSED_STORAGE_KEY, collapsed ? '1' : '0')
+  } catch {
+    // ignore quota / private mode
+  }
+}
 
 export type AppSidebarContext = {
   isOpen: Ref<boolean>
+  isCollapsed: Ref<boolean>
   open: () => void
   close: () => void
   toggle: () => void
+  toggleCollapsed: () => void
   menuButtonId: string
 }
 
@@ -12,6 +32,7 @@ const appSidebarKey: InjectionKey<AppSidebarContext> = Symbol('appSidebar')
 
 export function provideAppSidebar(): AppSidebarContext {
   const isOpen = ref(false)
+  const isCollapsed = ref(false)
   const menuButtonId = 'app-mobile-menu-button'
 
   function open(): void {
@@ -26,6 +47,10 @@ export function provideAppSidebar(): AppSidebarContext {
     isOpen.value = !isOpen.value
   }
 
+  function toggleCollapsed(): void {
+    isCollapsed.value = !isCollapsed.value
+  }
+
   function onKeydown(event: KeyboardEvent): void {
     if (event.key === 'Escape' && isOpen.value) {
       event.preventDefault()
@@ -35,7 +60,12 @@ export function provideAppSidebar(): AppSidebarContext {
   }
 
   onMounted(() => {
+    isCollapsed.value = readSidebarCollapsedFromStorage()
     window.addEventListener('keydown', onKeydown)
+  })
+
+  watch(isCollapsed, (collapsed) => {
+    writeSidebarCollapsedToStorage(collapsed)
   })
 
   onUnmounted(() => {
@@ -44,9 +74,11 @@ export function provideAppSidebar(): AppSidebarContext {
 
   const ctx: AppSidebarContext = {
     isOpen,
+    isCollapsed,
     open,
     close,
     toggle,
+    toggleCollapsed,
     menuButtonId,
   }
 
