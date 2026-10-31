@@ -29,13 +29,13 @@ defineProps<{
           <span v-if="index < breadcrumbs.length - 1" class="text-slate-300" aria-hidden="true">›</span>
         </template>
       </nav>
-      <div v-if="$slots.badges" class="mb-2 flex flex-wrap items-center gap-2">
-        <slot name="badges" />
-      </div>
       <div class="flex flex-wrap items-center gap-2.5">
         <h1 class="text-xl font-bold tracking-tight text-brand-ink sm:text-2xl">
           {{ title }}
         </h1>
+        <div v-if="$slots.badges" class="flex flex-wrap items-center gap-2">
+          <slot name="badges" />
+        </div>
         <ExampleDataBadge v-if="showExampleBadge" />
       </div>
       <p v-if="subtitle" class="mt-1 max-w-2xl text-sm text-brand-gray">
