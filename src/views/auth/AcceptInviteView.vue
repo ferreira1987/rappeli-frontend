@@ -6,6 +6,7 @@ import { RouterLink, useRoute, useRouter } from 'vue-router'
 
 import { acceptTeamInvitation, fetchTeamInvitationPreview } from '@/api/team'
 import AuthPageChrome from '@/components/auth/AuthPageChrome.vue'
+import InviteMarketingPanel from '@/components/auth/InviteMarketingPanel.vue'
 import RappeliLogo from '@/components/brand/RappeliLogo.vue'
 import { UiButton, UiCard, UiInput } from '@/components/ui'
 import { useAuthStore } from '@/stores/auth'
@@ -150,27 +151,30 @@ async function onSubmit(): Promise<void> {
 </script>
 
 <template>
-  <div class="flex min-h-screen flex-col bg-[#F8FAFC]">
-    <header
-      class="flex shrink-0 items-center justify-end gap-4 px-6 py-5 text-sm text-slate-600 sm:px-10 lg:px-12"
-    >
-      <a href="#" class="hover:text-[#4338CA]" @click.prevent>Central de Ajuda</a>
-      <span class="h-4 w-px bg-slate-300" aria-hidden="true" />
-      <a href="#" class="font-medium hover:text-[#4338CA]" @click.prevent>Suporte</a>
-    </header>
+  <div class="flex min-h-screen flex-col overflow-hidden lg:flex-row">
+    <InviteMarketingPanel placement="sidebar" />
 
-    <div class="flex flex-1 flex-col px-4 pb-4 sm:px-6">
-      <div class="mx-auto flex w-full max-w-[460px] items-center justify-center gap-2.5 pt-2 pb-6">
-        <RappeliLogo mode="symbol" class="h-8 w-8 shrink-0" />
-        <div class="flex flex-col">
-          <span class="font-display text-xl font-bold leading-none tracking-tight text-slate-900">
-            Rappeli
-          </span>
-          <span class="mt-0.5 text-[10px] text-slate-500 sm:text-xs">Mensagens &amp; automações</span>
+    <main class="flex min-h-screen flex-1 flex-col bg-[#F8FAFC]">
+      <header
+        class="flex shrink-0 items-center justify-end gap-4 px-6 py-5 text-sm text-slate-600 sm:px-10 lg:px-12"
+      >
+        <a href="#" class="hover:text-[#4338CA]" @click.prevent>Central de Ajuda</a>
+        <span class="h-4 w-px bg-slate-300" aria-hidden="true" />
+        <a href="#" class="font-medium hover:text-[#4338CA]" @click.prevent>Suporte</a>
+      </header>
+
+      <div class="flex flex-1 flex-col justify-center px-6 pb-6 sm:px-10 lg:px-12">
+        <div class="mx-auto mb-6 flex w-full max-w-[460px] items-center gap-3 lg:hidden">
+          <RappeliLogo mode="symbol" class="h-9 w-9 shrink-0" />
+          <div>
+            <span class="block font-display text-xl font-bold leading-none tracking-tight text-slate-900">
+              Rappeli
+            </span>
+            <span class="mt-1 block text-xs text-slate-500">Mensagens &amp; automações</span>
+          </div>
         </div>
-      </div>
 
-      <main class="mx-auto flex w-full max-w-[460px] flex-1 flex-col justify-center pb-6">
+        <div class="mx-auto w-full max-w-[460px]">
         <UiCard
           :bordered="false"
           padding="none"
@@ -361,9 +365,12 @@ async function onSubmit(): Promise<void> {
             </p>
           </form>
         </UiCard>
-      </main>
-    </div>
 
-    <AuthPageChrome hide-top />
+          <InviteMarketingPanel placement="below" class="mt-8" />
+        </div>
+      </div>
+
+      <AuthPageChrome hide-top />
+    </main>
   </div>
 </template>
