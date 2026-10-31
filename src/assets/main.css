@@ -42,4 +42,11 @@
   .scrollbar-none::-webkit-scrollbar {
     display: none;
   }
+
+  .onboarding-action-bar-scroll input,
+  .onboarding-action-bar-scroll select,
+  .onboarding-action-bar-scroll textarea {
+    scroll-margin-top: 1rem;
+    scroll-margin-bottom: 9rem;
+  }
 }

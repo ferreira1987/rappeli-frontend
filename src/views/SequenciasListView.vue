@@ -281,6 +281,7 @@ function goToNextPage(): void {
               v-model="search"
               type="search"
               placeholder="Buscar sequência por nome..."
+              aria-label="Buscar sequência por nome"
               class="min-w-0 w-full"
               input-class="w-full"
             >

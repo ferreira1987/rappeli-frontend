@@ -247,7 +247,7 @@ async function onSubmit(): Promise<void> {
               :model-value="cnpj"
               inputmode="numeric"
               autocomplete="off"
-              placeholder="00.000.000/0000-00"
+              placeholder="Ex.: 00.000.000/0000-00"
               :readonly="!canEdit"
               :invalid="Boolean(fieldErrors.cnpj)"
               @update:model-value="onCnpjUpdate"
@@ -326,6 +326,7 @@ async function onSubmit(): Promise<void> {
               type="file"
               accept="image/png,image/jpeg,image/webp,image/svg+xml"
               class="sr-only"
+              aria-label="Selecionar arquivo de logotipo"
               @change="onLogoChange"
             />
           </div>

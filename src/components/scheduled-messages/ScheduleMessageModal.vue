@@ -175,12 +175,16 @@ async function onSubmit(): Promise<void> {
         <p v-if="formError" class="text-sm text-red-600" role="alert">{{ formError }}</p>
 
         <div>
-          <p class="mb-1 text-[11px] font-semibold uppercase tracking-wide text-brand-gray">Contato</p>
+          <label for="schedule-contact-search" class="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-brand-gray"
+            >Contato</label
+          >
           <input
+            id="schedule-contact-search"
             v-model="contactSearch"
             type="search"
             placeholder="Buscar contato por nome ou telefone…"
-            class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+            aria-label="Buscar contato por nome ou telefone"
+            class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm placeholder:text-slate-400"
           />
           <p v-if="fieldErrors.contact_id" class="mt-1 text-xs text-red-600">{{ fieldErrors.contact_id }}</p>
           <ul v-if="contactResults.length" class="mt-1 max-h-32 overflow-y-auto rounded-lg border border-slate-200 text-sm">
@@ -201,7 +205,9 @@ async function onSubmit(): Promise<void> {
 
         <div>
           <div class="mb-1 flex items-center justify-between">
-            <p class="text-[11px] font-semibold uppercase tracking-wide text-brand-gray">Mensagem</p>
+            <label for="schedule-message-body" class="text-[11px] font-semibold uppercase tracking-wide text-brand-gray"
+              >Mensagem</label
+            >
             <button
               type="button"
               class="text-xs font-semibold text-brand-indigo hover:underline"
@@ -211,8 +217,10 @@ async function onSubmit(): Promise<void> {
             </button>
           </div>
           <textarea
+            id="schedule-message-body"
             v-model="messageBody"
             rows="4"
+            aria-label="Mensagem"
             class="w-full resize-none rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-brand-indigo focus:outline-none focus:ring-2 focus:ring-brand-indigo/20"
             @input="delete fieldErrors.body"
           />
@@ -246,10 +254,13 @@ async function onSubmit(): Promise<void> {
 
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="mb-1 block text-[11px] font-semibold uppercase text-brand-gray">Data</label>
+            <label for="schedule-date" class="mb-1 block text-[11px] font-semibold uppercase text-brand-gray"
+              >Data</label
+            >
             <div class="relative">
               <Calendar class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-gray" />
               <input
+                id="schedule-date"
                 v-model="scheduleDate"
                 type="date"
                 class="w-full rounded-lg border border-slate-200 py-2 pl-9 pr-3 text-sm"
@@ -257,10 +268,13 @@ async function onSubmit(): Promise<void> {
             </div>
           </div>
           <div>
-            <label class="mb-1 block text-[11px] font-semibold uppercase text-brand-gray">Hora</label>
+            <label for="schedule-time" class="mb-1 block text-[11px] font-semibold uppercase text-brand-gray"
+              >Hora</label
+            >
             <div class="relative">
               <Clock class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-gray" />
               <input
+                id="schedule-time"
                 v-model="scheduleTime"
                 type="time"
                 class="w-full rounded-lg border border-slate-200 py-2 pl-9 pr-3 text-sm"
@@ -270,8 +284,10 @@ async function onSubmit(): Promise<void> {
         </div>
 
         <div>
-          <label class="mb-1 block text-[11px] font-semibold uppercase text-brand-gray">Repetir</label>
-          <select v-model="repeat" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm">
+          <label for="schedule-repeat" class="mb-1 block text-[11px] font-semibold uppercase text-brand-gray"
+            >Repetir</label
+          >
+          <select id="schedule-repeat" v-model="repeat" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm">
             <option value="none">Não repetir</option>
             <option value="daily">Diariamente</option>
             <option value="weekly">Semanalmente</option>

@@ -290,6 +290,7 @@ function goToNextPage(): void {
               v-model="search"
               type="search"
               placeholder="Buscar campanha..."
+              aria-label="Buscar campanha"
               class="min-w-0 w-full"
               input-class="w-full"
             >

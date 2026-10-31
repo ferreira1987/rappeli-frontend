@@ -110,6 +110,7 @@ const kpiCards = computed(() => {
       hint: firstResponseHint,
       hintClass: 'text-brand-gray',
       icon: Timer,
+      visible: kpis?.average_first_response_time_seconds != null,
     },
     {
       key: 'handled',
@@ -118,6 +119,7 @@ const kpiCards = computed(() => {
       hint: hint,
       hintClass: 'text-emerald-700',
       icon: TrendingUp,
+      visible: true,
     },
     {
       key: 'resolved',
@@ -126,6 +128,7 @@ const kpiCards = computed(() => {
       hint: resolutionRateHint,
       hintClass: 'text-brand-indigo',
       icon: CheckCircle2,
+      visible: true,
     },
     {
       key: 'open',
@@ -134,6 +137,7 @@ const kpiCards = computed(() => {
       hint: 'Em andamento · ' + hint,
       hintClass: 'text-brand-gray',
       icon: MessageSquareMore,
+      visible: true,
     },
     {
       key: 'unassigned',
@@ -142,6 +146,7 @@ const kpiCards = computed(() => {
       hint: 'Aguardando triagem · ' + hint,
       hintClass: 'text-amber-800',
       icon: AlertTriangle,
+      visible: true,
     },
     {
       key: 'response_time',
@@ -150,6 +155,7 @@ const kpiCards = computed(() => {
       hint: 'Entre mensagens no período · ' + hint,
       hintClass: 'text-brand-gray',
       icon: NotebookPen,
+      visible: kpis?.average_response_time_seconds != null,
     },
     {
       key: 'new_contacts',
@@ -158,6 +164,7 @@ const kpiCards = computed(() => {
       hint: hint,
       hintClass: 'text-emerald-700',
       icon: UserPlus,
+      visible: true,
     },
     {
       key: 'automated',
@@ -166,8 +173,9 @@ const kpiCards = computed(() => {
       hint: hint,
       hintClass: 'text-brand-gray',
       icon: Bot,
+      visible: true,
     },
-  ]
+  ].filter((card) => card.visible)
 })
 
 const conversationVolumePoints = computed(() =>
@@ -232,12 +240,15 @@ async function exportCsv(): Promise<void> {
   <AppPageShell title="Relatórios" :breadcrumbs="headerBreadcrumbs">
     <template #actions>
       <label class="relative inline-flex items-center">
+        <span class="sr-only">Período do relatório</span>
         <Calendar
           class="pointer-events-none absolute left-3 h-4 w-4 text-brand-gray"
           aria-hidden="true"
         />
         <select
+          id="report-period"
           v-model="period"
+          aria-label="Período do relatório"
           class="appearance-none rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-8 text-sm font-medium text-brand-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-indigo"
           @change="loadReport"
         >
@@ -337,10 +348,8 @@ async function exportCsv(): Promise<void> {
                 <BarChart3 class="h-8 w-8 text-slate-300" aria-hidden="true" />
                 <p class="text-sm font-medium text-brand-ink">Sem série diária no período</p>
                 <p class="max-w-md px-4 text-xs text-brand-gray">
-                  O gráfico usa o campo opcional
-                  <span class="font-medium text-brand-ink">conversation_volume</span>
-                  retornado pela API de relatórios. Os KPIs acima continuam refletindo o período
-                  selecionado.
+                  Ainda não há dados de volume de conversas no período. Os KPIs acima continuam
+                  refletindo o período selecionado.
                 </p>
               </div>
 
@@ -473,7 +482,9 @@ async function exportCsv(): Promise<void> {
                 </td>
                 <td class="text-right tabular-nums">{{ row.conversations_open }}</td>
                 <td class="text-right tabular-nums text-brand-gray">
-                  {{ formatAverageResponseTime(row.average_first_response_time_seconds) }}
+                  <span v-if="row.average_first_response_time_seconds != null">
+                    {{ formatAverageResponseTime(row.average_first_response_time_seconds) }}
+                  </span>
                 </td>
               </tr>
               <tr v-if="!(report.agents?.length)">

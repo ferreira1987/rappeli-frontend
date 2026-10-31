@@ -180,11 +180,15 @@ function variableSummary(template: MessageTemplate): string {
               v-model="search"
               type="search"
               placeholder="Buscar modelo…"
-              class="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm"
+              aria-label="Buscar modelo"
+              class="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm placeholder:text-slate-400"
             />
           </div>
+          <label for="template-status-filter" class="sr-only">Filtrar por status</label>
           <select
+            id="template-status-filter"
             v-model="statusFilter"
+            aria-label="Filtrar por status"
             class="h-9 rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-brand-ink"
           >
             <option value="all">Todos os status</option>

@@ -34,8 +34,8 @@ const labelClass = computed(() =>
 const fieldClass = computed(() => {
   const base =
     uiVariant.value === 'v5'
-      ? 'mt-1.5 w-full rounded-lg border px-3 py-2 text-sm outline-none ring-0 focus:ring-2'
-      : 'mt-1 w-full rounded-xl border px-3 py-2.5 text-sm outline-none ring-0 focus:ring-2'
+      ? 'mt-1.5 w-full scroll-mb-36 scroll-mt-4 rounded-lg border px-3 py-2 text-sm outline-none ring-0 placeholder:text-slate-400 focus:ring-2'
+      : 'mt-1 w-full rounded-xl border px-3 py-2.5 text-sm outline-none ring-0 placeholder:text-slate-400 focus:ring-2'
   return base
 })
 

@@ -262,6 +262,7 @@ async function onImportFile(event: Event): Promise<void> {
         type="file"
         accept=".csv,text/csv"
         class="hidden"
+        aria-label="Importar contatos CSV"
         @change="onImportFile"
       />
       <UiButton @click="openCreate">
@@ -292,6 +293,7 @@ async function onImportFile(event: Event): Promise<void> {
               v-model="search"
               type="search"
               placeholder="Buscar por nome ou telefone..."
+              aria-label="Buscar por nome ou telefone"
               class="min-w-0 flex-1"
               input-class="w-full"
             >

@@ -407,6 +407,7 @@ async function onResolve(): Promise<void> {
             type="search"
             autocomplete="off"
             placeholder="Buscar por nome ou telefone…"
+            aria-label="Buscar por nome ou telefone"
             input-class="h-9 bg-brand-surface text-xs"
           >
             <template #leading>
@@ -742,10 +743,12 @@ async function onResolve(): Promise<void> {
             </p>
             <div class="flex gap-2">
               <textarea
+                id="conversation-composer"
                 v-model="draft"
                 rows="2"
                 :disabled="!canSendMessage || sending"
                 placeholder="Digite sua mensagem…"
+                aria-label="Digite sua mensagem"
                 class="min-h-[44px] min-w-0 flex-1 resize-none rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-brand-indigo focus:outline-none focus:ring-2 focus:ring-brand-indigo/20 disabled:bg-slate-50 disabled:text-brand-gray"
                 @keydown="onComposerKeydown"
               />

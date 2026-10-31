@@ -14,9 +14,12 @@ withDefaults(
     wide?: boolean
     /** v5 Stitch layout (Cadastro, Plano, Pagamento e Ativação). */
     shellVariant?: 'default' | 'cadastro-v5'
+    /** Espaço inferior para a barra fixa de ações (checkout/plano). */
+    reserveActionBarSpace?: boolean
   }>(),
   {
     shellVariant: 'default',
+    reserveActionBarSpace: false,
   },
 )
 </script>
@@ -46,6 +49,7 @@ withDefaults(
       class="mx-auto w-full flex-1 px-4 md:px-8"
       :class="[
         shellVariant === 'cadastro-v5' ? 'max-w-6xl py-6 sm:py-8' : 'max-w-6xl py-8',
+        reserveActionBarSpace ? 'pb-32 sm:pb-36' : '',
         wide && shellVariant !== 'cadastro-v5' ? 'max-w-7xl' : '',
       ]"
     >

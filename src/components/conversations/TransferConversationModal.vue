@@ -201,8 +201,9 @@ function onSubmit(): void {
 
         <div v-else class="space-y-4">
           <div v-if="targetMode === 'sector'">
-            <label class="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-brand-gray">Setor *</label>
+            <label for="transfer-sector" class="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-brand-gray">Setor *</label>
             <select
+              id="transfer-sector"
               v-model.number="sectorId"
               class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
             >
@@ -215,10 +216,11 @@ function onSubmit(): void {
           </div>
 
           <div>
-            <label class="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-brand-gray">
+            <label for="transfer-assignee" class="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-brand-gray">
               Atendente {{ targetMode === 'sector' ? '(opcional)' : '*' }}
             </label>
             <select
+              id="transfer-assignee"
               v-model.number="assigneeUserId"
               class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
             >
@@ -233,10 +235,11 @@ function onSubmit(): void {
           </div>
 
           <div>
-            <label class="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-brand-gray">
+            <label for="transfer-internal-note" class="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-brand-gray">
               Nota interna
             </label>
             <textarea
+              id="transfer-internal-note"
               v-model="internalNote"
               rows="3"
               placeholder="Resuma o contexto do atendimento…"

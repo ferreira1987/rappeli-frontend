@@ -150,8 +150,8 @@ function onPhoneInput(value: string): void {
 </script>
 
 <template>
-  <OnboardingShell :step="3" shell-variant="cadastro-v5" @back="goBack">
-    <div class="mx-auto w-full max-w-[1080px]">
+  <OnboardingShell :step="3" shell-variant="cadastro-v5" reserve-action-bar-space @back="goBack">
+    <div class="onboarding-action-bar-scroll mx-auto w-full max-w-[1080px]">
       <header class="mb-8">
         <h1 class="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
           Finalizar contratação
@@ -236,7 +236,7 @@ function onPhoneInput(value: string): void {
                     id="bill-doc"
                     :model-value="forms.holder.cpf_cnpj"
                     type="text"
-                    placeholder="00.000.000/0000-00"
+                    placeholder="Ex.: 000.000.000-00"
                     inputmode="numeric"
                     :invalid="Boolean(billingFieldError('holder.cpf_cnpj'))"
                     @update:model-value="(v) => (forms.holder.cpf_cnpj = maskCpfCnpj(v))"
@@ -262,7 +262,7 @@ function onPhoneInput(value: string): void {
                     id="cep"
                     :model-value="forms.holder.postal_code"
                     type="text"
-                    placeholder="00000-000"
+                    placeholder="Ex.: 00000-000"
                     inputmode="numeric"
                     autocomplete="postal-code"
                     :invalid="Boolean(billingFieldError('holder.postal_code'))"

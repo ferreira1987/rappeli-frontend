@@ -340,10 +340,13 @@ async function onEnroll(): Promise<void> {
 
         <section class="rounded-xl border border-slate-200 bg-white p-4 shadow-xs">
           <h2 class="font-display text-base font-bold text-brand-ink">Inscrever contatos (enroll)</h2>
+          <label for="enroll-contact-ids" class="sr-only">IDs dos contatos</label>
           <input
+            id="enroll-contact-ids"
             v-model="enrollIds"
             type="text"
             placeholder="IDs dos contatos, ex.: 12, 15, 20"
+            aria-label="IDs dos contatos"
             class="mt-2 w-full max-w-md rounded-lg border border-slate-200 px-3 py-2 text-sm"
           />
           <button
