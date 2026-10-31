@@ -5,11 +5,15 @@ import { RouterLink } from 'vue-router'
 
 import { createFunnelCard, createFunnelStage, deleteFunnelCard, fetchFunnelBoard } from '@/api/funnel'
 import AppConfirmModal from '@/components/app/AppConfirmModal.vue'
-import FunnelKanbanBoard from '@/components/funnel/FunnelKanbanBoard.vue'
 import ExampleFiltersModal from '@/components/app/ExampleFiltersModal.vue'
-import AppPageHeader from '@/components/app/AppPageHeader.vue'
+import EmptyState from '@/components/app/EmptyState.vue'
+import FunnelKanbanBoard from '@/components/funnel/FunnelKanbanBoard.vue'
 import AppPageFooter from '@/components/layout/AppPageFooter.vue'
+import AppPageShell from '@/components/layout/AppPageShell.vue'
+import UiButton from '@/components/ui/UiButton.vue'
+import UiInput from '@/components/ui/UiInput.vue'
 import { useEscapeKey } from '@/composables/useEscapeKey'
+import { panelBreadcrumbs } from '@/constants/panelBreadcrumbs'
 import type { FunnelCard, FunnelStage } from '@/types/funnel'
 import { getErrorMessage, getValidationErrors } from '@/utils/errors'
 import { stagesFromApi } from '@/utils/funnelBoardMove'
@@ -37,6 +41,8 @@ const addCardErrors = ref<Record<string, string>>({})
 const deleteCardConfirmOpen = ref(false)
 const cardPendingDelete = ref<FunnelCard | null>(null)
 const deleteCardSubmitting = ref(false)
+
+const headerBreadcrumbs = panelBreadcrumbs({ label: 'Automação' }, { label: 'Funil de atendimento' })
 
 const deleteCardMessage = computed(() => {
   if (!cardPendingDelete.value) return ''
@@ -174,125 +180,115 @@ useEscapeKey(
 </script>
 
 <template>
-  <div class="flex min-h-full flex-col bg-brand-surface">
-    <AppPageHeader
-      title="Funil de atendimento"
-      :breadcrumbs="[{ label: 'Painel', to: '/painel' }, { label: 'Funil de atendimento' }]"
-    >
-      <template #actions>
-        <button
-          type="button"
-          class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-brand-ink hover:bg-slate-50"
-          @click="filtersOpen = true"
-        >
-          <Filter class="h-4 w-4 text-brand-gray" />
-          Filtros
-        </button>
-        <RouterLink
-          :to="{ name: 'mensagens-agendadas' }"
-          class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-brand-ink hover:bg-slate-50"
-        >
-          <Calendar class="h-4 w-4 text-brand-gray" />
+  <AppPageShell
+    title="Funil de atendimento"
+    subtitle="Acompanhe e gerencie o fluxo de contatos e negociações em tempo real."
+    :breadcrumbs="headerBreadcrumbs"
+  >
+    <template #actions>
+      <UiButton variant="secondary" @click="filtersOpen = true">
+        <Filter class="h-4 w-4 text-brand-gray" aria-hidden="true" />
+        Filtros
+      </UiButton>
+      <RouterLink v-slot="{ navigate }" :to="{ name: 'mensagens-agendadas' }" custom>
+        <UiButton variant="secondary" @click="navigate">
+          <Calendar class="h-4 w-4 text-brand-gray" aria-hidden="true" />
           Agendar mensagem
-        </RouterLink>
-        <button
-          type="button"
-          class="inline-flex items-center gap-1.5 rounded-lg bg-brand-indigo px-4 py-2 text-sm font-semibold text-white hover:bg-brand-indigo-hover disabled:cursor-not-allowed disabled:opacity-60"
-          :disabled="!stages.length"
-          :title="!stages.length ? 'Crie uma etapa no funil antes de adicionar cards' : undefined"
-          @click="stages[0] && openAddCard(stages[0].id)"
-        >
-          <Plus class="h-4 w-4" />
-          Novo card
-        </button>
-      </template>
-    </AppPageHeader>
+        </UiButton>
+      </RouterLink>
+      <UiButton
+        :disabled="!stages.length"
+        :title="!stages.length ? 'Crie uma etapa no funil antes de adicionar cards' : undefined"
+        @click="stages[0] && openAddCard(stages[0].id)"
+      >
+        <Plus class="h-4 w-4" aria-hidden="true" />
+        Novo card
+      </UiButton>
+    </template>
 
-    <div class="border-b border-slate-200/80 bg-white px-4 py-3 sm:px-6 lg:px-8">
-      <div class="flex flex-wrap items-center gap-3">
-        <div class="relative min-w-[200px] flex-1">
-          <Search class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-gray" />
-          <input
+    <template #toolbar>
+      <div class="border-b border-slate-200/80 bg-white px-4 py-3 sm:px-6 lg:px-8">
+        <div class="flex flex-wrap items-center gap-3">
+          <UiInput
             v-model="search"
             type="search"
             placeholder="Buscar contato…"
-            class="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm focus:border-brand-indigo focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-indigo/20"
-          />
-        </div>
-        <button
-          type="button"
-          class="ml-auto text-sm font-semibold text-brand-indigo hover:underline"
-          @click="openAddStage"
-        >
-          + Adicionar etapa
-        </button>
-      </div>
-    </div>
-
-    <p v-if="statusMessage" class="px-4 pt-4 text-sm text-brand-indigo sm:px-6 lg:px-8" role="status">
-      {{ statusMessage }}
-    </p>
-
-    <ExampleFiltersModal
-      :open="filtersOpen"
-      title="Filtros do funil"
-      @close="filtersOpen = false"
-      @apply="filtersOpen = false"
-    />
-
-    <div v-if="loading" class="flex flex-1 items-center justify-center p-12">
-      <Loader2 class="h-8 w-8 animate-spin text-brand-indigo" aria-label="Carregando funil" />
-    </div>
-
-    <div v-else-if="error" class="flex flex-1 flex-col items-center justify-center gap-3 p-8 text-center">
-      <p class="text-sm text-red-600">{{ error }}</p>
-      <button type="button" class="rounded-lg bg-brand-indigo px-4 py-2 text-sm font-semibold text-white" @click="loadBoard">
-        Tentar novamente
-      </button>
-    </div>
-
-    <div
-      v-else-if="!stages.length"
-      class="mx-4 my-8 flex flex-1 flex-col items-center justify-center gap-4 rounded-2xl border border-dashed border-slate-200 bg-white p-10 text-center sm:mx-6 lg:mx-8"
-    >
-      <h2 class="font-display text-lg font-semibold text-brand-ink">Nenhuma etapa no funil</h2>
-      <p class="max-w-md text-sm text-brand-gray">
-        O funil é organizado em etapas (por exemplo: Novo lead, Em negociação, Fechado). Crie a primeira etapa
-        para adicionar cards de contatos — o botão <strong class="text-brand-ink">Novo card</strong> ficará
-        disponível depois disso.
-      </p>
-      <button
-        type="button"
-        class="inline-flex items-center gap-2 rounded-lg bg-brand-indigo px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-indigo-hover"
-        @click="openAddStage"
-      >
-        <Plus class="h-4 w-4" />
-        Criar primeira etapa
-      </button>
-    </div>
-
-    <div v-else class="flex-1 overflow-x-auto p-4 sm:p-6 lg:p-8">
-      <FunnelKanbanBoard
-        v-model:stages="stages"
-        :cards-by-stage="cardsByStage"
-        :drag-disabled="dragDisabled"
-        @delete-card="requestDeleteCard"
-        @status="statusMessage = $event"
-      >
-        <template #stage-actions="{ stage }">
-          <button
-            type="button"
-            class="ml-auto rounded p-1 text-brand-gray hover:bg-slate-100"
-            aria-label="Adicionar card"
-            @click="openAddCard(stage.id)"
+            class="min-w-[200px] flex-1"
+            input-class="w-full bg-slate-50 focus:bg-white"
           >
-            <Plus class="h-4 w-4" />
-          </button>
-        </template>
-      </FunnelKanbanBoard>
-      <div class="mt-6">
-        <AppPageFooter />
+            <template #leading>
+              <Search class="h-4 w-4" aria-hidden="true" />
+            </template>
+          </UiInput>
+          <UiButton variant="ghost" class="ml-auto shrink-0 text-brand-indigo" @click="openAddStage">
+            <Plus class="h-4 w-4" aria-hidden="true" />
+            Adicionar etapa
+          </UiButton>
+        </div>
       </div>
+    </template>
+
+    <div class="flex min-h-0 flex-1 flex-col px-4 py-6 sm:px-6 lg:px-8">
+      <p v-if="statusMessage" class="mb-4 text-sm text-brand-indigo" role="status">
+        {{ statusMessage }}
+      </p>
+
+      <ExampleFiltersModal
+        :open="filtersOpen"
+        title="Filtros do funil"
+        @close="filtersOpen = false"
+        @apply="filtersOpen = false"
+      />
+
+      <div v-if="loading" class="flex flex-1 justify-center py-16">
+        <Loader2 class="h-8 w-8 animate-spin text-brand-indigo" aria-label="Carregando funil" />
+      </div>
+
+      <div
+        v-else-if="error"
+        class="flex flex-1 flex-col items-center justify-center gap-3 rounded-lg border border-red-200 bg-red-50 p-8 text-center"
+      >
+        <p class="text-sm text-red-800">{{ error }}</p>
+        <UiButton @click="loadBoard">Tentar novamente</UiButton>
+      </div>
+
+      <EmptyState
+        v-else-if="!stages.length"
+        title="Nenhuma etapa no funil"
+        description="O funil é organizado em etapas (por exemplo: Novo lead, Em negociação, Fechado). Crie a primeira etapa para adicionar cards de contatos — o botão Novo card ficará disponível depois disso."
+      >
+        <template #actions>
+          <UiButton @click="openAddStage">
+            <Plus class="h-4 w-4" aria-hidden="true" />
+            Criar primeira etapa
+          </UiButton>
+        </template>
+      </EmptyState>
+
+      <template v-else>
+        <div class="min-w-0 flex-1 overflow-x-auto">
+          <FunnelKanbanBoard
+            v-model:stages="stages"
+            :cards-by-stage="cardsByStage"
+            :drag-disabled="dragDisabled"
+            @delete-card="requestDeleteCard"
+            @status="statusMessage = $event"
+          >
+            <template #stage-actions="{ stage }">
+              <UiButton
+                variant="ghost"
+                size="sm"
+                class="ml-auto !px-1.5 !py-1"
+                aria-label="Adicionar card nesta etapa"
+                @click="openAddCard(stage.id)"
+              >
+                <Plus class="h-4 w-4" aria-hidden="true" />
+              </UiButton>
+            </template>
+          </FunnelKanbanBoard>
+        </div>
+        <AppPageFooter class="mt-6" />
+      </template>
     </div>
 
     <Teleport to="body">
@@ -304,20 +300,22 @@ useEscapeKey(
         aria-labelledby="funnel-add-stage-title"
         @click.self="addStageOpen = false"
       >
-        <form class="w-full max-w-sm rounded-xl bg-white p-6 shadow-2xl" @submit.prevent="submitAddStage">
-          <h3 id="funnel-add-stage-title" class="font-display font-bold text-brand-ink">Nova etapa</h3>
-          <input
+        <form
+          class="w-full max-w-sm rounded-lg border border-slate-200 bg-white p-6 shadow-xl"
+          @submit.prevent="submitAddStage"
+        >
+          <h3 id="funnel-add-stage-title" class="text-lg font-bold text-brand-ink">Nova etapa</h3>
+          <UiInput
             v-model="newStageTitle"
             type="text"
             placeholder="Nome da etapa"
-            class="mt-3 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+            class="mt-3"
+            :invalid="Boolean(addStageErrors.title)"
           />
           <p v-if="addStageErrors.title" class="mt-1 text-xs text-red-600">{{ addStageErrors.title }}</p>
           <div class="mt-4 flex justify-end gap-2">
-            <button type="button" class="rounded-lg border px-3 py-1.5 text-sm" @click="addStageOpen = false">Cancelar</button>
-            <button type="submit" class="rounded-lg bg-brand-indigo px-3 py-1.5 text-sm font-semibold text-white" :disabled="addStageSubmitting">
-              Criar
-            </button>
+            <UiButton variant="secondary" type="button" @click="addStageOpen = false">Cancelar</UiButton>
+            <UiButton type="submit" :disabled="addStageSubmitting">Criar</UiButton>
           </div>
         </form>
       </div>
@@ -329,24 +327,25 @@ useEscapeKey(
         aria-labelledby="funnel-add-card-title"
         @click.self="addCardOpen = false"
       >
-        <form class="w-full max-w-sm rounded-xl bg-white p-6 shadow-2xl" @submit.prevent="submitAddCard">
-          <h3 id="funnel-add-card-title" class="font-display font-bold text-brand-ink">Novo card</h3>
+        <form
+          class="w-full max-w-sm rounded-lg border border-slate-200 bg-white p-6 shadow-xl"
+          @submit.prevent="submitAddCard"
+        >
+          <h3 id="funnel-add-card-title" class="text-lg font-bold text-brand-ink">Novo card</h3>
           <div class="mt-3 space-y-2">
-            <input v-model="addCardName" type="text" placeholder="Nome do contato" class="w-full rounded-lg border px-3 py-2 text-sm" />
-            <input
+            <UiInput v-model="addCardName" type="text" placeholder="Nome do contato" />
+            <UiInput
               v-model="addCardPhone"
               type="tel"
               placeholder="Telefone"
-              class="w-full rounded-lg border px-3 py-2 text-sm"
+              :invalid="Boolean(addCardErrors.phone)"
               @input="delete addCardErrors.phone"
             />
           </div>
           <p v-for="(msg, key) in addCardErrors" :key="key" class="mt-1 text-xs text-red-600">{{ msg }}</p>
           <div class="mt-4 flex justify-end gap-2">
-            <button type="button" class="rounded-lg border px-3 py-1.5 text-sm" @click="addCardOpen = false">Cancelar</button>
-            <button type="submit" class="rounded-lg bg-brand-indigo px-3 py-1.5 text-sm font-semibold text-white" :disabled="addCardSubmitting">
-              Adicionar
-            </button>
+            <UiButton variant="secondary" type="button" @click="addCardOpen = false">Cancelar</UiButton>
+            <UiButton type="submit" :disabled="addCardSubmitting">Adicionar</UiButton>
           </div>
         </form>
       </div>
@@ -357,9 +356,10 @@ useEscapeKey(
       title="Excluir card"
       :message="deleteCardMessage"
       confirm-label="Excluir"
+      variant="danger"
       :loading="deleteCardSubmitting"
       @close="deleteCardConfirmOpen = false"
       @confirm="confirmDeleteCard"
     />
-  </div>
+  </AppPageShell>
 </template>

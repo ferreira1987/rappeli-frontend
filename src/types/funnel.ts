@@ -9,6 +9,8 @@ export interface FunnelCard {
   last_message: string | null
   tags: string[]
   position: number
+  /** Present when the API includes card timestamps. */
+  updated_at?: string | null
 }
 
 export interface FunnelStage {
