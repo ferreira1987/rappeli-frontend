@@ -90,6 +90,14 @@ export const useCheckoutFlowStore = defineStore('checkoutFlow', () => {
     persist()
   }
 
+  function clearCheckoutPlan(): void {
+    planId.value = ''
+    planName.value = ''
+    amount.value = 0
+    modalityLabel.value = ''
+    persist()
+  }
+
   return {
     modality,
     tier,
@@ -102,6 +110,7 @@ export const useCheckoutFlowStore = defineStore('checkoutFlow', () => {
     companyName,
     setPlanSelection,
     setRegistrationExtras,
+    clearCheckoutPlan,
     persist,
   }
 })

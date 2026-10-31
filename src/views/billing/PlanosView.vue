@@ -1,10 +1,14 @@
 <script setup lang="ts">
 import { Check, CheckCircle2, Info, LockOpen, PiggyBank, Star, UserRound } from '@lucide/vue'
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
-
-import { fetchBillingPlans, fetchCurrentSubscription } from '@/api/billing'
+import {
+  changeSubscriptionPlan,
+  fetchBillingPlans,
+  fetchCurrentSubscription,
+} from '@/api/billing'
+import AppConfirmModal from '@/components/app/AppConfirmModal.vue'
 import OnboardingActionBar from '@/components/onboarding/OnboardingActionBar.vue'
 import OnboardingShell from '@/components/onboarding/OnboardingShell.vue'
 import { UiBadge, UiButton, UiCard, UiFilterChip } from '@/components/ui'
@@ -14,17 +18,33 @@ import {
   type PlanTierId,
 } from '@/constants/onboardingPlans'
 import { useCheckoutFlowStore } from '@/stores/checkoutFlow'
-import type { BillingCycle, BillingModality, BillingPlanItem, BillingPlansResponse } from '@/types/billing'
+import type {
+  BillingCycle,
+  BillingModality,
+  BillingPlanItem,
+  BillingPlansResponse,
+  Subscription,
+} from '@/types/billing'
 import { formatPlanAmountCompact, billingCycleLabel } from '@/utils/billingFormat'
+import {
+  planSelectionMatchesSubscription,
+  resolvePlanContinueAction,
+} from '@/utils/billingPlanChange'
 import { getErrorMessage } from '@/utils/errors'
 
 const router = useRouter()
 const checkoutFlow = useCheckoutFlowStore()
-const activeSubscriptionTier = ref<string | null>(null)
+const activeSubscription = ref<Subscription | null>(null)
 
 const loading = ref(true)
 const error = ref<string | null>(null)
 const catalog = ref<BillingPlansResponse | null>(null)
+
+const planChangeConfirmOpen = ref(false)
+const planChangeLoading = ref(false)
+const planChangeError = ref<string | null>(null)
+const planChangeSuccessMessage = ref<string | null>(null)
+const pendingChangePayload = ref<ReturnType<typeof resolvePlanContinueAction> | null>(null)
 
 const cycle = ref<BillingCycle>(checkoutFlow.cycle)
 const modality = ref<BillingModality>(checkoutFlow.modality)
@@ -69,6 +89,59 @@ const monthlyCompareByTier = computed(() => {
 })
 
 const selectedPlan = computed(() => plansByTier.value.get(selectedTier.value) ?? null)
+
+const currentPlanSelection = computed(() => ({
+  modality: modality.value,
+  tier: selectedTier.value,
+  cycle: cycle.value,
+}))
+
+const hasActiveSubscription = computed(
+  () => activeSubscription.value?.status === 'ACTIVE',
+)
+
+const isCurrentPlanSelection = computed(() => {
+  if (!activeSubscription.value || !hasActiveSubscription.value) {
+    return false
+  }
+  return planSelectionMatchesSubscription(activeSubscription.value, currentPlanSelection.value)
+})
+
+const actionPrimaryLabel = computed(() => {
+  if (hasActiveSubscription.value && isCurrentPlanSelection.value) {
+    return 'Plano atual'
+  }
+  return 'Continuar'
+})
+
+const actionPrimaryDisabled = computed(() => {
+  if (!selectedPlan.value) {
+    return true
+  }
+  if (hasActiveSubscription.value && isCurrentPlanSelection.value) {
+    return true
+  }
+  return false
+})
+
+const planChangeConfirmMessage = computed(() => {
+  const current = activeSubscription.value
+  const next = selectedPlan.value
+  if (!current || !next || !catalog.value) {
+    return ''
+  }
+  const currentCycle = billingCycleLabel(current.cycle)
+  const nextCycle = billingCycleLabel(next.cycle)
+  const currentAmount = formatPlanAmountCompact(current.value)
+  const nextAmount = formatPlanAmountCompact(next.amount)
+  const nextModalityLabel = catalog.value.modes[modality.value]?.label ?? current.modality_label
+
+  return [
+    `Plano atual: ${current.plan_name} — ${current.modality_label} — ${currentCycle} ${currentAmount}`,
+    `Novo plano: ${next.name} — ${nextModalityLabel} — ${nextCycle} ${nextAmount}`,
+    'Confirme para alterar a assinatura.',
+  ].join('\n\n')
+})
 
 const selectedSummary = computed(() => {
   if (!selectedPlan.value) {
@@ -126,7 +199,9 @@ onMounted(async () => {
   try {
     const subscription = await fetchCurrentSubscription()
     if (subscription?.status === 'ACTIVE') {
-      activeSubscriptionTier.value = subscription.tier
+      activeSubscription.value = subscription
+      modality.value = subscription.modality
+      cycle.value = subscription.cycle
       selectedTier.value = subscription.tier
     }
   } catch {
@@ -150,7 +225,9 @@ async function retryLoadPlans(): Promise<void> {
 }
 
 function isActivePlanTier(tier: string): boolean {
-  return activeSubscriptionTier.value != null && activeSubscriptionTier.value === tier
+  return (
+    activeSubscription.value?.status === 'ACTIVE' && activeSubscription.value.tier === tier
+  )
 }
 
 function selectTier(tier: string): void {
@@ -180,6 +257,26 @@ function continueToPayment(): void {
   if (!plan || !catalog.value) {
     return
   }
+
+  planChangeError.value = null
+
+  const action = resolvePlanContinueAction({
+    subscription: activeSubscription.value,
+    selection: currentPlanSelection.value,
+  })
+
+  if (action.kind === 'redirect') {
+    checkoutFlow.clearCheckoutPlan()
+    void router.push({ name: action.routeName })
+    return
+  }
+
+  if (action.kind === 'confirm-change') {
+    pendingChangePayload.value = action
+    planChangeConfirmOpen.value = true
+    return
+  }
+
   checkoutFlow.setPlanSelection({
     modality: modality.value,
     tier: plan.tier,
@@ -190,6 +287,39 @@ function continueToPayment(): void {
     modalityLabel: catalog.value.modes[modality.value]?.label ?? '',
   })
   void router.push({ name: 'assinatura-checkout' })
+}
+
+function closePlanChangeConfirm(): void {
+  if (planChangeLoading.value) {
+    return
+  }
+  planChangeConfirmOpen.value = false
+  pendingChangePayload.value = null
+}
+
+async function confirmPlanChange(): Promise<void> {
+  const pending = pendingChangePayload.value
+  if (!pending || pending.kind !== 'confirm-change') {
+    return
+  }
+
+  planChangeLoading.value = true
+  planChangeError.value = null
+  try {
+    const updated = await changeSubscriptionPlan(pending.payload)
+    activeSubscription.value = updated
+    checkoutFlow.clearCheckoutPlan()
+    planChangeConfirmOpen.value = false
+    pendingChangePayload.value = null
+    planChangeSuccessMessage.value = `Plano alterado para ${updated.plan_name}.`
+    await nextTick()
+    await new Promise((resolve) => setTimeout(resolve, 1200))
+    void router.push({ name: 'minha-assinatura' })
+  } catch (err) {
+    planChangeError.value = getErrorMessage(err)
+  } finally {
+    planChangeLoading.value = false
+  }
 }
 
 function goBack(): void {
@@ -208,6 +338,21 @@ function goBack(): void {
           Sem taxa de implantação, sem fidelidade. Cancele quando quiser em 1 clique.
         </p>
       </header>
+
+      <p
+        v-if="planChangeSuccessMessage"
+        class="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900"
+        role="status"
+      >
+        {{ planChangeSuccessMessage }}
+      </p>
+      <p
+        v-if="planChangeError"
+        class="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+        role="alert"
+      >
+        {{ planChangeError }}
+      </p>
 
       <p v-if="loading" class="py-10 text-center text-sm text-slate-500">Carregando planos…</p>
       <div
@@ -417,8 +562,9 @@ function goBack(): void {
         v-if="!loading && !error"
         summary-layout="v5"
         :show-back="false"
-        primary-label="Continuar"
-        :primary-disabled="!selectedPlan"
+        :primary-label="actionPrimaryLabel"
+        :primary-disabled="actionPrimaryDisabled"
+        :primary-loading="planChangeLoading"
         @primary="continueToPayment"
       >
         <template #summary>
@@ -437,4 +583,16 @@ function goBack(): void {
       </OnboardingActionBar>
     </template>
   </OnboardingShell>
+
+  <AppConfirmModal
+    :open="planChangeConfirmOpen"
+    title="Confirmar alteração de plano"
+    :message="planChangeConfirmMessage"
+    confirm-label="Confirmar alteração"
+    cancel-label="Voltar"
+    variant="primary"
+    :loading="planChangeLoading"
+    @close="closePlanChangeConfirm"
+    @confirm="confirmPlanChange"
+  />
 </template>

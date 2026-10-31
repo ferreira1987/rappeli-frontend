@@ -3,7 +3,7 @@ import { AlertCircle, Building2, CheckCircle2, CreditCard, MessageCircle, Refres
 import { computed, onMounted, reactive, ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 
-import { checkoutSubscription } from '@/api/billing'
+import { checkoutSubscription, fetchCurrentSubscription } from '@/api/billing'
 import BillingCheckoutForms from '@/components/billing/BillingCheckoutForms.vue'
 import OnboardingActionBar from '@/components/onboarding/OnboardingActionBar.vue'
 import OnboardingShell from '@/components/onboarding/OnboardingShell.vue'
@@ -21,6 +21,10 @@ import {
 import { emptyCheckoutForms, validateCheckoutForms } from '@/utils/billingCheckoutValidation'
 import { resolveCheckoutSubmitError } from '@/utils/billingCheckoutSubmitError'
 import {
+  resolveActiveSubscriptionRedirect,
+  shouldBlockCheckoutForSubscription,
+} from '@/utils/billingCheckoutGuard'
+import {
   CHECKOUT_PAYMENT_REFUSED_HINT,
   isCheckoutPaymentFailureResult,
 } from '@/utils/billingCheckoutPaymentRefused'
@@ -30,6 +34,7 @@ const auth = useAuthStore()
 const checkoutFlow = useCheckoutFlowStore()
 
 const submitting = ref(false)
+const checkingSubscription = ref(false)
 const formError = ref<string | null>(null)
 const paymentRefusedActive = ref(false)
 const fieldErrors = ref<Record<string, string>>({})
@@ -71,10 +76,28 @@ const totalCycleHint = computed(() => {
 const termsUrl = 'https://rappeli.com.br/termos'
 const privacyUrl = 'https://rappeli.com.br/privacidade'
 
-onMounted(() => {
+onMounted(async () => {
   if (!checkoutFlow.planId) {
     void router.replace({ name: 'assinatura-planos' })
     return
+  }
+
+  checkingSubscription.value = true
+  let redirectingForActiveSubscription = false
+  try {
+    const subscription = await fetchCurrentSubscription()
+    if (shouldBlockCheckoutForSubscription(subscription)) {
+      checkoutFlow.clearCheckoutPlan()
+      redirectingForActiveSubscription = true
+      await router.replace(resolveActiveSubscriptionRedirect('checkout'))
+      return
+    }
+  } catch {
+    // Falha na checagem não impede quem ainda não tem assinatura.
+  } finally {
+    if (!redirectingForActiveSubscription) {
+      checkingSubscription.value = false
+    }
   }
 
   if (auth.user) {
@@ -151,7 +174,14 @@ function onPhoneInput(value: string): void {
 
 <template>
   <OnboardingShell :step="3" shell-variant="cadastro-v5" reserve-action-bar-space @back="goBack">
-    <div class="onboarding-action-bar-scroll mx-auto w-full max-w-[1080px]">
+    <p
+      v-if="checkingSubscription"
+      class="py-16 text-center text-sm text-slate-500"
+      aria-live="polite"
+    >
+      Verificando assinatura…
+    </p>
+    <div v-else class="onboarding-action-bar-scroll mx-auto w-full max-w-[1080px]">
       <header class="mb-8">
         <h1 class="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
           Finalizar contratação
@@ -515,7 +545,7 @@ function onPhoneInput(value: string): void {
       </div>
     </div>
 
-    <template v-if="!paymentRefusedActive" #action-bar>
+    <template v-if="!paymentRefusedActive && !checkingSubscription" #action-bar>
       <OnboardingActionBar
         summary-layout="v5"
         :show-back="false"
