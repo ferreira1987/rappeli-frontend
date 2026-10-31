@@ -28,12 +28,9 @@ const featureItems = [
   >
     <header class="flex items-center gap-3">
       <RappeliLogo mode="symbol" class="h-10 w-10 shrink-0" />
-      <div>
-        <span class="block font-display text-2xl font-bold leading-none tracking-tight text-white">
-          Rappeli
-        </span>
-        <span class="mt-1 block text-sm text-white/85">Mensagens &amp; automações</span>
-      </div>
+      <span class="font-display text-2xl font-bold leading-none tracking-tight text-white">
+        Rappeli
+      </span>
     </header>
 
     <div class="flex flex-1 flex-col justify-center py-10 lg:py-12">

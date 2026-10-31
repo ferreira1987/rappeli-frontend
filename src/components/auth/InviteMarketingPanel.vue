@@ -31,12 +31,9 @@ const wrapperClass = computed(() => {
     <div :class="placement === 'sidebar' ? 'flex flex-col space-y-8' : 'flex flex-col space-y-6'">
       <div class="flex items-center gap-3">
         <RappeliLogo mode="symbol" class="h-10 w-10 shrink-0" />
-        <div>
-          <span class="block font-display text-2xl font-bold leading-none tracking-tight text-white">
-            Rappeli
-          </span>
-          <p class="mt-0.5 text-xs text-white/80 sm:text-sm">Mensagens &amp; automações</p>
-        </div>
+        <span class="font-display text-2xl font-bold leading-none tracking-tight text-white">
+          Rappeli
+        </span>
       </div>
 
       <div :class="placement === 'sidebar' ? 'space-y-6 pt-4' : 'space-y-5'">
