@@ -16,7 +16,10 @@ import UiInput from '@/components/ui/UiInput.vue'
 import UiTable from '@/components/ui/UiTable.vue'
 import { panelBreadcrumbs } from '@/constants/panelBreadcrumbs'
 import type { Campaign, CampaignStatus } from '@/types/campaigns'
-import { formatCampaignListEnvioLine } from '@/utils/campaignDeliveryCounts'
+import {
+  formatCampaignDeliverySummary,
+  formatCampaignListEnvioLine,
+} from '@/utils/campaignDeliveryCounts'
 import { getErrorMessage } from '@/utils/errors'
 import { pluralWordPt } from '@/utils/pluralize'
 
@@ -128,6 +131,14 @@ function statusBadgeVariant(status: CampaignStatus): 'neutral' | 'primary' | 'su
 function templateModelLabel(campaign: Campaign): string {
   const name = campaign.template?.name?.trim()
   return name ? `Modelo ${name}` : 'Sem template'
+}
+
+function countStatus(status: CampaignStatus): number {
+  return campaigns.value.filter((c) => c.status === status).length
+}
+
+function showsDeliverySummary(status: CampaignStatus): boolean {
+  return status === 'enviando' || status === 'concluida'
 }
 
 async function loadCampaigns(): Promise<void> {
@@ -295,6 +306,18 @@ function goToNextPage(): void {
                 @click="statusChip = option.id"
               >
                 {{ option.label }}
+                <span
+                  v-if="option.id !== 'all'"
+                  class="inline-flex min-h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[10px] font-bold leading-none tabular-nums"
+                  :class="
+                    statusChip === option.id
+                      ? 'bg-white/20 text-white'
+                      : 'bg-brand-mist text-brand-indigo'
+                  "
+                  :aria-label="`${countStatus(option.id)} campanhas`"
+                >
+                  {{ countStatus(option.id) }}
+                </span>
               </UiFilterChip>
             </div>
 
@@ -331,9 +354,19 @@ function goToNextPage(): void {
                   </div>
                 </td>
                 <td class="text-sm text-brand-gray">
-                  <span class="text-brand-ink">{{ templateModelLabel(campaign) }}</span>
-                  <span aria-hidden="true"> · </span>
-                  <span>{{ formatCampaignListEnvioLine(campaign) }}</span>
+                  <div class="space-y-1.5">
+                    <p>
+                      <span class="text-brand-ink">{{ templateModelLabel(campaign) }}</span>
+                      <span aria-hidden="true"> · </span>
+                      <span>{{ formatCampaignListEnvioLine(campaign) }}</span>
+                    </p>
+                    <p
+                      v-if="showsDeliverySummary(campaign.status)"
+                      class="text-xs leading-snug text-brand-gray"
+                    >
+                      {{ formatCampaignDeliverySummary(campaign) }}
+                    </p>
+                  </div>
                 </td>
                 <td>
                   <UiBadge :variant="statusBadgeVariant(campaign.status)" size="md">
