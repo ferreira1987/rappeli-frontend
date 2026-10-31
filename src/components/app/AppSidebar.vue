@@ -100,9 +100,6 @@ function closeAndFocusMenu(): void {
           :mode="isDesktopCollapsed ? 'symbol' : 'horizontal'"
           :class="isDesktopCollapsed ? 'mx-auto' : undefined"
         />
-        <p v-if="!isDesktopCollapsed" class="mt-1.5 text-xs font-medium text-brand-gray">
-          Mensagens &amp; automações
-        </p>
       </div>
       <button
         type="button"
