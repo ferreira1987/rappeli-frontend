@@ -1,11 +1,14 @@
 <script setup lang="ts">
-import { ArrowRight, Eye, EyeOff, Loader2, Lock } from '@lucide/vue'
+import { ArrowRight, Eye, EyeOff, Loader2 } from '@lucide/vue'
 import axios from 'axios'
 import { computed, onMounted, ref, watch } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 
 import { acceptTeamInvitation, fetchTeamInvitationPreview } from '@/api/team'
+import AuthPageChrome from '@/components/auth/AuthPageChrome.vue'
 import InviteMarketingPanel from '@/components/auth/InviteMarketingPanel.vue'
+import RappeliLogo from '@/components/brand/RappeliLogo.vue'
+import { UiButton, UiCard, UiInput } from '@/components/ui'
 import { useAuthStore } from '@/stores/auth'
 import type { TeamAgentRole, TeamInvitationPreview } from '@/types/team'
 import { getErrorMessage, getValidationErrors } from '@/utils/errors'
@@ -148,52 +151,70 @@ async function onSubmit(): Promise<void> {
 </script>
 
 <template>
-  <div class="flex min-h-screen flex-col lg:flex-row">
-    <InviteMarketingPanel />
-    <main class="flex min-h-screen flex-1 flex-col justify-between bg-white">
+  <div class="flex min-h-screen flex-col overflow-hidden lg:flex-row">
+    <InviteMarketingPanel placement="sidebar" />
+
+    <main class="flex min-h-screen flex-1 flex-col bg-[#F8FAFC]">
       <header
-        class="flex items-center justify-between border-b border-slate-200/60 px-4 py-4 md:px-8 lg:justify-end"
+        class="flex shrink-0 items-center justify-end gap-4 px-6 py-5 text-sm text-slate-600 sm:px-10 lg:px-12"
       >
-        <div class="flex items-center gap-2 lg:hidden">
-          <span class="font-display text-lg font-bold text-brand-indigo">Rappeli</span>
-        </div>
-        <a href="#" class="text-sm font-semibold text-brand-gray hover:text-brand-indigo" @click.prevent>
-          Suporte
-        </a>
+        <a href="#" class="hover:text-[#4338CA]" @click.prevent>Central de Ajuda</a>
+        <span class="h-4 w-px bg-slate-300" aria-hidden="true" />
+        <a href="#" class="font-medium hover:text-[#4338CA]" @click.prevent>Suporte</a>
       </header>
 
-      <div class="flex flex-1 items-center justify-center px-4 py-8 md:px-8">
-        <div class="w-full max-w-lg space-y-6">
-          <h1 class="font-display text-2xl font-bold text-brand-ink">Aceitar convite</h1>
-          <p class="mt-2 text-sm text-slate-500">Crie sua senha para entrar na equipe.</p>
+      <div class="flex flex-1 flex-col justify-center px-6 pb-6 sm:px-10 lg:px-12">
+        <div class="mx-auto mb-6 flex w-full max-w-[460px] items-center gap-3 lg:hidden">
+          <RappeliLogo mode="symbol" class="h-9 w-9 shrink-0" />
+          <div>
+            <span class="block font-display text-xl font-bold leading-none tracking-tight text-slate-900">
+              Rappeli
+            </span>
+            <span class="mt-1 block text-xs text-slate-500">Mensagens &amp; automações</span>
+          </div>
+        </div>
+
+        <div class="mx-auto w-full max-w-[460px]">
+        <UiCard
+          :bordered="false"
+          padding="none"
+          class="w-full !rounded-xl border border-slate-200/90 p-7 shadow-sm sm:p-8"
+        >
+          <header class="mb-6 text-left">
+            <h1 class="text-2xl font-bold tracking-tight text-slate-900">Aceitar convite</h1>
+            <p class="mt-2 text-sm leading-relaxed text-slate-500">
+              Crie sua senha para entrar na equipe.
+            </p>
+          </header>
 
           <div
             v-if="missingToken"
-            class="mt-8 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"
+            class="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"
             role="alert"
           >
             Este link está incompleto. Abra o convite enviado por e-mail ou peça um novo link ao administrador.
           </div>
 
-          <div v-else-if="previewLoading" class="mt-12 flex flex-col items-center gap-3 text-sm text-brand-gray">
-            <Loader2 class="h-8 w-8 animate-spin text-brand-indigo" aria-label="Validando convite" />
+          <div
+            v-else-if="previewLoading"
+            class="flex flex-col items-center gap-3 py-8 text-sm text-slate-600"
+          >
+            <Loader2 class="h-8 w-8 animate-spin text-[#4338CA]" aria-label="Validando convite" />
             Validando convite…
           </div>
 
           <div
             v-else-if="(inviteInvalid || previewLoadError) && !missingToken"
-            class="mt-8 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+            class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
             role="alert"
           >
             <p class="font-medium">{{ invalidPreviewMessage }}</p>
           </div>
 
-          <form v-else-if="previewReady" class="space-y-4" novalidate @submit.prevent="onSubmit">
-            <div
-              class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
-            >
-              <div class="flex items-center justify-between border-b border-slate-100 pb-2">
-                <span class="text-[11px] font-semibold uppercase tracking-wider text-brand-gray">
+          <form v-else-if="previewReady" class="space-y-5" novalidate @submit.prevent="onSubmit">
+            <div class="rounded-xl border border-slate-200/90 bg-slate-50/50 p-4">
+              <div class="flex items-center justify-between border-b border-slate-200/80 pb-2">
+                <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
                   Detalhes do acesso
                 </span>
                 <span
@@ -202,23 +223,23 @@ async function onSubmit(): Promise<void> {
                   Convite pendente
                 </span>
               </div>
-              <div class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 text-sm">
+              <div class="mt-3 grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
                 <div>
-                  <p class="text-[11px] font-semibold uppercase text-brand-gray">Nome</p>
-                  <p class="font-semibold text-brand-ink">{{ preview?.name || 'Novo membro' }}</p>
+                  <p class="text-[11px] font-semibold uppercase text-slate-500">Nome</p>
+                  <p class="font-semibold text-slate-900">{{ preview?.name || 'Novo membro' }}</p>
                 </div>
                 <div>
-                  <p class="text-[11px] font-semibold uppercase text-brand-gray">E-mail</p>
-                  <p class="truncate font-semibold text-brand-ink">{{ preview?.email }}</p>
+                  <p class="text-[11px] font-semibold uppercase text-slate-500">E-mail</p>
+                  <p class="truncate font-semibold text-slate-900">{{ preview?.email }}</p>
                 </div>
                 <div v-if="preview?.company_name">
-                  <p class="text-[11px] font-semibold uppercase text-brand-gray">Empresa</p>
-                  <p class="font-semibold text-brand-ink">{{ preview.company_name }}</p>
+                  <p class="text-[11px] font-semibold uppercase text-slate-500">Empresa</p>
+                  <p class="font-semibold text-slate-900">{{ preview.company_name }}</p>
                 </div>
                 <div v-if="preview?.role">
-                  <p class="text-[11px] font-semibold uppercase text-brand-gray">Papel</p>
+                  <p class="text-[11px] font-semibold uppercase text-slate-500">Papel</p>
                   <span
-                    class="mt-0.5 inline-flex rounded-full border border-slate-200 bg-brand-mist px-2 py-0.5 text-xs font-semibold text-brand-indigo"
+                    class="mt-0.5 inline-flex rounded-full border border-slate-200 bg-[#EEF2FF] px-2 py-0.5 text-xs font-semibold text-[#4338CA]"
                   >
                     {{ roleLabel(preview.role) }}
                   </span>
@@ -249,75 +270,111 @@ async function onSubmit(): Promise<void> {
               <li v-for="(message, key) in fieldErrors" :key="key">{{ message }}</li>
             </ul>
 
-            <div>
-              <label class="mb-1 block text-sm font-medium text-brand-ink" for="invite-password">Senha *</label>
+            <div class="space-y-1.5">
+              <label class="text-sm font-medium text-slate-700" for="invite-password">Senha *</label>
               <div class="relative">
-                <Lock class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-gray" />
-                <input
+                <UiInput
                   id="invite-password"
                   v-model="password"
                   :type="showPassword ? 'text' : 'password'"
                   autocomplete="new-password"
-                  class="w-full rounded-lg border border-slate-200 py-2 pl-9 pr-10 text-sm"
+                  placeholder="Digite sua senha"
+                  input-class="pr-10"
+                  :invalid="Boolean(fieldErrors.password)"
                 />
                 <button
                   type="button"
-                  class="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-brand-gray hover:text-brand-ink"
+                  class="absolute inset-y-0 right-0 flex items-center px-3 text-slate-400 hover:text-slate-600"
                   :aria-label="showPassword ? 'Ocultar senha' : 'Mostrar senha'"
                   @click="showPassword = !showPassword"
                 >
-                  <EyeOff v-if="showPassword" class="h-4 w-4" />
-                  <Eye v-else class="h-4 w-4" />
+                  <EyeOff v-if="showPassword" class="h-4 w-4" aria-hidden="true" />
+                  <Eye v-else class="h-4 w-4" aria-hidden="true" />
                 </button>
               </div>
-              <p v-if="fieldErrors.password" class="mt-1 text-xs text-red-600">{{ fieldErrors.password }}</p>
+              <p v-if="fieldErrors.password" class="text-xs text-red-600">{{ fieldErrors.password }}</p>
             </div>
 
-            <div>
-              <label class="mb-1 block text-sm font-medium text-brand-ink" for="invite-password-confirm">Confirmar senha *</label>
-              <input
+            <div class="space-y-1.5">
+              <label class="text-sm font-medium text-slate-700" for="invite-password-confirm">
+                Confirmar senha *
+              </label>
+              <UiInput
                 id="invite-password-confirm"
                 v-model="passwordConfirmation"
                 type="password"
                 autocomplete="new-password"
-                class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                placeholder="Repita sua senha"
+                :invalid="Boolean(fieldErrors.password_confirmation)"
               />
-              <p v-if="fieldErrors.password_confirmation" class="mt-1 text-xs text-red-600">
+              <p v-if="fieldErrors.password_confirmation" class="text-xs text-red-600">
                 {{ fieldErrors.password_confirmation }}
               </p>
             </div>
 
-            <label class="flex items-start gap-2 text-sm text-brand-gray">
-              <input v-model="acceptedTerms" type="checkbox" class="mt-1 rounded text-brand-indigo" />
+            <label class="flex cursor-pointer items-start gap-2.5 text-sm leading-snug text-slate-600">
+              <input
+                v-model="acceptedTerms"
+                type="checkbox"
+                class="mt-0.5 h-4 w-4 shrink-0 rounded border-slate-300 text-[#4338CA] focus:ring-[#4338CA]"
+              />
               <span>
                 Aceito os
-                <a :href="termsUrl" class="font-medium text-brand-indigo hover:underline" target="_blank" rel="noopener">Termos de Uso</a>
+                <a
+                  :href="termsUrl"
+                  class="font-semibold text-[#4338CA] hover:underline"
+                  target="_blank"
+                  rel="noopener"
+                >
+                  Termos de Uso
+                </a>
                 e a
-                <a :href="privacyUrl" class="font-medium text-brand-indigo hover:underline" target="_blank" rel="noopener">Política de Privacidade</a>.
+                <a
+                  :href="privacyUrl"
+                  class="font-semibold text-[#4338CA] hover:underline"
+                  target="_blank"
+                  rel="noopener"
+                >
+                  Política de Privacidade
+                </a>.
               </span>
             </label>
-            <p v-if="fieldErrors.terms_accepted" class="text-xs text-red-600">{{ fieldErrors.terms_accepted }}</p>
+            <p v-if="fieldErrors.terms_accepted" class="text-xs text-red-600">
+              {{ fieldErrors.terms_accepted }}
+            </p>
 
-            <button
+            <UiButton
               type="submit"
-              class="flex w-full items-center justify-center gap-2 rounded-lg bg-brand-indigo py-2.5 text-sm font-semibold text-white hover:bg-brand-indigo-hover disabled:opacity-60"
+              variant="primary"
+              size="lg"
+              class="!w-full !bg-[#4338CA] py-3 hover:!bg-brand-indigo-hover"
               :disabled="submitting"
             >
               {{ submitting ? 'Ativando…' : 'Ativar conta' }}
-              <ArrowRight v-if="!submitting" class="h-4 w-4" />
-            </button>
+              <ArrowRight v-if="!submitting" class="h-4 w-4" aria-hidden="true" />
+            </UiButton>
 
-            <p class="text-center text-sm text-brand-gray">
+            <p class="text-center text-sm text-slate-500">
               Já tem conta?
-              <RouterLink :to="{ name: 'login' }" class="font-semibold text-brand-indigo hover:underline">Entrar</RouterLink>
+              <RouterLink
+                :to="{ name: 'login' }"
+                class="ml-1 font-semibold text-[#4338CA] hover:underline"
+              >
+                Entrar
+              </RouterLink>
             </p>
           </form>
+        </UiCard>
+
+          <InviteMarketingPanel placement="below" class="mt-8" />
         </div>
       </div>
 
-      <footer class="border-t border-slate-200/60 px-4 py-4 text-center text-xs text-brand-gray md:px-8">
-        © {{ new Date().getFullYear() }} Rappeli. Todos os direitos reservados.
-      </footer>
+      <AuthPageChrome hide-top>
+        <p class="px-4 pb-2 text-center text-xs text-slate-500 sm:px-10 lg:px-12">
+          © {{ new Date().getFullYear() }} Rappeli. Todos os direitos reservados.
+        </p>
+      </AuthPageChrome>
     </main>
   </div>
 </template>
