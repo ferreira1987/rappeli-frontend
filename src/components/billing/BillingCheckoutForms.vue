@@ -19,6 +19,8 @@ const props = defineProps<{
   disabled?: boolean
   billingOnly?: boolean
   uiVariant?: 'default' | 'v5'
+  /** Destaca campos do cartão após falha de pagamento na operadora. */
+  cardPaymentRefusedHighlight?: boolean
 }>()
 
 const uiVariant = computed(() => props.uiVariant ?? 'default')
@@ -56,14 +58,26 @@ watch(
   },
 )
 
+const cardFieldKeys = new Set([
+  'credit_card.number',
+  'credit_card.expiry_month',
+  'credit_card.expiry_year',
+  'credit_card.cvv',
+])
+
 function inputClass(field: string): string {
   const focus =
     uiVariant.value === 'v5'
       ? 'focus:border-[#4338CA] focus:ring-[#4338CA]/20'
       : 'focus:border-brand-indigo focus:ring-brand-indigo'
-  return props.fieldErrors[field]
-    ? 'border-red-300 focus:border-red-400 focus:ring-red-200'
-    : `border-slate-200 ${focus}`
+  const refusedHighlight =
+    props.cardPaymentRefusedHighlight && cardFieldKeys.has(field)
+  if (props.fieldErrors[field] || refusedHighlight) {
+    return uiVariant.value === 'v5' && refusedHighlight
+      ? 'border-red-600 focus:border-red-600 focus:ring-red-600/20'
+      : 'border-red-300 focus:border-red-400 focus:ring-red-200'
+  }
+  return `border-slate-200 ${focus}`
 }
 
 function updateHolder(patch: Partial<CheckoutHolderPayload>): void {
