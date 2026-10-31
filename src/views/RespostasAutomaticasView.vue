@@ -682,6 +682,7 @@ onMounted(() => {
                               type="time"
                               class="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm text-brand-ink disabled:opacity-50"
                               :disabled="slot.is_closed"
+                              :aria-label="`${weekdayLabels[slot.day_of_week]}, horário de abertura`"
                             />
                             <span class="text-xs text-brand-gray">até</span>
                             <input
@@ -689,6 +690,7 @@ onMounted(() => {
                               type="time"
                               class="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm text-brand-ink disabled:opacity-50"
                               :disabled="slot.is_closed"
+                              :aria-label="`${weekdayLabels[slot.day_of_week]}, horário de fechamento`"
                             />
                           </div>
                         </li>

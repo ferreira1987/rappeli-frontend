@@ -401,10 +401,14 @@ function setScheduleMode(mode: 'draft' | 'scheduled'): void {
               <div v-if="selectedVariableIndexes.length" class="mt-5 space-y-3 border-t border-slate-100 pt-4">
                 <p class="text-sm font-semibold text-brand-ink">Variáveis do modelo</p>
                 <div v-for="(variableIndex, parameterIndex) in selectedVariableIndexes" :key="variableIndex">
-                  <label class="block text-xs font-medium text-brand-ink">
+                  <label
+                    :for="`tpl-param-${parameterIndex}`"
+                    class="block text-xs font-medium text-brand-ink"
+                  >
                     Valor para <code>{{ formatMetaTemplateVariable(variableIndex) }}</code>
                   </label>
                   <UiInput
+                    :id="`tpl-param-${parameterIndex}`"
                     v-model="templateBodyParameters[parameterIndex]"
                     input-class="mt-1"
                     :placeholder="`Ex.: valor para posição ${variableIndex}`"
@@ -442,9 +446,12 @@ function setScheduleMode(mode: 'draft' | 'scheduled'): void {
               </div>
               <div v-if="scheduleMode === 'scheduled'" class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
+                  <label for="campaign-schedule-date" class="sr-only">Data</label>
                   <input
+                    id="campaign-schedule-date"
                     v-model="scheduleDate"
                     type="date"
+                    aria-label="Data"
                     class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-brand-ink focus:border-brand-indigo focus:outline-none focus:ring-2 focus:ring-brand-indigo/20"
                     @input="delete fieldErrors.scheduled_date"
                   />
@@ -453,9 +460,12 @@ function setScheduleMode(mode: 'draft' | 'scheduled'): void {
                   </p>
                 </div>
                 <div>
+                  <label for="campaign-schedule-time" class="sr-only">Hora</label>
                   <input
+                    id="campaign-schedule-time"
                     v-model="scheduleTime"
                     type="time"
+                    aria-label="Hora"
                     class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-brand-ink focus:border-brand-indigo focus:outline-none focus:ring-2 focus:ring-brand-indigo/20"
                     @input="delete fieldErrors.scheduled_time"
                   />

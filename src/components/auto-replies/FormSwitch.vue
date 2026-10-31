@@ -20,6 +20,7 @@ defineProps<{
       class="relative inline-flex h-7 w-12 shrink-0 rounded-full transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-indigo disabled:opacity-50"
       :class="model ? 'bg-brand-indigo' : 'bg-slate-200'"
       :aria-checked="model"
+      :aria-label="label"
       :disabled="disabled"
       @click="model = !model"
     >

@@ -213,6 +213,7 @@ useEscapeKey(
             v-model="search"
             type="search"
             placeholder="Buscar contato…"
+            aria-label="Buscar contato"
             class="min-w-[200px] flex-1"
             input-class="w-full bg-slate-50 focus:bg-white"
           >
@@ -305,7 +306,9 @@ useEscapeKey(
           @submit.prevent="submitAddStage"
         >
           <h3 id="funnel-add-stage-title" class="text-lg font-bold text-brand-ink">Nova etapa</h3>
+          <label for="new-stage-title" class="sr-only">Nome da etapa</label>
           <UiInput
+            id="new-stage-title"
             v-model="newStageTitle"
             type="text"
             placeholder="Nome da etapa"
@@ -333,8 +336,11 @@ useEscapeKey(
         >
           <h3 id="funnel-add-card-title" class="text-lg font-bold text-brand-ink">Novo card</h3>
           <div class="mt-3 space-y-2">
-            <UiInput v-model="addCardName" type="text" placeholder="Nome do contato" />
+            <label for="add-card-name" class="sr-only">Nome do contato</label>
+            <UiInput id="add-card-name" v-model="addCardName" type="text" placeholder="Nome do contato" />
+            <label for="add-card-phone" class="sr-only">Telefone</label>
             <UiInput
+              id="add-card-phone"
               v-model="addCardPhone"
               type="tel"
               placeholder="Telefone"

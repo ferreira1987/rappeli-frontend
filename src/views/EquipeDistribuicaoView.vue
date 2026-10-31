@@ -607,6 +607,7 @@ function toggleRowMenu(agentId: number): void {
                     v-model="search"
                     type="search"
                     placeholder="Filtrar por nome ou e-mail..."
+                    aria-label="Filtrar por nome ou e-mail"
                     class="w-full"
                   >
                     <template #leading>
@@ -615,9 +616,12 @@ function toggleRowMenu(agentId: number): void {
                   </UiInput>
                   <div class="flex flex-wrap gap-3">
                     <label class="flex min-w-[160px] flex-1 items-center gap-2 text-sm text-brand-gray sm:max-w-xs">
+                      <span class="sr-only">Filtrar por setor</span>
                       <Filter class="h-4 w-4 shrink-0" aria-hidden="true" />
                       <select
+                        id="team-sector-filter"
                         v-model="sectorFilter"
+                        aria-label="Filtrar por setor"
                         class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-brand-ink"
                       >
                         <option value="all">Todos os setores</option>
@@ -957,7 +961,9 @@ function toggleRowMenu(agentId: number): void {
                 <div v-if="respectLimit" class="text-sm">
                   <div class="flex flex-wrap items-center gap-2">
                     <span class="text-brand-gray">Limite:</span>
+                    <label for="chat-limit" class="sr-only">Limite de conversas simultâneas</label>
                     <input
+                      id="chat-limit"
                       v-model="chatLimitText"
                       type="text"
                       inputmode="numeric"
@@ -978,8 +984,11 @@ function toggleRowMenu(agentId: number): void {
                   <input v-model="overflowQueue" type="checkbox" class="h-4 w-4 rounded text-brand-indigo" />
                 </label>
                 <div>
-                  <label class="mb-1 block text-xs font-semibold uppercase text-brand-gray">Setor padrão</label>
+                  <label for="default-sector-id" class="mb-1 block text-xs font-semibold uppercase text-brand-gray"
+                    >Setor padrão</label
+                  >
                   <select
+                    id="default-sector-id"
                     v-model="defaultSectorId"
                     class="w-full max-w-md rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
                   >

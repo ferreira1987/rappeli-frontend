@@ -276,6 +276,7 @@ function goToNextPage(): void {
             v-model="search"
             type="search"
             placeholder="Buscar por contato ou mensagem..."
+            aria-label="Buscar por contato ou mensagem"
             class="min-w-0 w-full sm:max-w-xs"
             input-class="w-full"
           >

@@ -46,8 +46,13 @@ useEscapeKey(
         <p class="mt-2 text-sm text-brand-gray">
           Filtros de exemplo — ajuste os campos e aplique para simular a ação no painel.
         </p>
-        <label class="mt-4 block text-xs font-semibold text-brand-ink">Período</label>
-        <select class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm">
+        <label for="example-filter-period" class="mt-4 block text-xs font-semibold text-brand-ink"
+          >Período</label
+        >
+        <select
+          id="example-filter-period"
+          class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+        >
           <option>Últimos 7 dias</option>
           <option>Últimos 30 dias</option>
         </select>

@@ -1,5 +1,9 @@
 <script setup lang="ts">
-import { computed, useId } from 'vue'
+import { computed, useAttrs, useId } from 'vue'
+
+defineOptions({ inheritAttrs: false })
+
+const attrs = useAttrs()
 
 const props = withDefaults(
   defineProps<{
@@ -37,7 +41,7 @@ function onInput(event: Event): void {
 </script>
 
 <template>
-  <div class="relative w-full">
+  <div class="relative w-full" :class="attrs.class">
     <span
       v-if="$slots.leading"
       class="pointer-events-none absolute left-3 top-1/2 flex -translate-y-1/2 items-center text-brand-gray"
@@ -46,6 +50,7 @@ function onInput(event: Event): void {
     </span>
     <input
       :id="inputId"
+      v-bind="attrs"
       :value="modelValue"
       :type="type"
       :placeholder="placeholder"
@@ -55,7 +60,7 @@ function onInput(event: Event): void {
       :inputmode="inputmode"
       :minlength="minlength"
       :aria-invalid="invalid || undefined"
-      class="w-full rounded-lg border bg-white py-2 text-sm text-brand-ink placeholder:text-brand-gray/80 focus:border-brand-indigo focus:outline-none focus:ring-2 focus:ring-brand-indigo/20 disabled:cursor-not-allowed disabled:bg-slate-50 read-only:cursor-default read-only:bg-slate-50"
+      class="w-full rounded-lg border bg-white py-2 text-sm text-brand-ink placeholder:text-slate-400 focus:border-brand-indigo focus:outline-none focus:ring-2 focus:ring-brand-indigo/20 disabled:cursor-not-allowed disabled:bg-slate-50 read-only:cursor-default read-only:bg-slate-50"
       :class="[
         $slots.leading ? 'pl-9 pr-3' : 'px-3',
         invalid ? 'border-red-300' : 'border-slate-200',

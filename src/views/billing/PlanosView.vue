@@ -198,8 +198,8 @@ function goBack(): void {
 </script>
 
 <template>
-  <OnboardingShell :step="2" shell-variant="cadastro-v5" @back="goBack">
-    <div class="mx-auto w-full max-w-6xl">
+  <OnboardingShell :step="2" shell-variant="cadastro-v5" reserve-action-bar-space @back="goBack">
+    <div class="onboarding-action-bar-scroll mx-auto w-full max-w-6xl">
       <header class="mb-8 text-center md:text-left">
         <h1 class="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
           Escolha o plano
