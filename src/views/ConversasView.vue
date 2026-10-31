@@ -112,6 +112,7 @@ const transferContactName = computed(() => {
   return inboxContactPrimaryLabel(conversation.contact)
 })
 const mobileShowThread = ref(false)
+const contactDetailOpen = ref(false)
 const threadScrollEl = ref<HTMLElement | null>(null)
 const filterChipsEl = ref<HTMLElement | null>(null)
 const filterCounts = computed(() => filterCountsFromApi(listCounts.value))
@@ -298,12 +299,17 @@ async function loadActivities(conversationId: number): Promise<void> {
 }
 
 watch(selectedId, (id) => {
+  contactDetailOpen.value = false
   if (id != null) {
     void loadActivities(id)
   } else {
     activities.value = []
   }
 })
+
+function toggleContactDetail(): void {
+  contactDetailOpen.value = !contactDetailOpen.value
+}
 
 async function onTransferred(payload: TransferConversationPayload): Promise<void> {
   const id = selectedId.value
@@ -353,7 +359,10 @@ async function onResolve(): Promise<void> {
     </template>
 
     <div
-      class="grid h-full min-h-0 grid-cols-1 lg:grid-cols-[minmax(280px,320px)_1fr] xl:grid-cols-[minmax(280px,320px)_1fr_280px]"
+      class="grid h-full min-h-0 grid-cols-1 lg:grid-cols-[minmax(280px,320px)_1fr]"
+      :class="
+        contactDetailOpen ? 'xl:grid-cols-[minmax(280px,320px)_1fr_280px]' : ''
+      "
     >
       <!-- Lista de conversas -->
       <section
@@ -544,27 +553,35 @@ async function onResolve(): Promise<void> {
             >
               <ArrowLeft class="h-5 w-5" />
             </button>
-            <div
-              class="flex h-10 w-10 items-center justify-center rounded-full border border-indigo-100 bg-brand-mist text-sm font-bold text-brand-indigo"
+            <button
+              type="button"
+              class="flex min-w-0 flex-1 cursor-pointer items-center gap-3 rounded-lg text-left transition-colors hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-indigo/20"
+              :aria-expanded="contactDetailOpen"
+              aria-controls="contact-detail-panel"
+              @click="toggleContactDetail"
             >
-              <User
-                v-if="contactAvatarInitials(selectedConversation.contact) == null"
-                class="h-5 w-5"
-                aria-hidden="true"
-              />
-              <span v-else>{{ contactAvatarInitials(selectedConversation.contact) }}</span>
-            </div>
-            <div class="min-w-0 flex-1">
-              <p class="truncate font-semibold text-brand-ink">
-                {{ inboxContactPrimaryLabel(selectedConversation.contact) }}
-              </p>
-              <p
-                v-if="inboxContactSecondaryPhone(selectedConversation.contact)"
-                class="truncate text-xs text-brand-gray"
+              <div
+                class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-indigo-100 bg-brand-mist text-sm font-bold text-brand-indigo"
               >
-                {{ inboxContactSecondaryPhone(selectedConversation.contact) }}
-              </p>
-            </div>
+                <User
+                  v-if="contactAvatarInitials(selectedConversation.contact) == null"
+                  class="h-5 w-5"
+                  aria-hidden="true"
+                />
+                <span v-else>{{ contactAvatarInitials(selectedConversation.contact) }}</span>
+              </div>
+              <div class="min-w-0 flex-1">
+                <p class="truncate font-semibold text-brand-ink">
+                  {{ inboxContactPrimaryLabel(selectedConversation.contact) }}
+                </p>
+                <p
+                  v-if="inboxContactSecondaryPhone(selectedConversation.contact)"
+                  class="truncate text-xs text-brand-gray"
+                >
+                  {{ inboxContactSecondaryPhone(selectedConversation.contact) }}
+                </p>
+              </div>
+            </button>
             <div class="hidden items-center gap-2 sm:flex">
               <UiButton variant="secondary" size="sm" type="button" @click="openTransferModal">
                 <ArrowRightLeft class="h-3.5 w-3.5 text-brand-indigo" />
@@ -752,10 +769,12 @@ async function onResolve(): Promise<void> {
       </section>
 
       <ContactDetailPanel
+        :open="contactDetailOpen"
         :conversation="selectedConversation"
         :activities="activities"
         :activities-loading="activitiesLoading"
         :activities-error="activitiesError"
+        @close="contactDetailOpen = false"
       />
     </div>
 
