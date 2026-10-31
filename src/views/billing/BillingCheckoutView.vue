@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Building2, CheckCircle2, CreditCard, ShieldCheck } from '@lucide/vue'
+import { AlertCircle, Building2, CheckCircle2, CreditCard, MessageCircle, RefreshCw, ShieldCheck } from '@lucide/vue'
 import { computed, onMounted, reactive, ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 
@@ -8,7 +8,7 @@ import BillingCheckoutForms from '@/components/billing/BillingCheckoutForms.vue'
 import OnboardingActionBar from '@/components/onboarding/OnboardingActionBar.vue'
 import OnboardingShell from '@/components/onboarding/OnboardingShell.vue'
 import { UiBadge, UiCard, UiInput } from '@/components/ui'
-import { PLAN_TIER_FEATURES, type PlanTierId } from '@/constants/onboardingPlans'
+import { PLAN_TIER_FEATURES, WHATSAPP_HELP_URL, type PlanTierId } from '@/constants/onboardingPlans'
 import { useAuthStore } from '@/stores/auth'
 import { useCheckoutFlowStore } from '@/stores/checkoutFlow'
 import { maskCpfCnpj } from '@/utils/brazilianDocument'
@@ -20,6 +20,10 @@ import {
 } from '@/utils/billingFormat'
 import { emptyCheckoutForms, validateCheckoutForms } from '@/utils/billingCheckoutValidation'
 import { resolveCheckoutSubmitError } from '@/utils/billingCheckoutSubmitError'
+import {
+  CHECKOUT_PAYMENT_REFUSED_HINT,
+  isCheckoutPaymentFailureResult,
+} from '@/utils/billingCheckoutPaymentRefused'
 
 const router = useRouter()
 const auth = useAuthStore()
@@ -27,6 +31,7 @@ const checkoutFlow = useCheckoutFlowStore()
 
 const submitting = ref(false)
 const formError = ref<string | null>(null)
+const paymentRefusedActive = ref(false)
 const fieldErrors = ref<Record<string, string>>({})
 const authorizeRecurring = ref(true)
 const legalName = ref('')
@@ -63,6 +68,9 @@ const totalCycleHint = computed(() => {
   return null
 })
 
+const termsUrl = 'https://rappeli.com.br/termos'
+const privacyUrl = 'https://rappeli.com.br/privacidade'
+
 onMounted(() => {
   if (!checkoutFlow.planId) {
     void router.replace({ name: 'assinatura-planos' })
@@ -94,9 +102,11 @@ async function onSubmit(): Promise<void> {
   fieldErrors.value = validateCheckoutForms(forms.holder, forms.creditCard)
   if (!authorizeRecurring.value) {
     formError.value = 'Autorize a cobrança recorrente para continuar.'
+    paymentRefusedActive.value = false
     return
   }
   if (Object.keys(fieldErrors.value).length > 0) {
+    paymentRefusedActive.value = false
     return
   }
 
@@ -110,9 +120,11 @@ async function onSubmit(): Promise<void> {
       credit_card: { ...forms.creditCard },
     })
     clearCardState()
+    paymentRefusedActive.value = false
     void router.push({ name: 'assinatura-ativacao' })
   } catch (error) {
     const resolved = resolveCheckoutSubmitError(error)
+    paymentRefusedActive.value = isCheckoutPaymentFailureResult(resolved)
     if (resolved.kind === 'validation') {
       fieldErrors.value = resolved.fieldErrors
       formError.value = resolved.alertMessage ?? null
@@ -308,11 +320,29 @@ function onPhoneInput(value: string): void {
             </div>
 
             <div class="p-6">
+              <div
+                v-if="paymentRefusedActive && formError"
+                class="mb-4 flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-3.5"
+                role="alert"
+              >
+                <AlertCircle
+                  class="mt-0.5 h-5 w-5 shrink-0 text-red-600"
+                  aria-hidden="true"
+                />
+                <div>
+                  <h3 class="text-sm font-bold text-red-900">{{ formError }}</h3>
+                  <p class="mt-0.5 text-xs text-red-600">
+                    {{ CHECKOUT_PAYMENT_REFUSED_HINT }}
+                  </p>
+                </div>
+              </div>
+
               <BillingCheckoutForms
                 v-model:holder="forms.holder"
                 v-model:credit-card="forms.creditCard"
                 :field-errors="fieldErrors"
                 :disabled="submitting"
+                :card-payment-refused-highlight="paymentRefusedActive"
                 billing-only
                 ui-variant="v5"
               />
@@ -334,11 +364,50 @@ function onPhoneInput(value: string): void {
                 />
                 Autorizo a cobrança recorrente no cartão a cada renovação do plano.
               </label>
+
+              <div v-if="paymentRefusedActive" class="mt-4 space-y-2.5">
+                <button
+                  type="button"
+                  class="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-[#4338CA] text-sm font-medium text-white shadow-sm transition hover:bg-[#3730A3] disabled:opacity-60"
+                  :disabled="submitting"
+                  @click="onSubmit"
+                >
+                  <span>{{ submitting ? 'Aguarde…' : 'Tentar outro cartão' }}</span>
+                  <RefreshCw class="h-4 w-4" aria-hidden="true" />
+                </button>
+                <a
+                  :href="WHATSAPP_HELP_URL"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50"
+                >
+                  <MessageCircle class="h-4 w-4 text-emerald-600" aria-hidden="true" />
+                  <span>Ajuda no WhatsApp</span>
+                </a>
+                <p class="mt-2.5 text-center text-[11px] text-slate-500">
+                  Ao confirmar, você concorda com nossos
+                  <a
+                    :href="termsUrl"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="font-semibold text-[#4338CA] hover:underline"
+                    >Termos de Uso</a
+                  >
+                  e
+                  <a
+                    :href="privacyUrl"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="font-semibold text-[#4338CA] hover:underline"
+                    >Política de Privacidade</a
+                  >.
+                </p>
+              </div>
             </div>
           </UiCard>
 
           <p
-            v-if="formError"
+            v-if="formError && !paymentRefusedActive"
             class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
             role="alert"
           >
@@ -446,7 +515,7 @@ function onPhoneInput(value: string): void {
       </div>
     </div>
 
-    <template #action-bar>
+    <template v-if="!paymentRefusedActive" #action-bar>
       <OnboardingActionBar
         summary-layout="v5"
         :show-back="false"
