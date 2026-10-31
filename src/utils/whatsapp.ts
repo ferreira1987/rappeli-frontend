@@ -59,6 +59,26 @@ export function formatQualityRatingDisplay(rating: string | null | undefined): {
 }
 
 /** Mascara identificadores da Meta para exibição (cópia usa o valor completo). */
+export function hasWhatsAppDisplayText(value: string | null | undefined): boolean {
+  return Boolean(value?.trim())
+}
+
+export function formatMessagesWebhookLabel(account: {
+  messages_webhook_status?: string | null
+  messages_webhook_latency_ms?: number | null
+}): string | null {
+  const status = account.messages_webhook_status?.trim()
+  const latencyMs = account.messages_webhook_latency_ms
+  const parts: string[] = []
+  if (status) {
+    parts.push(status)
+  }
+  if (latencyMs != null && !Number.isNaN(latencyMs)) {
+    parts.push(`(latência ${latencyMs}ms)`)
+  }
+  return parts.length > 0 ? parts.join(' ') : null
+}
+
 export function maskWhatsAppIdentifier(id: string | null | undefined, visiblePrefix = 12): string {
   const trimmed = id?.trim()
   if (!trimmed) {

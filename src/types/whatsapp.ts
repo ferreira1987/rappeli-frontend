@@ -13,6 +13,14 @@ export interface WhatsAppAccount {
   status: string | null
   token_expires_at: string | null
   connected_at: string | null
+  /** Limite de conversas/mensagens (tier), quando informado pela API. */
+  messaging_limit?: string | null
+  /** Nome da conta comercial no Gerenciador de Negócios. */
+  business_account_name?: string | null
+  business_manager_id?: string | null
+  business_verification_status?: string | null
+  messages_webhook_status?: string | null
+  messages_webhook_latency_ms?: number | null
 }
 
 export interface WhatsAppAccountResponse {

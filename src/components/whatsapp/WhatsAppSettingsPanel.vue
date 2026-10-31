@@ -30,8 +30,10 @@ import { getErrorMessage } from '@/utils/errors'
 import { formatBrazilPhone } from '@/utils/phone'
 import {
   formatAccountStatus,
+  formatMessagesWebhookLabel,
   formatQualityRatingDisplay,
   getWhatsAppConnectError,
+  hasWhatsAppDisplayText,
   maskWhatsAppIdentifier,
 } from '@/utils/whatsapp'
 
@@ -94,6 +96,32 @@ const qualityDotClass = computed(() => {
   if (tone === 'yellow') return 'bg-amber-500'
   if (tone === 'red') return 'bg-red-500'
   return 'bg-slate-300'
+})
+
+const showMessagingLimit = computed(() =>
+  hasWhatsAppDisplayText(account.value?.messaging_limit),
+)
+
+const messagesWebhookLabel = computed(() => {
+  if (!account.value) {
+    return null
+  }
+  return formatMessagesWebhookLabel(account.value)
+})
+
+const showMessagesWebhook = computed(() => messagesWebhookLabel.value != null)
+
+const showMetaAccountCard = computed(() => {
+  if (!isConnected.value || !account.value) {
+    return false
+  }
+  const current = account.value
+  return (
+    hasWhatsAppDisplayText(current.business_account_name) ||
+    hasWhatsAppDisplayText(current.business_manager_id) ||
+    hasWhatsAppDisplayText(current.business_verification_status) ||
+    showMessagesWebhook.value
+  )
 })
 
 async function loadAccount(): Promise<void> {
@@ -257,7 +285,6 @@ onMounted(() => {
 
     <div v-if="loading" class="space-y-4">
       <div class="h-48 animate-pulse rounded-lg border border-slate-200 bg-white" />
-      <div class="h-40 animate-pulse rounded-lg border border-slate-200 bg-white" />
     </div>
 
     <div
@@ -378,9 +405,9 @@ onMounted(() => {
                   {{ qualityDisplay.label }}
                 </dd>
               </div>
-              <div>
+              <div v-if="showMessagingLimit">
                 <dt class="text-xs font-medium text-brand-gray">Limite de mensagens</dt>
-                <dd class="mt-1.5 text-sm text-brand-ink">—</dd>
+                <dd class="mt-1.5 text-sm text-brand-ink">{{ account.messaging_limit }}</dd>
               </div>
               <div>
                 <dt class="text-xs font-medium text-brand-gray">Status do número</dt>
@@ -449,35 +476,58 @@ onMounted(() => {
         </div>
       </UiCard>
 
-      <UiCard padding="lg">
+      <UiCard v-if="showMetaAccountCard" padding="lg">
         <h3 class="text-lg font-semibold text-brand-ink">Dados da conta Meta</h3>
         <p class="mt-1 text-sm text-brand-gray">
           Informações vinculadas ao Gerenciador de Negócios da Meta.
         </p>
 
         <dl class="mt-6 grid gap-5 sm:grid-cols-2">
-          <div>
+          <div v-if="hasWhatsAppDisplayText(account?.business_account_name)">
             <dt class="text-xs font-medium text-brand-gray">Nome da conta comercial</dt>
-            <dd class="mt-1.5 text-sm text-brand-ink">—</dd>
+            <dd class="mt-1.5 text-sm text-brand-ink">{{ account?.business_account_name }}</dd>
           </div>
-          <div>
+          <div v-if="hasWhatsAppDisplayText(account?.business_manager_id)">
             <dt class="text-xs font-medium text-brand-gray">ID do Gerenciador de Negócios</dt>
-            <dd class="mt-1.5 text-sm font-mono text-brand-ink">—</dd>
-          </div>
-          <div>
-            <dt class="text-xs font-medium text-brand-gray">Verificação da empresa</dt>
-            <dd class="mt-1.5">
-              <span class="text-sm text-brand-ink">—</span>
+            <dd class="mt-1.5 flex items-center gap-2">
+              <span class="font-mono text-sm text-brand-ink">
+                {{ maskWhatsAppIdentifier(account?.business_manager_id) }}
+              </span>
+              <button
+                type="button"
+                class="inline-flex rounded-md p-1 text-brand-gray hover:bg-slate-100 hover:text-brand-indigo"
+                :aria-label="
+                  copiedField === 'business_manager_id'
+                    ? 'Copiado'
+                    : 'Copiar ID do Gerenciador de Negócios'
+                "
+                @click="copyIdentifier('business_manager_id', account?.business_manager_id)"
+              >
+                <Copy class="h-4 w-4" aria-hidden="true" />
+              </button>
             </dd>
           </div>
-          <div>
+          <div v-if="hasWhatsAppDisplayText(account?.business_verification_status)">
+            <dt class="text-xs font-medium text-brand-gray">Verificação da empresa</dt>
+            <dd class="mt-1.5">
+              <UiBadge variant="success" size="md">
+                <Check class="mr-0.5 h-3 w-3" aria-hidden="true" />
+                {{ account?.business_verification_status }}
+              </UiBadge>
+            </dd>
+          </div>
+          <div v-if="showMessagesWebhook">
             <dt class="text-xs font-medium text-brand-gray">Webhook de mensagens</dt>
-            <dd class="mt-1.5 text-sm text-brand-ink">—</dd>
+            <dd class="mt-1.5 flex items-center gap-2 text-sm text-brand-ink">
+              <span
+                v-if="hasWhatsAppDisplayText(account?.messages_webhook_status)"
+                class="h-2 w-2 shrink-0 rounded-full bg-emerald-500"
+                aria-hidden="true"
+              />
+              {{ messagesWebhookLabel }}
+            </dd>
           </div>
         </dl>
-        <p v-if="!isConnected" class="mt-4 text-xs text-brand-gray">
-          Conecte o canal de WhatsApp para visualizar os dados operacionais disponíveis pela API.
-        </p>
       </UiCard>
     </template>
   </div>
