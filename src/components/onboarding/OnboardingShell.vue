@@ -12,7 +12,7 @@ withDefaults(
   defineProps<{
     step: 1 | 2 | 3 | 4
     wide?: boolean
-    /** v5 Stitch layout (Cadastro, Plano e Pagamento). Ativação permanece default. */
+    /** v5 Stitch layout (Cadastro, Plano, Pagamento e Ativação). */
     shellVariant?: 'default' | 'cadastro-v5'
   }>(),
   {
@@ -29,7 +29,7 @@ withDefaults(
     <OnboardingCadastroHeader
       v-if="shellVariant === 'cadastro-v5'"
       :step="step"
-      :plan-step-layout="step === 2 || step === 3"
+      :plan-step-layout="step === 2 || step === 3 || step === 4"
       @back="emit('back')"
     />
     <template v-else>

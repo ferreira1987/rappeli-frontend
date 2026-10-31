@@ -10,7 +10,7 @@ import { useAuthStore } from '@/stores/auth'
 withDefaults(
   defineProps<{
     step: 1 | 2 | 3 | 4
-    /** Plano/Pagamento (steps 2–3): voltar no topo e indicador Passo X de 4. */
+    /** Plano, Pagamento e Ativação (steps 2–4): voltar no topo e indicador Passo X de 4. */
     planStepLayout?: boolean
   }>(),
   {
