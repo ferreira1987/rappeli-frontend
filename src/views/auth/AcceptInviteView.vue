@@ -370,7 +370,11 @@ async function onSubmit(): Promise<void> {
         </div>
       </div>
 
-      <AuthPageChrome hide-top />
+      <AuthPageChrome hide-top>
+        <p class="px-4 pb-2 text-center text-xs text-slate-500 sm:px-10 lg:px-12">
+          © {{ new Date().getFullYear() }} Rappeli. Todos os direitos reservados.
+        </p>
+      </AuthPageChrome>
     </main>
   </div>
 </template>
