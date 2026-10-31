@@ -10,23 +10,28 @@ import {
   updateCampaign,
 } from '@/api/campaigns'
 import { fetchMessageTemplatesList } from '@/api/messageTemplates'
-import AppPageHeader from '@/components/app/AppPageHeader.vue'
 import CampaignSendRateSelect from '@/components/campaigns/CampaignSendRateSelect.vue'
 import AppPageFooter from '@/components/layout/AppPageFooter.vue'
+import AppPageShell from '@/components/layout/AppPageShell.vue'
+import UiButton from '@/components/ui/UiButton.vue'
+import UiCard from '@/components/ui/UiCard.vue'
+import UiFilterChip from '@/components/ui/UiFilterChip.vue'
+import UiInput from '@/components/ui/UiInput.vue'
 import { panelBreadcrumbs } from '@/constants/panelBreadcrumbs'
 import type { CampaignStatus } from '@/types/campaigns'
 import type { MessageTemplate } from '@/types/messageTemplates'
+import {
+  campaignSendRatePayloadValue,
+  normalizeCampaignSendRateForForm,
+} from '@/utils/campaignSendRate'
+import { getErrorMessage, getValidationErrors } from '@/utils/errors'
+import { messageTemplateCategoryLabel, messageTemplateStatusLabel } from '@/utils/messageTemplateLabels'
 import {
   applyTemplateBodyParameters,
   formatMetaTemplateVariable,
   isMessageTemplateApproved,
   resolveTemplateVariableIndexes,
 } from '@/utils/messageTemplatePreview'
-import {
-  campaignSendRatePayloadValue,
-  normalizeCampaignSendRateForForm,
-} from '@/utils/campaignSendRate'
-import { getErrorMessage, getValidationErrors } from '@/utils/errors'
 
 const router = useRouter()
 const route = useRoute()
@@ -59,6 +64,9 @@ const previewCount = ref<number | null>(null)
 
 const pageTitle = computed(() => (isEditMode.value ? 'Editar campanha' : 'Nova campanha'))
 
+const pageSubtitle =
+  'Configure o envio em massa via WhatsApp Cloud API respeitando opt-in e cadência de segurança.'
+
 const breadcrumbs = computed(() =>
   panelBreadcrumbs(
     { label: 'Campanhas', to: { name: 'campanhas' } },
@@ -86,6 +94,23 @@ const previewBody = computed(() => {
   }
   return applyTemplateBodyParameters(body, templateBodyParameters.value)
 })
+
+const primaryActionLabel = computed(() =>
+  scheduleMode.value === 'scheduled' ? 'Agendar campanha' : isEditMode.value ? 'Salvar campanha' : 'Criar campanha',
+)
+
+function templateMetaLine(template: MessageTemplate): string | null {
+  const parts: string[] = []
+  const category = messageTemplateCategoryLabel(template.category)
+  if (category && category !== '—') {
+    parts.push(category)
+  }
+  const status = messageTemplateStatusLabel(template.status)
+  if (status) {
+    parts.push(`${status} pela Meta`)
+  }
+  return parts.length ? parts.join(' • ') : null
+}
 
 function syncTemplateBodyParametersFromSelection(): void {
   const indexes = selectedVariableIndexes.value
@@ -277,226 +302,206 @@ async function submit(status: 'rascunho' | 'agendada'): Promise<void> {
     submitting.value = false
   }
 }
+
+function setScheduleMode(mode: 'draft' | 'scheduled'): void {
+  scheduleMode.value = mode
+}
 </script>
 
 <template>
-  <div class="flex min-h-full flex-col bg-brand-surface">
-    <AppPageHeader :title="pageTitle" :breadcrumbs="breadcrumbs">
-      <template #actions>
-        <button
-          type="button"
-          class="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold disabled:opacity-60"
-          :disabled="submitting"
-          @click="saveDraft"
-        >
-          Salvar rascunho
-        </button>
-        <button
-          type="button"
-          class="rounded-lg bg-brand-indigo px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
-          :disabled="submitting"
-          @click="scheduleCampaign"
-        >
-          {{ scheduleMode === 'scheduled' ? 'Agendar campanha' : isEditMode ? 'Salvar campanha' : 'Criar campanha' }}
-        </button>
-      </template>
-    </AppPageHeader>
+  <AppPageShell :title="pageTitle" :subtitle="pageSubtitle" :breadcrumbs="breadcrumbs">
+    <template #actions>
+      <RouterLink :to="{ name: 'campanhas' }" class="inline-flex">
+        <UiButton variant="secondary" size="sm" :disabled="submitting">Cancelar</UiButton>
+      </RouterLink>
+      <UiButton variant="secondary" size="sm" :disabled="submitting" @click="saveDraft">
+        Salvar rascunho
+      </UiButton>
+      <UiButton size="sm" :disabled="submitting" @click="scheduleCampaign">
+        {{ primaryActionLabel }}
+      </UiButton>
+    </template>
 
-    <p v-if="statusMessage" class="px-4 text-sm text-brand-indigo lg:px-8" role="status">{{ statusMessage }}</p>
-    <p v-if="formError" class="px-4 text-sm text-red-600 lg:px-8" role="alert">{{ formError }}</p>
+    <div class="flex min-h-0 flex-1 flex-col">
+      <p v-if="statusMessage" class="px-4 pt-4 text-sm text-brand-indigo sm:px-6 lg:px-8" role="status">
+        {{ statusMessage }}
+      </p>
+      <p v-if="formError" class="px-4 pt-4 text-sm text-red-600 sm:px-6 lg:px-8" role="alert">
+        {{ formError }}
+      </p>
 
-    <div v-if="loading" class="flex flex-1 items-center justify-center">
-      <Loader2 class="h-8 w-8 animate-spin text-brand-indigo" />
-    </div>
-
-    <div v-else class="mx-auto flex max-w-[1520px] flex-1 flex-col gap-6 px-4 py-6 lg:px-8 xl:grid xl:grid-cols-12">
-      <div class="min-w-0 space-y-6 xl:col-span-7">
-        <div>
-          <h1 class="font-display text-2xl font-semibold tracking-tight text-brand-ink">{{ pageTitle }}</h1>
-          <p class="mt-1 text-sm text-brand-gray">
-            Configure o envio em massa via WhatsApp Cloud API respeitando opt-in e cadência de segurança.
-          </p>
-        </div>
-
-        <section class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-          <div class="mb-5 flex items-center gap-2.5 border-b border-slate-100 pb-4">
-            <span
-              class="flex h-6 w-6 items-center justify-center rounded-full bg-brand-mist text-xs font-bold text-brand-indigo"
-              >1</span
-            >
-            <h2 class="text-base font-semibold text-brand-ink">Informações</h2>
-          </div>
-          <label class="mt-4 block text-sm font-medium text-brand-ink">Nome da campanha *</label>
-          <input
-            v-model="campaignName"
-            type="text"
-            placeholder="Ex.: Lembrete de retorno — pacientes 6 meses"
-            class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
-            @input="delete fieldErrors.name"
-          />
-          <p v-if="fieldErrors.name" class="mt-1 text-xs text-red-600">{{ fieldErrors.name }}</p>
-        </section>
-
-        <section class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-          <div class="mb-5 flex items-center gap-2.5 border-b border-slate-100 pb-4">
-            <span
-              class="flex h-6 w-6 items-center justify-center rounded-full bg-brand-mist text-xs font-bold text-brand-indigo"
-              >2</span
-            >
-            <h2 class="text-base font-semibold text-brand-ink">Público (segmento)</h2>
-          </div>
-          <label class="mt-4 block text-sm">Tags (separadas por vírgula)</label>
-          <input v-model="segmentTags" type="text" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" placeholder="retorno, limpeza" />
-          <label class="mt-4 flex items-center justify-between gap-4 rounded-lg border border-brand-indigo/20 bg-brand-mist/40 p-3">
-            <span class="text-sm font-medium text-brand-ink">Somente contatos com opt-in registrado</span>
-            <input v-model="optInOnly" type="checkbox" class="h-4 w-4 rounded text-brand-indigo" />
-          </label>
-          <p v-if="previewCount != null" class="mt-2 text-sm font-semibold text-brand-indigo">
-            Última prévia: {{ previewCount }} contatos
-          </p>
-        </section>
-
-        <section class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-          <div class="mb-5 flex items-center justify-between border-b border-slate-100 pb-4">
-            <div class="flex items-center gap-2.5">
-              <span
-                class="flex h-6 w-6 items-center justify-center rounded-full bg-brand-mist text-xs font-bold text-brand-indigo"
-                >3</span
-              >
-              <h2 class="text-base font-semibold text-brand-ink">Mensagem (template aprovado pela Meta)</h2>
-            </div>
-          </div>
-          <p class="text-xs text-brand-gray">Somente modelos aprovados pela Meta.</p>
-          <div class="mt-4 space-y-3">
-            <label
-              v-for="template in approvedTemplates"
-              :key="template.id"
-              class="flex cursor-pointer items-start gap-3 rounded-lg border p-3"
-              :class="selectedTemplateId === template.id ? 'border-brand-indigo bg-brand-mist/30' : 'border-slate-200'"
-            >
-              <input v-model="selectedTemplateId" type="radio" :value="template.id" class="mt-1" />
-              <div>
-                <p class="text-sm font-semibold text-brand-ink">{{ template.name }}</p>
-                <p class="text-xs text-brand-gray line-clamp-2">{{ template.body }}</p>
-              </div>
-            </label>
-            <p v-if="!approvedTemplates.length" class="text-sm text-brand-gray">
-              Nenhum modelo aprovado. Sincronize ou aguarde aprovação em Campanhas → Modelos de mensagem.
-            </p>
-          </div>
-
-          <div v-if="selectedVariableIndexes.length" class="mt-5 space-y-3 border-t border-slate-100 pt-4">
-            <p class="text-sm font-semibold text-brand-ink">Variáveis do modelo</p>
-            <div
-              v-for="(variableIndex, parameterIndex) in selectedVariableIndexes"
-              :key="variableIndex"
-            >
-              <label class="block text-xs font-medium text-brand-ink">
-                Valor para <code>{{ formatMetaTemplateVariable(variableIndex) }}</code>
-              </label>
-              <input
-                v-model="templateBodyParameters[parameterIndex]"
-                type="text"
-                class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
-                :placeholder="`Ex.: valor para posição ${variableIndex}`"
-              />
-              <p
-                v-if="fieldErrors[`template_body_parameters.${parameterIndex}`]"
-                class="mt-1 text-xs text-red-600"
-              >
-                {{ fieldErrors[`template_body_parameters.${parameterIndex}`] }}
-              </p>
-            </div>
-            <p v-if="fieldErrors.template_body_parameters" class="text-xs text-red-600">
-              {{ fieldErrors.template_body_parameters }}
-            </p>
-          </div>
-        </section>
-
-        <section class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-          <div class="mb-5 flex items-center gap-2.5 border-b border-slate-100 pb-4">
-            <span
-              class="flex h-6 w-6 items-center justify-center rounded-full bg-brand-mist text-xs font-bold text-brand-indigo"
-              >4</span
-            >
-            <h2 class="text-base font-semibold text-brand-ink">Velocidade de envio</h2>
-          </div>
-          <div class="mt-4">
-            <CampaignSendRateSelect v-model="sendRate" :error="fieldErrors.send_rate" />
-          </div>
-        </section>
-
-        <section class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-          <div class="mb-5 flex items-center gap-2.5 border-b border-slate-100 pb-4">
-            <span
-              class="flex h-6 w-6 items-center justify-center rounded-full bg-brand-mist text-xs font-bold text-brand-indigo"
-              >5</span
-            >
-            <h2 class="text-base font-semibold text-brand-ink">Agendamento</h2>
-          </div>
-          <div class="mt-3 flex gap-4 text-sm">
-            <label class="flex items-center gap-2">
-              <input v-model="scheduleMode" type="radio" value="draft" />
-              Rascunho
-            </label>
-            <label class="flex items-center gap-2">
-              <input v-model="scheduleMode" type="radio" value="scheduled" />
-              Agendar data
-            </label>
-          </div>
-          <div v-if="scheduleMode === 'scheduled'" class="mt-3 grid grid-cols-2 gap-3">
-            <div>
-              <input
-                v-model="scheduleDate"
-                type="date"
-                class="w-full rounded-lg border px-3 py-2 text-sm"
-                @input="delete fieldErrors.scheduled_date"
-              />
-              <p v-if="fieldErrors.scheduled_date" class="mt-1 text-xs text-red-600">
-                {{ fieldErrors.scheduled_date }}
-              </p>
-            </div>
-            <div>
-              <input
-                v-model="scheduleTime"
-                type="time"
-                class="w-full rounded-lg border px-3 py-2 text-sm"
-                @input="delete fieldErrors.scheduled_time"
-              />
-              <p v-if="fieldErrors.scheduled_time" class="mt-1 text-xs text-red-600">
-                {{ fieldErrors.scheduled_time }}
-              </p>
-              <p v-if="fieldErrors.scheduled_at" class="mt-1 text-xs text-red-600">
-                {{ fieldErrors.scheduled_at }}
-              </p>
-            </div>
-          </div>
-        </section>
+      <div v-if="loading" class="flex flex-1 items-center justify-center py-24">
+        <Loader2 class="h-8 w-8 animate-spin text-brand-indigo" aria-label="Carregando" />
       </div>
 
-      <aside class="w-full xl:col-span-5">
-        <div class="sticky top-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-          <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-            <p class="text-sm font-semibold text-brand-ink">Pré-visualização da mensagem</p>
-            <span class="rounded bg-brand-mist px-2 py-0.5 text-[10px] font-semibold uppercase text-brand-gray">
-              Tempo real
-            </span>
-          </div>
-          <div class="mt-4 overflow-hidden rounded-xl border border-slate-200 bg-[#efeae2]">
-            <div class="bg-[#075e54] px-3 py-2 text-xs font-semibold text-white">WhatsApp — preview</div>
-            <div class="p-4">
-              <div class="max-w-[95%] rounded-lg rounded-tl-none bg-white p-3 text-sm leading-relaxed text-slate-800 shadow-sm">
-                {{ previewBody || 'Selecione um template aprovado.' }}
-              </div>
-            </div>
-          </div>
-          <RouterLink :to="{ name: 'campanhas' }" class="mt-4 inline-block text-sm font-semibold text-brand-indigo">
-            Voltar para campanhas
-          </RouterLink>
-        </div>
-      </aside>
+      <div v-else class="mx-auto w-full max-w-[1240px] flex-1 px-4 py-6 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-1 items-start gap-8 lg:grid-cols-12">
+          <div class="space-y-6 lg:col-span-7">
+            <UiCard padding="lg" class="shadow-none">
+              <h2 class="border-b border-slate-100 pb-3 text-base font-semibold text-brand-ink">Informações</h2>
+              <label for="campaign-name" class="mt-4 block text-sm font-medium text-brand-ink">
+                Nome da campanha *
+              </label>
+              <UiInput
+                id="campaign-name"
+                v-model="campaignName"
+                input-class="mt-1"
+                placeholder="Ex.: Lembrete de retorno — pacientes 6 meses"
+                :invalid="Boolean(fieldErrors.name)"
+                @update:model-value="delete fieldErrors.name"
+              />
+              <p v-if="fieldErrors.name" class="mt-1 text-xs text-red-600">{{ fieldErrors.name }}</p>
+            </UiCard>
 
-      <AppPageFooter class="xl:col-span-12" />
+            <UiCard padding="lg" class="shadow-none">
+              <h2 class="border-b border-slate-100 pb-3 text-base font-semibold text-brand-ink">
+                Público (segmento)
+              </h2>
+              <label for="segment-tags" class="mt-4 block text-sm text-brand-ink">Tags (separadas por vírgula)</label>
+              <UiInput id="segment-tags" v-model="segmentTags" input-class="mt-1" placeholder="retorno, limpeza" />
+              <label
+                class="mt-4 flex items-center justify-between gap-4 rounded-lg border border-brand-indigo/20 bg-brand-mist/40 p-3"
+              >
+                <span class="text-sm font-medium text-brand-ink">Somente contatos com opt-in registrado</span>
+                <input v-model="optInOnly" type="checkbox" class="h-4 w-4 rounded text-brand-indigo" />
+              </label>
+              <p v-if="previewCount != null" class="mt-2 text-sm font-semibold text-brand-indigo">
+                Última prévia: {{ previewCount }} contatos
+              </p>
+            </UiCard>
+
+            <UiCard padding="lg" class="shadow-none">
+              <h2 class="border-b border-slate-100 pb-3 text-base font-semibold text-brand-ink">
+                Mensagem (template aprovado pela Meta)
+              </h2>
+              <p class="mt-3 text-xs text-brand-gray">Somente modelos aprovados pela Meta.</p>
+              <div class="mt-4 space-y-3">
+                <label
+                  v-for="template in approvedTemplates"
+                  :key="template.id"
+                  class="flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors"
+                  :class="
+                    selectedTemplateId === template.id ? 'border-brand-indigo bg-brand-mist/30' : 'border-slate-200'
+                  "
+                >
+                  <input v-model="selectedTemplateId" type="radio" :value="template.id" class="mt-1 shrink-0" />
+                  <div class="min-w-0">
+                    <p class="text-sm font-semibold text-brand-ink">{{ template.name }}</p>
+                    <p v-if="templateMetaLine(template)" class="mt-0.5 text-[11px] text-brand-gray">
+                      {{ templateMetaLine(template) }}
+                    </p>
+                    <p v-if="template.body" class="mt-1 line-clamp-2 text-xs text-brand-gray">{{ template.body }}</p>
+                  </div>
+                </label>
+                <p v-if="!approvedTemplates.length" class="text-sm text-brand-gray">
+                  Nenhum modelo aprovado. Sincronize ou aguarde aprovação em Campanhas → Modelos de mensagem.
+                </p>
+              </div>
+
+              <div v-if="selectedVariableIndexes.length" class="mt-5 space-y-3 border-t border-slate-100 pt-4">
+                <p class="text-sm font-semibold text-brand-ink">Variáveis do modelo</p>
+                <div v-for="(variableIndex, parameterIndex) in selectedVariableIndexes" :key="variableIndex">
+                  <label class="block text-xs font-medium text-brand-ink">
+                    Valor para <code>{{ formatMetaTemplateVariable(variableIndex) }}</code>
+                  </label>
+                  <UiInput
+                    v-model="templateBodyParameters[parameterIndex]"
+                    input-class="mt-1"
+                    :placeholder="`Ex.: valor para posição ${variableIndex}`"
+                    :invalid="Boolean(fieldErrors[`template_body_parameters.${parameterIndex}`])"
+                  />
+                  <p
+                    v-if="fieldErrors[`template_body_parameters.${parameterIndex}`]"
+                    class="mt-1 text-xs text-red-600"
+                  >
+                    {{ fieldErrors[`template_body_parameters.${parameterIndex}`] }}
+                  </p>
+                </div>
+                <p v-if="fieldErrors.template_body_parameters" class="text-xs text-red-600">
+                  {{ fieldErrors.template_body_parameters }}
+                </p>
+              </div>
+            </UiCard>
+
+            <UiCard padding="lg" class="shadow-none">
+              <h2 class="border-b border-slate-100 pb-3 text-base font-semibold text-brand-ink">Velocidade de envio</h2>
+              <div class="mt-4">
+                <CampaignSendRateSelect v-model="sendRate" :error="fieldErrors.send_rate" />
+              </div>
+            </UiCard>
+
+            <UiCard padding="lg" class="shadow-none">
+              <h2 class="border-b border-slate-100 pb-3 text-base font-semibold text-brand-ink">Agendamento</h2>
+              <div class="mt-3 flex flex-wrap gap-2">
+                <UiFilterChip :active="scheduleMode === 'draft'" @click="setScheduleMode('draft')">
+                  Rascunho
+                </UiFilterChip>
+                <UiFilterChip :active="scheduleMode === 'scheduled'" @click="setScheduleMode('scheduled')">
+                  Agendar data
+                </UiFilterChip>
+              </div>
+              <div v-if="scheduleMode === 'scheduled'" class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div>
+                  <input
+                    v-model="scheduleDate"
+                    type="date"
+                    class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-brand-ink focus:border-brand-indigo focus:outline-none focus:ring-2 focus:ring-brand-indigo/20"
+                    @input="delete fieldErrors.scheduled_date"
+                  />
+                  <p v-if="fieldErrors.scheduled_date" class="mt-1 text-xs text-red-600">
+                    {{ fieldErrors.scheduled_date }}
+                  </p>
+                </div>
+                <div>
+                  <input
+                    v-model="scheduleTime"
+                    type="time"
+                    class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-brand-ink focus:border-brand-indigo focus:outline-none focus:ring-2 focus:ring-brand-indigo/20"
+                    @input="delete fieldErrors.scheduled_time"
+                  />
+                  <p v-if="fieldErrors.scheduled_time" class="mt-1 text-xs text-red-600">
+                    {{ fieldErrors.scheduled_time }}
+                  </p>
+                  <p v-if="fieldErrors.scheduled_at" class="mt-1 text-xs text-red-600">
+                    {{ fieldErrors.scheduled_at }}
+                  </p>
+                </div>
+              </div>
+            </UiCard>
+          </div>
+
+          <aside class="lg:col-span-5">
+            <UiCard padding="lg" class="sticky top-4 shadow-none">
+              <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <p class="text-sm font-semibold text-brand-ink">Pré-visualização da mensagem</p>
+                <span
+                  class="rounded bg-brand-mist px-2 py-0.5 text-[10px] font-semibold uppercase text-brand-gray"
+                >
+                  Tempo real
+                </span>
+              </div>
+              <div class="mt-4 overflow-hidden rounded-xl border border-slate-200 bg-[#efeae2]">
+                <div class="bg-[#075e54] px-3 py-2 text-xs font-semibold text-white">WhatsApp — preview</div>
+                <div class="p-4">
+                  <div
+                    class="max-w-[95%] rounded-lg rounded-tl-none bg-white p-3 text-sm leading-relaxed text-slate-800 shadow-sm"
+                  >
+                    {{ previewBody || 'Selecione um template aprovado.' }}
+                  </div>
+                </div>
+              </div>
+              <RouterLink
+                :to="{ name: 'campanhas' }"
+                class="mt-4 inline-block text-sm font-semibold text-brand-indigo hover:underline"
+              >
+                Voltar para campanhas
+              </RouterLink>
+            </UiCard>
+          </aside>
+        </div>
+      </div>
+
+      <AppPageFooter />
     </div>
-  </div>
+  </AppPageShell>
 </template>
