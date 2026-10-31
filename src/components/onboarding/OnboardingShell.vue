@@ -4,11 +4,15 @@ import OnboardingFooter from '@/components/onboarding/OnboardingFooter.vue'
 import OnboardingHeader from '@/components/onboarding/OnboardingHeader.vue'
 import OnboardingStepper from '@/components/onboarding/OnboardingStepper.vue'
 
+const emit = defineEmits<{
+  back: []
+}>()
+
 withDefaults(
   defineProps<{
     step: 1 | 2 | 3 | 4
     wide?: boolean
-    /** v5 Stitch layout for etapa Cadastro (step 1 only). */
+    /** v5 Stitch layout (Cadastro + Plano). Pagamento/Ativação permanecem default. */
     shellVariant?: 'default' | 'cadastro-v5'
   }>(),
   {
@@ -22,7 +26,12 @@ withDefaults(
     class="flex min-h-screen flex-col text-brand-ink"
     :class="shellVariant === 'cadastro-v5' ? 'bg-[#F8FAFC]' : 'bg-[#faf8ff]'"
   >
-    <OnboardingCadastroHeader v-if="shellVariant === 'cadastro-v5'" :step="step" />
+    <OnboardingCadastroHeader
+      v-if="shellVariant === 'cadastro-v5'"
+      :step="step"
+      :plan-step-layout="step === 2"
+      @back="emit('back')"
+    />
     <template v-else>
       <OnboardingHeader />
       <div class="w-full">
