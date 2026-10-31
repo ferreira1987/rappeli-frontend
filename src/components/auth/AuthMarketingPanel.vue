@@ -27,11 +27,7 @@ const featureItems = [
     class="relative hidden min-h-screen w-full shrink-0 flex-col justify-between overflow-y-auto bg-[#4338CA] p-8 text-white sm:p-12 lg:flex lg:w-[min(42%,520px)] lg:max-w-[520px] lg:p-14 xl:p-16"
   >
     <header class="flex items-center gap-3">
-      <div
-        class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/20 bg-white/10"
-      >
-        <RappeliLogo mode="symbol" class="h-5 w-5" />
-      </div>
+      <RappeliLogo mode="symbol" class="h-10 w-10 shrink-0" />
       <div>
         <span class="block font-display text-2xl font-bold leading-none tracking-tight text-white">
           Rappeli
