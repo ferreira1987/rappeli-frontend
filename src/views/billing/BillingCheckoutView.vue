@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Building2, CreditCard, Lock } from '@lucide/vue'
+import { Building2, CheckCircle2, CreditCard, ShieldCheck } from '@lucide/vue'
 import { computed, onMounted, reactive, ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 
@@ -7,6 +7,8 @@ import { checkoutSubscription } from '@/api/billing'
 import BillingCheckoutForms from '@/components/billing/BillingCheckoutForms.vue'
 import OnboardingActionBar from '@/components/onboarding/OnboardingActionBar.vue'
 import OnboardingShell from '@/components/onboarding/OnboardingShell.vue'
+import { UiBadge, UiCard, UiInput } from '@/components/ui'
+import { PLAN_TIER_FEATURES, type PlanTierId } from '@/constants/onboardingPlans'
 import { useAuthStore } from '@/stores/auth'
 import { useCheckoutFlowStore } from '@/stores/checkoutFlow'
 import { maskCpfCnpj } from '@/utils/brazilianDocument'
@@ -17,9 +19,7 @@ import {
   maskPostalCode,
 } from '@/utils/billingFormat'
 import { emptyCheckoutForms, validateCheckoutForms } from '@/utils/billingCheckoutValidation'
-import {
-  resolveCheckoutSubmitError,
-} from '@/utils/billingCheckoutSubmitError'
+import { resolveCheckoutSubmitError } from '@/utils/billingCheckoutSubmitError'
 
 const router = useRouter()
 const auth = useAuthStore()
@@ -40,6 +40,28 @@ const planSummary = computed(() => ({
   cycle: checkoutFlow.cycle,
   amount: checkoutFlow.amount,
 }))
+
+const planTierFeatures = computed(() => {
+  const tier = checkoutFlow.tier
+  if (tier === 'essencial' || tier === 'profissional' || tier === 'escala') {
+    return PLAN_TIER_FEATURES[tier as PlanTierId]
+  }
+  return []
+})
+
+const planLineLabel = computed(() =>
+  planSummary.value.cycle === 'YEARLY' ? 'Plano anual' : 'Plano mensal',
+)
+
+const totalCycleHint = computed(() => {
+  if (planSummary.value.cycle === 'MONTHLY') {
+    return 'Cobrado mensalmente'
+  }
+  if (planSummary.value.cycle === 'YEARLY') {
+    return 'Cobrado anualmente'
+  }
+  return null
+})
 
 onMounted(() => {
   if (!checkoutFlow.planId) {
@@ -102,13 +124,6 @@ async function onSubmit(): Promise<void> {
   }
 }
 
-function billingInputClass(field: string): string {
-  const base = 'mt-1 h-[42px] w-full rounded-lg border px-3 text-sm'
-  return fieldErrors.value[field]
-    ? `${base} border-red-300 focus:border-red-400 focus:ring-red-200`
-    : `${base} border-slate-200`
-}
-
 function billingFieldError(field: string): string | undefined {
   return fieldErrors.value[field]
 }
@@ -117,273 +132,346 @@ function goBack(): void {
   void router.push({ name: 'assinatura-planos' })
 }
 
-function onDocInput(event: Event): void {
-  forms.holder.cpf_cnpj = maskCpfCnpj((event.target as HTMLInputElement).value)
-}
-
-function onPhoneInput(event: Event): void {
-  forms.holder.phone = maskPhoneBr((event.target as HTMLInputElement).value)
-}
-
-function onCepInput(event: Event): void {
-  forms.holder.postal_code = maskPostalCode((event.target as HTMLInputElement).value)
+function onPhoneInput(value: string): void {
+  forms.holder.phone = maskPhoneBr(value)
 }
 </script>
 
 <template>
-  <OnboardingShell :step="3" wide>
-    <div class="grid gap-8 lg:grid-cols-3">
-      <div class="space-y-6 lg:col-span-2">
-        <article class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-          <div class="mb-4 flex items-center gap-2">
-            <div
-              class="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-mist text-brand-indigo"
-            >
-              <Building2 class="h-4 w-4" aria-hidden="true" />
-            </div>
-            <h2 class="text-lg font-semibold text-brand-ink">Dados de faturamento</h2>
-          </div>
-          <div class="grid gap-4 sm:grid-cols-2">
-            <div>
-              <label
-                class="text-[11px] font-semibold uppercase tracking-wide text-brand-gray"
-                for="bill-name"
-              >
-                Nome completo
-              </label>
-              <input
-                id="bill-name"
-                v-model="forms.holder.name"
-                type="text"
-                placeholder="Nome do responsável"
-                :class="billingInputClass('holder.name')"
-              />
-              <p v-if="billingFieldError('holder.name')" class="mt-1 text-xs text-red-600">
-                {{ billingFieldError('holder.name') }}
-              </p>
-            </div>
-            <div>
-              <label
-                class="text-[11px] font-semibold uppercase tracking-wide text-brand-gray"
-                for="bill-email"
-              >
-                E-mail
-              </label>
-              <input
-                id="bill-email"
-                v-model="forms.holder.email"
-                type="email"
-                placeholder="nome@empresa.com.br"
-                :class="billingInputClass('holder.email')"
-              />
-              <p v-if="billingFieldError('holder.email')" class="mt-1 text-xs text-red-600">
-                {{ billingFieldError('holder.email') }}
-              </p>
-            </div>
-            <div>
-              <label
-                class="text-[11px] font-semibold uppercase tracking-wide text-brand-gray"
-                for="bill-phone"
-              >
-                WhatsApp
-              </label>
-              <input
-                id="bill-phone"
-                :value="forms.holder.phone"
-                type="tel"
-                placeholder="(00) 00000-0000"
-                :class="billingInputClass('holder.phone')"
-                @input="onPhoneInput"
-              />
-              <p v-if="billingFieldError('holder.phone')" class="mt-1 text-xs text-red-600">
-                {{ billingFieldError('holder.phone') }}
-              </p>
-            </div>
-            <div>
-              <label
-                class="text-[11px] font-semibold uppercase tracking-wide text-brand-gray"
-                for="bill-doc"
-              >
-                CPF ou CNPJ
-              </label>
-              <input
-                id="bill-doc"
-                :value="forms.holder.cpf_cnpj"
-                type="text"
-                placeholder="00.000.000/0000-00"
-                :class="billingInputClass('holder.cpf_cnpj')"
-                @input="onDocInput"
-              />
-              <p v-if="billingFieldError('holder.cpf_cnpj')" class="mt-1 text-xs text-red-600">
-                {{ billingFieldError('holder.cpf_cnpj') }}
-              </p>
-            </div>
-            <div class="sm:col-span-2">
-              <label
-                class="text-[11px] font-semibold uppercase tracking-wide text-brand-gray"
-                for="legal-name"
-              >
-                Razão social
-              </label>
-              <input
-                id="legal-name"
-                v-model="legalName"
-                type="text"
-                placeholder="Razão social ou nome fantasia"
-                class="mt-1 h-[42px] w-full rounded-lg border border-slate-200 px-3 text-sm"
-              />
-            </div>
-            <div>
-              <label
-                class="text-[11px] font-semibold uppercase tracking-wide text-brand-gray"
-                for="cep"
-              >
-                CEP
-              </label>
-              <input
-                id="cep"
-                :value="forms.holder.postal_code"
-                type="text"
-                placeholder="00000-000"
-                :class="billingInputClass('holder.postal_code')"
-                @input="onCepInput"
-              />
-              <p v-if="billingFieldError('holder.postal_code')" class="mt-1 text-xs text-red-600">
-                {{ billingFieldError('holder.postal_code') }}
-              </p>
-            </div>
-            <div>
-              <label
-                class="text-[11px] font-semibold uppercase tracking-wide text-brand-gray"
-                for="street"
-              >
-                Endereço
-              </label>
-              <input
-                id="street"
-                v-model="streetAddress"
-                type="text"
-                placeholder="Rua, avenida ou logradouro"
-                class="mt-1 h-[42px] w-full rounded-lg border border-slate-200 px-3 text-sm"
-              />
-            </div>
-            <div>
-              <label
-                class="text-[11px] font-semibold uppercase tracking-wide text-brand-gray"
-                for="number"
-              >
-                Número
-              </label>
-              <input
-                id="number"
-                v-model="forms.holder.address_number"
-                type="text"
-                placeholder="Número"
-                :class="billingInputClass('holder.address_number')"
-              />
-              <p v-if="billingFieldError('holder.address_number')" class="mt-1 text-xs text-red-600">
-                {{ billingFieldError('holder.address_number') }}
-              </p>
-            </div>
-          </div>
-        </article>
-
-        <article class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-          <div class="mb-4 flex items-center justify-between gap-2">
-            <div class="flex items-center gap-2">
-              <div
-                class="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-mist text-brand-indigo"
-              >
-                <CreditCard class="h-4 w-4" aria-hidden="true" />
-              </div>
-              <h2 class="text-lg font-semibold text-brand-ink">Cartão de crédito</h2>
-            </div>
-            <div class="flex gap-2 text-[10px] font-bold tracking-wide text-slate-400">
-              <span>VISA</span>
-              <span>mastercard</span>
-              <span>elo</span>
-            </div>
-          </div>
-
-          <BillingCheckoutForms
-            v-model:holder="forms.holder"
-            v-model:credit-card="forms.creditCard"
-            :field-errors="fieldErrors"
-            :disabled="submitting"
-            billing-only
-          />
-
-          <p class="mt-3 flex items-center gap-2 text-xs text-brand-gray">
-            <Lock class="h-3.5 w-3.5" aria-hidden="true" />
-            Pagamento processado pelo Asaas; não armazenamos os dados do seu cartão.
-          </p>
-
-          <label class="mt-4 flex cursor-pointer items-start gap-2 text-sm text-brand-gray">
-            <input
-              v-model="authorizeRecurring"
-              type="checkbox"
-              class="mt-0.5 h-4 w-4 rounded border-slate-300 text-brand-indigo"
-            />
-            Autorizo a cobrança recorrente no cartão a cada renovação do plano.
-          </label>
-        </article>
-
-        <p
-          v-if="formError"
-          class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
-          role="alert"
-        >
-          {{ formError }}
+  <OnboardingShell :step="3" shell-variant="cadastro-v5" @back="goBack">
+    <div class="mx-auto w-full max-w-[1080px]">
+      <header class="mb-8">
+        <h1 class="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+          Finalizar contratação
+        </h1>
+        <p class="mt-2 text-sm leading-relaxed text-slate-500 sm:text-base">
+          Ambiente seguro com criptografia de ponta a ponta. Ativação imediata do seu workspace.
         </p>
-      </div>
+      </header>
 
-      <aside class="lg:col-span-1">
-        <article class="sticky top-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h2 class="text-lg font-semibold text-brand-ink">Resumo do pedido</h2>
-          <p class="mt-3 text-sm font-semibold text-brand-ink">
-            Plano {{ planSummary.name }} — {{ planSummary.modalityLabel }}
-          </p>
-          <p class="mt-1 text-xs text-brand-gray">
-            Ciclo: {{ billingCycleLabel(planSummary.cycle) }}
-            <template v-if="planSummary.cycle === 'YEARLY'"> (renova a cada 12 meses)</template>
-          </p>
-          <div class="mt-4 flex justify-between text-sm">
-            <span class="text-brand-gray">
-              {{ planSummary.cycle === 'YEARLY' ? 'Plano anual' : 'Plano mensal' }}
-            </span>
-            <span>{{ formatBillingCurrency(planSummary.amount) }}</span>
-          </div>
-          <div class="mt-4 border-t border-slate-100 pt-4">
-            <div class="flex items-end justify-between">
-              <span class="text-sm font-semibold text-brand-ink">Total hoje</span>
-              <span class="text-2xl font-bold text-brand-indigo">
-                {{ formatBillingCurrency(planSummary.amount) }}
-              </span>
+      <div class="grid grid-cols-1 items-start gap-6 lg:grid-cols-12 lg:gap-8">
+        <div class="space-y-6 lg:col-span-7">
+          <UiCard padding="none" class="overflow-hidden rounded-xl border border-slate-200 shadow-sm">
+            <div class="border-b border-slate-200 px-6 py-4">
+              <div class="flex flex-wrap items-center justify-between gap-3">
+                <div class="flex items-center gap-2">
+                  <div
+                    class="flex h-6 w-6 items-center justify-center rounded-md bg-indigo-50 text-[#4338CA]"
+                  >
+                    <Building2 class="h-3.5 w-3.5" aria-hidden="true" />
+                  </div>
+                  <h2 class="text-base font-semibold text-slate-900">Dados de faturamento</h2>
+                </div>
+                <span class="text-xs text-slate-500">Nota fiscal emitida automaticamente</span>
+              </div>
             </div>
-            <p class="mt-3 text-xs leading-relaxed text-brand-gray">
-              Cobrança à vista no cartão. Sem taxa de implantação, sem fidelidade, cancele quando
-              quiser em 1 clique.
-            </p>
-            <div class="mt-3 text-right">
-              <RouterLink
-                :to="{ name: 'assinatura-planos' }"
-                class="text-xs font-semibold text-brand-indigo hover:underline"
+
+            <div class="space-y-4 p-6">
+              <div class="grid gap-4 sm:grid-cols-2">
+                <div class="space-y-1.5">
+                  <label for="bill-name" class="text-xs font-medium text-slate-700">
+                    Nome completo
+                  </label>
+                  <UiInput
+                    id="bill-name"
+                    v-model="forms.holder.name"
+                    type="text"
+                    placeholder="Nome do responsável"
+                    autocomplete="name"
+                    :invalid="Boolean(billingFieldError('holder.name'))"
+                  />
+                  <p v-if="billingFieldError('holder.name')" class="text-xs text-red-600">
+                    {{ billingFieldError('holder.name') }}
+                  </p>
+                </div>
+                <div class="space-y-1.5">
+                  <label for="bill-email" class="text-xs font-medium text-slate-700"> E-mail </label>
+                  <UiInput
+                    id="bill-email"
+                    v-model="forms.holder.email"
+                    type="email"
+                    placeholder="nome@empresa.com.br"
+                    autocomplete="email"
+                    :invalid="Boolean(billingFieldError('holder.email'))"
+                  />
+                  <p v-if="billingFieldError('holder.email')" class="text-xs text-red-600">
+                    {{ billingFieldError('holder.email') }}
+                  </p>
+                </div>
+                <div class="space-y-1.5">
+                  <label for="bill-phone" class="text-xs font-medium text-slate-700">
+                    WhatsApp
+                  </label>
+                  <UiInput
+                    id="bill-phone"
+                    :model-value="forms.holder.phone"
+                    type="tel"
+                    placeholder="(00) 00000-0000"
+                    autocomplete="tel"
+                    inputmode="tel"
+                    :invalid="Boolean(billingFieldError('holder.phone'))"
+                    @update:model-value="onPhoneInput"
+                  />
+                  <p v-if="billingFieldError('holder.phone')" class="text-xs text-red-600">
+                    {{ billingFieldError('holder.phone') }}
+                  </p>
+                </div>
+                <div class="space-y-1.5">
+                  <label for="bill-doc" class="text-xs font-medium text-slate-700">
+                    CPF ou CNPJ
+                  </label>
+                  <UiInput
+                    id="bill-doc"
+                    :model-value="forms.holder.cpf_cnpj"
+                    type="text"
+                    placeholder="00.000.000/0000-00"
+                    inputmode="numeric"
+                    :invalid="Boolean(billingFieldError('holder.cpf_cnpj'))"
+                    @update:model-value="(v) => (forms.holder.cpf_cnpj = maskCpfCnpj(v))"
+                  />
+                  <p v-if="billingFieldError('holder.cpf_cnpj')" class="text-xs text-red-600">
+                    {{ billingFieldError('holder.cpf_cnpj') }}
+                  </p>
+                </div>
+                <div class="space-y-1.5 sm:col-span-2">
+                  <label for="legal-name" class="text-xs font-medium text-slate-700">
+                    Razão social
+                  </label>
+                  <UiInput
+                    id="legal-name"
+                    v-model="legalName"
+                    type="text"
+                    placeholder="Razão social ou nome fantasia"
+                  />
+                </div>
+                <div class="space-y-1.5 sm:col-span-4 lg:col-span-4">
+                  <label for="cep" class="text-xs font-medium text-slate-700"> CEP </label>
+                  <UiInput
+                    id="cep"
+                    :model-value="forms.holder.postal_code"
+                    type="text"
+                    placeholder="00000-000"
+                    inputmode="numeric"
+                    autocomplete="postal-code"
+                    :invalid="Boolean(billingFieldError('holder.postal_code'))"
+                    @update:model-value="(v) => (forms.holder.postal_code = maskPostalCode(v))"
+                  />
+                  <p v-if="billingFieldError('holder.postal_code')" class="text-xs text-red-600">
+                    {{ billingFieldError('holder.postal_code') }}
+                  </p>
+                </div>
+                <div class="space-y-1.5 sm:col-span-5 lg:col-span-5">
+                  <label for="street" class="text-xs font-medium text-slate-700"> Endereço </label>
+                  <UiInput
+                    id="street"
+                    v-model="streetAddress"
+                    type="text"
+                    placeholder="Rua, avenida ou logradouro"
+                  />
+                </div>
+                <div class="space-y-1.5 sm:col-span-3 lg:col-span-3">
+                  <label for="number" class="text-xs font-medium text-slate-700"> Número </label>
+                  <UiInput
+                    id="number"
+                    v-model="forms.holder.address_number"
+                    type="text"
+                    placeholder="Número"
+                    :invalid="Boolean(billingFieldError('holder.address_number'))"
+                  />
+                  <p v-if="billingFieldError('holder.address_number')" class="text-xs text-red-600">
+                    {{ billingFieldError('holder.address_number') }}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </UiCard>
+
+          <UiCard padding="none" class="overflow-hidden rounded-xl border border-slate-200 shadow-sm">
+            <div class="border-b border-slate-200 px-6 py-4">
+              <div class="flex flex-wrap items-center justify-between gap-3">
+                <div class="flex items-center gap-2">
+                  <div
+                    class="flex h-6 w-6 items-center justify-center rounded-md bg-indigo-50 text-[#4338CA]"
+                  >
+                    <CreditCard class="h-3.5 w-3.5" aria-hidden="true" />
+                  </div>
+                  <h2 class="text-base font-semibold text-slate-900">Cartão de crédito</h2>
+                </div>
+                <div class="flex items-center gap-2 text-[10px] font-bold tracking-wide text-slate-400">
+                  <span class="rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5">VISA</span>
+                  <span class="rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 lowercase">
+                    mastercard
+                  </span>
+                  <span class="rounded border border-slate-200 bg-slate-50 px-2 py-0.5">elo</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="p-6">
+              <BillingCheckoutForms
+                v-model:holder="forms.holder"
+                v-model:credit-card="forms.creditCard"
+                :field-errors="fieldErrors"
+                :disabled="submitting"
+                billing-only
+                ui-variant="v5"
+              />
+
+              <div
+                class="mt-4 flex items-start gap-2 rounded-lg border border-slate-200 bg-slate-50 p-2.5 text-xs text-slate-600"
               >
-                Alterar plano
-              </RouterLink>
+                <ShieldCheck class="mt-0.5 h-4 w-4 shrink-0 text-[#4338CA]" aria-hidden="true" />
+                <span>
+                  Pagamento processado pelo Asaas; não armazenamos os dados do seu cartão.
+                </span>
+              </div>
+
+              <label class="mt-4 flex cursor-pointer items-start gap-3 text-sm text-slate-600">
+                <input
+                  v-model="authorizeRecurring"
+                  type="checkbox"
+                  class="mt-0.5 h-4 w-4 rounded border-slate-300 text-[#4338CA] focus:ring-[#4338CA]/20"
+                />
+                Autorizo a cobrança recorrente no cartão a cada renovação do plano.
+              </label>
             </div>
-          </div>
-        </article>
-      </aside>
+          </UiCard>
+
+          <p
+            v-if="formError"
+            class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+            role="alert"
+          >
+            {{ formError }}
+          </p>
+        </div>
+
+        <aside class="lg:col-span-5 lg:sticky lg:top-24">
+          <UiCard padding="none" class="overflow-hidden rounded-xl border border-slate-200 shadow-sm">
+            <div
+              class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 px-6 py-4"
+            >
+              <h2 class="text-base font-semibold text-slate-900">Resumo do pedido</h2>
+              <UiBadge
+                variant="success"
+                size="md"
+                class="!rounded-md border border-emerald-200 bg-emerald-50 !text-[11px] font-medium text-emerald-700"
+              >
+                Ativação Imediata
+              </UiBadge>
+            </div>
+
+            <div class="space-y-3 border-b border-slate-200 px-6 py-4">
+              <p v-if="planSummary.name" class="text-sm font-semibold text-slate-900">
+                Plano {{ planSummary.name
+                }}<template v-if="planSummary.modalityLabel">
+                  — {{ planSummary.modalityLabel }}</template
+                >
+              </p>
+              <p v-if="planSummary.cycle" class="text-xs text-slate-500">
+                Ciclo: {{ billingCycleLabel(planSummary.cycle) }}
+                <template v-if="planSummary.cycle === 'YEARLY'"> (renova a cada 12 meses)</template>
+              </p>
+
+              <ul v-if="planTierFeatures.length" class="space-y-1.5 pt-1 text-xs text-slate-500">
+                <li
+                  v-for="(feature, index) in planTierFeatures"
+                  :key="index"
+                  class="flex items-start gap-2"
+                >
+                  <CheckCircle2
+                    class="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-500"
+                    aria-hidden="true"
+                  />
+                  <span v-html="feature.html" />
+                </li>
+              </ul>
+            </div>
+
+            <div class="space-y-2.5 border-b border-slate-200 px-6 py-4 text-xs text-slate-700">
+              <div class="flex justify-between">
+                <span>{{ planLineLabel }}</span>
+                <span v-if="planSummary.amount != null" class="font-medium text-slate-900">
+                  {{ formatBillingCurrency(planSummary.amount) }}
+                </span>
+              </div>
+              <div class="flex justify-between text-emerald-600">
+                <span>Taxa de implantação</span>
+                <span class="font-medium">Grátis</span>
+              </div>
+            </div>
+
+            <div class="border-b border-slate-200 px-6 py-4">
+              <div class="flex items-end justify-between gap-4">
+                <span class="text-sm font-semibold text-slate-900">Total hoje</span>
+                <div class="text-right">
+                  <span v-if="planSummary.amount != null" class="text-2xl font-bold text-[#4338CA]">
+                    {{ formatBillingCurrency(planSummary.amount) }}
+                  </span>
+                  <span v-if="totalCycleHint" class="mt-0.5 block text-[11px] text-slate-500">
+                    {{ totalCycleHint }}
+                  </span>
+                </div>
+              </div>
+              <p class="mt-3 text-xs leading-relaxed text-slate-500">
+                Cobrança à vista no cartão. Sem taxa de implantação, sem fidelidade, cancele quando
+                quiser em 1 clique.
+              </p>
+            </div>
+
+            <div class="px-6 py-4">
+              <p
+                class="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 border-b border-slate-100 pb-3 text-center text-xs text-slate-500"
+              >
+                <span class="inline-flex items-center gap-1.5">
+                  <span class="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden="true" />
+                  Sem fidelidade
+                </span>
+                <span class="text-slate-300" aria-hidden="true">·</span>
+                <span>Sem taxa de adesão</span>
+                <span class="text-slate-300" aria-hidden="true">·</span>
+                <span>Cancele em 1 clique</span>
+              </p>
+              <div class="mt-3 text-center">
+                <RouterLink
+                  :to="{ name: 'assinatura-planos' }"
+                  class="text-xs font-semibold text-[#4338CA] hover:underline"
+                >
+                  Alterar plano
+                </RouterLink>
+              </div>
+            </div>
+          </UiCard>
+        </aside>
+      </div>
     </div>
 
     <template #action-bar>
       <OnboardingActionBar
+        summary-layout="v5"
+        :show-back="false"
         primary-label="Confirmar pagamento"
         :primary-loading="submitting"
         @back="goBack"
         @primary="onSubmit"
-      />
+      >
+        <template #summary>
+          <div v-if="planSummary.name" class="min-w-0">
+            <span class="block text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+              Resumo da seleção
+            </span>
+            <span class="mt-0.5 block text-sm font-semibold text-slate-900 sm:text-base">
+              Plano {{ planSummary.name
+              }}<template v-if="planSummary.modalityLabel">
+                — {{ planSummary.modalityLabel }}</template
+              >
+            </span>
+            <span v-if="planSummary.amount != null" class="mt-0.5 block text-xs text-slate-500">
+              Total hoje: {{ formatBillingCurrency(planSummary.amount) }}
+            </span>
+          </div>
+        </template>
+      </OnboardingActionBar>
     </template>
   </OnboardingShell>
 </template>
