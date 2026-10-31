@@ -24,6 +24,10 @@ const initials = useInitials(computed(() => auth.user?.name))
 const isDrawerHidden = computed(() => !isLgViewport.value && !isOpen.value)
 const isDesktopCollapsed = computed(() => isLgViewport.value && isCollapsed.value)
 
+const collapseToggleLabel = computed(() =>
+  isCollapsed.value ? 'Expandir menu' : 'Recolher menu',
+)
+
 const sidebarWidthClass = computed(() =>
   isDesktopCollapsed.value ? 'lg:w-[72px] lg:px-2' : 'lg:w-[260px] lg:px-3',
 )
@@ -91,24 +95,44 @@ function closeAndFocusMenu(): void {
     :inert="isDrawerHidden ? true : undefined"
   >
     <div
-      class="flex items-start justify-between gap-2 lg:items-center"
-      :class="isDesktopCollapsed ? 'justify-center px-0' : 'px-2 lg:block'"
+      class="flex shrink-0 gap-2"
+      :class="
+        isDesktopCollapsed
+          ? 'flex-col items-center px-0 lg:flex-col lg:items-center'
+          : 'items-center justify-between px-2'
+      "
     >
-      <div :class="isDesktopCollapsed ? 'flex justify-center' : ''">
-        <RappeliLogo
-          variant="dark"
-          :mode="isDesktopCollapsed ? 'symbol' : 'horizontal'"
-          :class="isDesktopCollapsed ? 'mx-auto' : undefined"
-        />
-      </div>
-      <button
-        type="button"
-        class="inline-flex h-9 w-9 items-center justify-center rounded-lg text-brand-gray hover:bg-slate-100 lg:hidden"
-        aria-label="Fechar menu"
-        @click="closeAndFocusMenu"
+      <RappeliLogo
+        variant="dark"
+        :mode="isDesktopCollapsed ? 'symbol' : 'horizontal'"
+        :class="isDesktopCollapsed ? 'mx-auto' : 'min-w-0'"
+      />
+
+      <div
+        class="flex items-center gap-2"
+        :class="isDesktopCollapsed ? 'flex-col' : 'shrink-0'"
       >
-        <X class="h-5 w-5" aria-hidden="true" />
-      </button>
+        <button
+          type="button"
+          class="hidden h-9 w-9 shrink-0 items-center justify-center rounded-lg text-[#4338CA] transition hover:bg-slate-50 lg:inline-flex"
+          :aria-expanded="!isCollapsed"
+          aria-controls="app-sidebar"
+          :aria-label="collapseToggleLabel"
+          :title="collapseToggleLabel"
+          @click="toggleCollapsed"
+        >
+          <PanelLeftClose v-if="!isCollapsed" class="h-[18px] w-[18px]" aria-hidden="true" />
+          <PanelLeftOpen v-else class="h-[18px] w-[18px]" aria-hidden="true" />
+        </button>
+        <button
+          type="button"
+          class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-brand-gray hover:bg-slate-100 lg:hidden"
+          aria-label="Fechar menu"
+          @click="closeAndFocusMenu"
+        >
+          <X class="h-5 w-5" aria-hidden="true" />
+        </button>
+      </div>
     </div>
 
     <div
@@ -182,20 +206,6 @@ function closeAndFocusMenu(): void {
       class="mt-auto space-y-2 border-t border-slate-100 pt-3"
       :class="isDesktopCollapsed ? 'px-0' : 'px-1'"
     >
-      <button
-        type="button"
-        class="hidden w-full items-center justify-center rounded-lg py-1.5 text-brand-gray transition hover:bg-slate-50 hover:text-brand-indigo lg:inline-flex"
-        :class="isDesktopCollapsed ? 'mx-auto h-9 w-9' : 'gap-2 px-2 text-xs font-medium'"
-        :aria-expanded="!isCollapsed"
-        aria-controls="app-sidebar"
-        :aria-label="isCollapsed ? 'Expandir menu lateral' : 'Recolher menu lateral'"
-        @click="toggleCollapsed"
-      >
-        <PanelLeftClose v-if="!isCollapsed" class="h-[18px] w-[18px]" aria-hidden="true" />
-        <PanelLeftOpen v-else class="h-[18px] w-[18px]" aria-hidden="true" />
-        <span v-if="!isDesktopCollapsed">Recolher menu</span>
-      </button>
-
       <div
         v-if="!isDesktopCollapsed"
         class="rounded-lg border px-3 py-2 text-xs"
