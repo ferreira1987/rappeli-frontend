@@ -5,6 +5,7 @@ import { RouterLink, useRoute, useRouter } from 'vue-router'
 
 import OnboardingShell from '@/components/onboarding/OnboardingShell.vue'
 import { UiButton, UiCard, UiInput } from '@/components/ui'
+import { brandPrivacyUrl, brandTermsUrl } from '@/constants/brandUrls'
 import { useAuthStore } from '@/stores/auth'
 import { useCheckoutFlowStore } from '@/stores/checkoutFlow'
 import { maskPhoneBr } from '@/utils/billingFormat'
@@ -24,9 +25,6 @@ const acceptedTerms = ref(false)
 const showPassword = ref(false)
 const formError = ref<string | null>(null)
 const fieldErrors = ref<Record<string, string>>({})
-
-const termsUrl = 'https://rappeli.com.br/termos'
-const privacyUrl = 'https://rappeli.com.br/privacidade'
 
 function clearFieldError(field: string): void {
   delete fieldErrors.value[field]
@@ -94,7 +92,13 @@ async function onSubmit(): Promise<void> {
             </p>
           </header>
 
-          <form id="register-form" class="space-y-5" novalidate @submit.prevent="onSubmit">
+          <form
+            id="register-form"
+            class="space-y-5"
+            novalidate
+            :aria-busy="auth.loading || undefined"
+            @submit.prevent="onSubmit"
+          >
             <p
               v-if="formError"
               class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
@@ -143,13 +147,13 @@ async function onSubmit(): Promise<void> {
                   autocomplete="new-password"
                   :minlength="8"
                   placeholder="Crie uma senha segura"
-                  input-class="pr-10"
+                  input-class="pr-12"
                   :invalid="Boolean(fieldErrors.password)"
                   @update:model-value="clearFieldError('password')"
                 />
                 <button
                   type="button"
-                  class="absolute inset-y-0 right-0 flex items-center px-3 text-slate-400 hover:text-slate-600"
+                  class="absolute inset-y-0 right-0 flex min-h-11 min-w-11 items-center justify-center text-slate-400 transition-colors hover:text-slate-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-indigo"
                   :aria-label="showPassword ? 'Ocultar senha' : 'Mostrar senha'"
                   @click="showPassword = !showPassword"
                 >
@@ -183,7 +187,12 @@ async function onSubmit(): Promise<void> {
             <div class="space-y-1.5">
               <label for="whatsapp" class="text-sm font-medium text-slate-700"> WhatsApp * </label>
               <div
-                class="flex overflow-hidden rounded-lg border border-slate-200 focus-within:border-[#4338CA] focus-within:ring-2 focus-within:ring-[#4338CA]/20"
+                class="flex overflow-hidden rounded-lg border focus-within:ring-2"
+                :class="
+                  fieldErrors.business_whatsapp
+                    ? 'border-red-300 focus-within:border-red-500 focus-within:ring-red-500/20'
+                    : 'border-slate-200 focus-within:border-brand-indigo focus-within:ring-brand-indigo/20'
+                "
               >
                 <span
                   class="inline-flex shrink-0 items-center border-r border-slate-200 bg-slate-50 px-3 text-sm font-medium text-slate-600"
@@ -208,30 +217,30 @@ async function onSubmit(): Promise<void> {
             </div>
 
             <label
-              class="flex cursor-pointer items-start gap-2.5 text-sm leading-snug text-slate-600"
+              class="flex min-h-11 cursor-pointer items-start gap-2.5 py-1 text-sm leading-snug text-slate-600"
             >
               <input
                 v-model="acceptedTerms"
                 type="checkbox"
-                class="mt-0.5 h-4 w-4 shrink-0 rounded border-slate-300 text-[#4338CA] focus:ring-[#4338CA]"
+                class="mt-0.5 h-4 w-4 shrink-0 rounded border-slate-300 text-brand-indigo focus:ring-brand-indigo"
                 @change="clearFieldError('terms_accepted')"
               />
               <span>
                 Li e concordo com os
                 <a
-                  :href="termsUrl"
+                  :href="brandTermsUrl"
                   target="_blank"
                   rel="noopener noreferrer"
-                  class="font-semibold text-[#4338CA] hover:underline"
+                  class="font-semibold text-brand-indigo hover:underline"
                 >
                   Termos de Uso
                 </a>
                 e a
                 <a
-                  :href="privacyUrl"
+                  :href="brandPrivacyUrl"
                   target="_blank"
                   rel="noopener noreferrer"
-                  class="font-semibold text-[#4338CA] hover:underline"
+                  class="font-semibold text-brand-indigo hover:underline"
                 >
                   Política de Privacidade
                 </a>
@@ -251,18 +260,17 @@ async function onSubmit(): Promise<void> {
             Já tem conta?
             <RouterLink
               :to="{ name: 'login' }"
-              class="font-semibold text-[#4338CA] hover:underline"
+              class="font-semibold text-brand-indigo hover:underline"
             >
               Entrar
             </RouterLink>
           </p>
           <UiButton
-            type="button"
+            type="submit"
+            form="register-form"
             variant="primary"
             size="lg"
-            class="!bg-[#4338CA] hover:!bg-brand-indigo-hover"
             :disabled="auth.loading"
-            @click="onSubmit"
           >
             {{ auth.loading ? 'Aguarde…' : 'Continuar' }}
             <ArrowRight v-if="!auth.loading" class="h-4 w-4" aria-hidden="true" />
@@ -275,7 +283,7 @@ async function onSubmit(): Promise<void> {
         class="rounded-2xl border border-slate-200/90 bg-brand-mist/40 shadow-sm lg:col-span-5 lg:self-stretch"
       >
         <p
-          class="inline-flex items-center gap-1.5 rounded-full border border-[#4338CA]/15 bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-[#4338CA]"
+          class="inline-flex items-center gap-1.5 rounded-full border border-brand-indigo/15 bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-brand-indigo"
         >
           Vantagens do ecossistema
         </p>
@@ -285,7 +293,7 @@ async function onSubmit(): Promise<void> {
         <ul class="mt-6 space-y-3">
           <li class="flex gap-3.5 rounded-xl border border-slate-200/80 bg-white p-4">
             <div
-              class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-mist text-[#4338CA]"
+              class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-mist text-brand-indigo"
             >
               <Share2 class="h-5 w-5" aria-hidden="true" />
             </div>
@@ -298,7 +306,7 @@ async function onSubmit(): Promise<void> {
           </li>
           <li class="flex gap-3.5 rounded-xl border border-slate-200/80 bg-white p-4">
             <div
-              class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-mist text-[#4338CA]"
+              class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-mist text-brand-indigo"
             >
               <Users class="h-5 w-5" aria-hidden="true" />
             </div>
@@ -311,7 +319,7 @@ async function onSubmit(): Promise<void> {
           </li>
           <li class="flex gap-3.5 rounded-xl border border-slate-200/80 bg-white p-4">
             <div
-              class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-mist text-[#4338CA]"
+              class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-mist text-brand-indigo"
             >
               <Handshake class="h-5 w-5" aria-hidden="true" />
             </div>
@@ -324,7 +332,7 @@ async function onSubmit(): Promise<void> {
           </li>
           <li class="flex gap-3.5 rounded-xl border border-slate-200/80 bg-white p-4">
             <div
-              class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-mist text-[#4338CA]"
+              class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-mist text-brand-indigo"
             >
               <LockOpen class="h-5 w-5" aria-hidden="true" />
             </div>

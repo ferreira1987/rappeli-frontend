@@ -8,6 +8,7 @@ import BillingCheckoutForms from '@/components/billing/BillingCheckoutForms.vue'
 import OnboardingActionBar from '@/components/onboarding/OnboardingActionBar.vue'
 import OnboardingShell from '@/components/onboarding/OnboardingShell.vue'
 import { UiBadge, UiCard, UiInput } from '@/components/ui'
+import { brandPrivacyUrl, brandTermsUrl } from '@/constants/brandUrls'
 import { PLAN_TIER_FEATURES, WHATSAPP_HELP_URL, type PlanTierId } from '@/constants/onboardingPlans'
 import { useAuthStore } from '@/stores/auth'
 import { useCheckoutFlowStore } from '@/stores/checkoutFlow'
@@ -72,9 +73,6 @@ const totalCycleHint = computed(() => {
   }
   return null
 })
-
-const termsUrl = 'https://rappeli.com.br/termos'
-const privacyUrl = 'https://rappeli.com.br/privacidade'
 
 onMounted(async () => {
   if (!checkoutFlow.planId) {
@@ -417,7 +415,7 @@ function onPhoneInput(value: string): void {
                 <p class="mt-2.5 text-center text-[11px] text-slate-500">
                   Ao confirmar, você concorda com nossos
                   <a
-                    :href="termsUrl"
+                    :href="brandTermsUrl"
                     target="_blank"
                     rel="noopener noreferrer"
                     class="font-semibold text-[#4338CA] hover:underline"
@@ -425,7 +423,7 @@ function onPhoneInput(value: string): void {
                   >
                   e
                   <a
-                    :href="privacyUrl"
+                    :href="brandPrivacyUrl"
                     target="_blank"
                     rel="noopener noreferrer"
                     class="font-semibold text-[#4338CA] hover:underline"

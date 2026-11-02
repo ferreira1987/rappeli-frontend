@@ -8,6 +8,7 @@ import AppPageFooter from '@/components/layout/AppPageFooter.vue'
 import AppPageShell from '@/components/layout/AppPageShell.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiSubNav from '@/components/ui/UiSubNav.vue'
+import { brandDocsUrl } from '@/constants/brandUrls'
 import { useWhatsAppStore } from '@/stores/whatsapp'
 import { formatBrazilPhone } from '@/utils/phone'
 import {
@@ -17,8 +18,6 @@ import {
   settingsTabQueryValue,
   type SettingsTabKey,
 } from '@/utils/settingsTab'
-
-const docsUrl = 'https://rappeli.com.br'
 
 const router = useRouter()
 const whatsappStore = useWhatsAppStore()
@@ -86,7 +85,7 @@ onMounted(() => {
         <span class="h-2 w-2 shrink-0 rounded-full bg-emerald-500" aria-hidden="true" />
         {{ whatsappHeaderLabel }}
       </span>
-      <a :href="docsUrl" target="_blank" rel="noopener noreferrer" class="inline-flex">
+      <a :href="brandDocsUrl" target="_blank" rel="noopener noreferrer" class="inline-flex">
         <UiButton variant="secondary" size="sm" class="gap-2 font-medium">
           <CircleHelp class="h-4 w-4 text-brand-gray" aria-hidden="true" />
           <span class="hidden sm:inline">Ver documentação</span>

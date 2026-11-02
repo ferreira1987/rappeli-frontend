@@ -29,6 +29,7 @@ import AppPageShell from '@/components/layout/AppPageShell.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiInput from '@/components/ui/UiInput.vue'
+import { brandSupportMailto } from '@/constants/brandUrls'
 import { useConversationsInbox } from '@/composables/useConversationsInbox'
 import { initialsFromName } from '@/composables/useInitials'
 import { isRealtimeConfigured } from '@/realtime/config'
@@ -131,7 +132,6 @@ const showWhatsappDisconnectedBadge = computed(
   () => whatsappStore.hydrated && !whatsappStore.connected,
 )
 
-const supportMailto = 'mailto:contato@rappeli.com.br'
 
 const isSearchActive = computed(() => searchQuery.value.trim().length > 0)
 const searchActiveLabel = computed(() => searchQuery.value.trim())
@@ -517,7 +517,7 @@ async function onResolve(): Promise<void> {
               WhatsApp desconectado
             </span>
             <a
-              :href="supportMailto"
+              :href="brandSupportMailto"
               class="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-brand-gray transition-colors hover:bg-slate-100 hover:text-brand-ink"
             >
               <CircleHelp class="h-4 w-4" aria-hidden="true" />

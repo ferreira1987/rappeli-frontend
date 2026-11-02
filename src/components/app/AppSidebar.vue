@@ -8,6 +8,7 @@ import { useAppSidebar } from '@/composables/useAppSidebar'
 import { useInitials } from '@/composables/useInitials'
 import { useMediaQuery } from '@/composables/useMediaQuery'
 import { appNavGroups, type AppNavItem } from '@/constants/appNavGroups'
+import { brandSupportMailto } from '@/constants/brandUrls'
 import { useAuthStore } from '@/stores/auth'
 import { useInboxNavStore } from '@/stores/inboxNav'
 import { useWhatsAppStore } from '@/stores/whatsapp'
@@ -251,7 +252,7 @@ function closeAndFocusMenu(): void {
       </RouterLink>
 
       <a
-        href="mailto:contato@rappeli.com.br"
+        :href="brandSupportMailto"
         class="flex items-center rounded-lg text-sm text-brand-gray transition hover:bg-slate-50 hover:text-brand-ink"
         :class="isDesktopCollapsed ? 'justify-center px-2 py-1.5' : 'gap-2 px-2 py-1.5'"
         :title="isDesktopCollapsed ? 'Ajuda e suporte' : undefined"

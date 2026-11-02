@@ -3,9 +3,7 @@ import { ArrowLeft, HelpCircle, Link2Off, RefreshCw } from '@lucide/vue'
 import { RouterLink } from 'vue-router'
 
 import RappeliLogo from '@/components/brand/RappeliLogo.vue'
-
-const termsUrl = 'https://rappeli.com.br/termos'
-const privacyUrl = 'https://rappeli.com.br/privacidade'
+import { brandPrivacyUrl, brandTermsUrl } from '@/constants/brandUrls'
 </script>
 
 <template>
@@ -71,10 +69,10 @@ const privacyUrl = 'https://rappeli.com.br/privacidade'
     >
       <p>© {{ new Date().getFullYear() }} Rappeli</p>
       <div class="flex gap-6">
-        <a :href="termsUrl" target="_blank" rel="noopener noreferrer" class="hover:text-brand-indigo">
+        <a :href="brandTermsUrl" target="_blank" rel="noopener noreferrer" class="hover:text-brand-indigo">
           Termos de Uso
         </a>
-        <a :href="privacyUrl" target="_blank" rel="noopener noreferrer" class="hover:text-brand-indigo">
+        <a :href="brandPrivacyUrl" target="_blank" rel="noopener noreferrer" class="hover:text-brand-indigo">
           Política de Privacidade
         </a>
       </div>
