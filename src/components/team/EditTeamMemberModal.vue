@@ -2,7 +2,7 @@
 import { Pencil, X } from '@lucide/vue'
 import { computed, reactive, ref, watch } from 'vue'
 
-import { UiButton, UiIconButton, UiInput } from '@/components/ui'
+import { UiButton, UiIconButton, UiInput, UiModalLayer } from '@/components/ui'
 import { uiSelectClass } from '@/components/ui/uiSelectClass'
 import { useEscapeKey } from '@/composables/useEscapeKey'
 import type { Sector, TeamAgent, TeamAgentRole } from '@/types/team'
@@ -72,20 +72,13 @@ useEscapeKey(
 </script>
 
 <template>
-  <Teleport to="body">
-    <div
-      v-if="open && agent"
-      class="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-[2px]"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="edit-team-title"
-      @click.self="onClose"
+  <UiModalLayer :open="open && Boolean(agent)" labelled-by="edit-team-title" @close="onClose">
+    <form
+      v-if="agent"
+      class="mx-auto w-full max-w-md rounded-xl border border-slate-200 bg-white p-6 shadow-2xl"
+      :aria-busy="submitting || undefined"
+      @submit.prevent="onSubmit"
     >
-      <form
-        class="w-full max-w-md rounded-xl border border-slate-200 bg-white p-6 shadow-2xl"
-        :aria-busy="submitting || undefined"
-        @submit.prevent="onSubmit"
-      >
         <div class="flex items-start justify-between gap-3">
           <div class="flex items-center gap-2">
             <Pencil class="h-5 w-5 text-brand-indigo" aria-hidden="true" />
@@ -150,7 +143,6 @@ useEscapeKey(
             {{ submitting ? 'Salvando…' : 'Salvar alterações' }}
           </UiButton>
         </div>
-      </form>
-    </div>
-  </Teleport>
+    </form>
+  </UiModalLayer>
 </template>

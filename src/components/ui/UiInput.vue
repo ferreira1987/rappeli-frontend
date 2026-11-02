@@ -9,7 +9,7 @@ const props = withDefaults(
   defineProps<{
     modelValue?: string
     id?: string
-    type?: 'text' | 'search' | 'email' | 'password' | 'tel' | 'number'
+    type?: 'text' | 'search' | 'email' | 'password' | 'tel' | 'number' | 'date' | 'time'
     placeholder?: string
     disabled?: boolean
     readonly?: boolean

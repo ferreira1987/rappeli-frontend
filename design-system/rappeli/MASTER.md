@@ -127,6 +127,13 @@ Implementação preferida — **não** duplicar estilos ad hoc.
 
 - Estilo alinhado ao `UiInput`: `uiSelectClass` e `uiTextareaClass` em `src/components/ui/uiSelectClass.ts`.
 
+### `UiModalLayer`
+
+- Wrapper com `Teleport`, scrim, a11y (`role`, `aria-labelledby`) e **`<Transition name="ui-modal">`**.
+- Painel filho usa classe `ui-modal-panel` (scale/fade leve; só opacidade com `prefers-reduced-motion`).
+- Props: `open`, `labelledBy`, `describedBy`, `role`, `zClass`, `scrollable`.
+- Emit `@close` no clique do backdrop.
+
 ---
 
 ## Formulários e feedback

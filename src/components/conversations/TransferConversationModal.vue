@@ -4,7 +4,8 @@ import { computed, ref, watch } from 'vue'
 
 import type { TransferConversationPayload } from '@/api/inbox'
 import { fetchSectors, fetchTeamAgents } from '@/api/team'
-import { UiIconButton } from '@/components/ui'
+import { UiButton, UiIconButton, UiModalLayer } from '@/components/ui'
+import { uiSelectClass, uiTextareaClass } from '@/components/ui/uiSelectClass'
 import { useEscapeKey } from '@/composables/useEscapeKey'
 import type { Sector, TeamAgent } from '@/types/team'
 import { formatAgentDisplayName } from '@/utils/teamLabels'
@@ -125,16 +126,8 @@ function onSubmit(): void {
 </script>
 
 <template>
-  <Teleport to="body">
-    <div
-      v-if="open"
-      class="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-[2px]"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="transfer-modal-title"
-      @click.self="onClose"
-    >
-      <div class="flex w-full max-w-lg flex-col gap-5 rounded-xl border border-slate-200 bg-white p-6 shadow-2xl">
+  <UiModalLayer :open="open" labelled-by="transfer-modal-title" @close="onClose">
+    <div class="mx-auto flex w-full max-w-lg flex-col gap-5 rounded-xl border border-slate-200 bg-white p-6 shadow-2xl">
         <div class="flex items-start justify-between gap-3">
           <div>
             <h2 id="transfer-modal-title" class="font-display text-lg font-bold text-brand-ink">
@@ -201,7 +194,8 @@ function onSubmit(): void {
             <select
               id="transfer-sector"
               v-model.number="sectorId"
-              class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
+              :class="uiSelectClass"
+              :aria-invalid="Boolean(fieldErrors.sector_id) || undefined"
             >
               <option :value="null" disabled>Selecione…</option>
               <option v-for="sector in sectors" :key="sector.id" :value="sector.id">
@@ -218,7 +212,8 @@ function onSubmit(): void {
             <select
               id="transfer-assignee"
               v-model.number="assigneeUserId"
-              class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
+              :class="uiSelectClass"
+              :aria-invalid="Boolean(fieldErrors.assignee_user_id) || undefined"
             >
               <option :value="null">{{ targetMode === 'sector' ? 'Distribuir automaticamente' : 'Selecione…' }}</option>
               <option v-for="agent in agents" :key="agent.id" :value="agent.id">
@@ -239,7 +234,7 @@ function onSubmit(): void {
               v-model="internalNote"
               rows="3"
               placeholder="Resuma o contexto do atendimento…"
-              class="w-full resize-none rounded-lg border border-slate-200 px-3 py-2 text-sm"
+              :class="`${uiTextareaClass} resize-none`"
             />
             <p v-if="fieldErrors.note" class="mt-1 text-xs text-red-600">{{ fieldErrors.note }}</p>
           </div>
@@ -254,24 +249,12 @@ function onSubmit(): void {
         </div>
 
         <div class="flex justify-end gap-2 border-t border-slate-100 pt-2">
-          <button
-            type="button"
-            class="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-brand-ink hover:bg-slate-50"
-            @click="onClose"
-          >
-            Cancelar
-          </button>
-          <button
-            type="button"
-            class="inline-flex items-center gap-2 rounded-lg bg-brand-indigo px-4 py-2 text-sm font-semibold text-white hover:bg-brand-indigo-hover"
-            :disabled="loading"
-            @click="onSubmit"
-          >
-            <ArrowRightLeft class="h-4 w-4" />
+          <UiButton type="button" variant="secondary" @click="onClose"> Cancelar </UiButton>
+          <UiButton type="button" variant="primary" :disabled="loading" @click="onSubmit">
+            <ArrowRightLeft class="h-4 w-4" aria-hidden="true" />
             Transferir
-          </button>
+          </UiButton>
         </div>
-      </div>
     </div>
-  </Teleport>
+  </UiModalLayer>
 </template>

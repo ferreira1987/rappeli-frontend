@@ -2,7 +2,7 @@
 import { UserPlus, X } from '@lucide/vue'
 import { computed, reactive, ref, watch } from 'vue'
 
-import { UiButton, UiIconButton, UiInput } from '@/components/ui'
+import { UiButton, UiIconButton, UiInput, UiModalLayer } from '@/components/ui'
 import { uiSelectClass } from '@/components/ui/uiSelectClass'
 import { useEscapeKey } from '@/composables/useEscapeKey'
 import type { Sector, TeamAgentRole } from '@/types/team'
@@ -86,19 +86,11 @@ useEscapeKey(
 </script>
 
 <template>
-  <Teleport to="body">
-    <div
-      v-if="open"
-      class="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-[2px]"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="invite-team-title"
-      @click.self="onClose"
+  <UiModalLayer :open="open" labelled-by="invite-team-title" @close="onClose">
+    <form
+      class="mx-auto w-full max-w-md rounded-xl border border-slate-200 bg-white p-6 shadow-2xl"
+      @submit.prevent="onSubmit"
     >
-      <form
-        class="w-full max-w-md rounded-xl border border-slate-200 bg-white p-6 shadow-2xl"
-        @submit.prevent="onSubmit"
-      >
         <div class="flex items-start justify-between gap-3">
           <div class="flex items-center gap-2">
             <UserPlus class="h-5 w-5 text-brand-indigo" aria-hidden="true" />
@@ -162,7 +154,6 @@ useEscapeKey(
           <UiButton type="button" variant="secondary" @click="onClose"> Cancelar </UiButton>
           <UiButton type="submit" variant="primary"> Enviar convite </UiButton>
         </div>
-      </form>
-    </div>
-  </Teleport>
+    </form>
+  </UiModalLayer>
 </template>

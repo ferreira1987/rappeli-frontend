@@ -46,6 +46,34 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+
+  .ui-modal-enter-from .ui-modal-panel,
+  .ui-modal-leave-to .ui-modal-panel {
+    transform: none !important;
+  }
+}
+
+.ui-modal-enter-active,
+.ui-modal-leave-active {
+  transition: opacity 200ms ease;
+}
+
+.ui-modal-enter-active .ui-modal-panel,
+.ui-modal-leave-active .ui-modal-panel {
+  transition:
+    transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 200ms ease;
+}
+
+.ui-modal-enter-from,
+.ui-modal-leave-to {
+  opacity: 0;
+}
+
+.ui-modal-enter-from .ui-modal-panel,
+.ui-modal-leave-to .ui-modal-panel {
+  opacity: 0;
+  transform: scale(0.97) translateY(8px);
 }
 
 @layer utilities {
