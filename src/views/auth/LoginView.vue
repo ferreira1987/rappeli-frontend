@@ -91,7 +91,9 @@ async function onSubmit(): Promise<void> {
 
             <div class="space-y-1.5">
               <div class="flex items-center justify-between gap-3">
-                <label for="login-password" class="text-sm font-medium text-slate-700"> Senha </label>
+                <label for="login-password" class="text-sm font-medium text-slate-700">
+                  Senha
+                </label>
                 <a
                   href="#"
                   class="text-sm font-semibold text-[#4338CA] hover:underline"

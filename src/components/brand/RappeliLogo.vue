@@ -14,9 +14,7 @@ withDefaults(
 )
 
 const horizontalSrc = (variant: 'light' | 'dark') =>
-  variant === 'light'
-    ? '/brand/rappeli-A-horizontal-escuro.svg'
-    : '/brand/rappeli-A-horizontal.svg'
+  variant === 'light' ? '/brand/rappeli-A-horizontal-escuro.svg' : '/brand/rappeli-A-horizontal.svg'
 </script>
 
 <template>

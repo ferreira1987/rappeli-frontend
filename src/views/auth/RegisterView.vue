@@ -86,184 +86,188 @@ async function onSubmit(): Promise<void> {
         padding="none"
         class="overflow-hidden rounded-2xl border border-slate-200/90 shadow-sm lg:col-span-7"
       >
-      <div class="p-6 sm:p-8">
-        <header class="mb-6">
-          <h1 class="text-2xl font-bold tracking-tight text-slate-900">Crie sua conta</h1>
-          <p class="mt-2 text-sm leading-relaxed text-slate-500">
-            Preencha os dados abaixo para iniciar sua configuração no Rappeli.
-          </p>
-        </header>
+        <div class="p-6 sm:p-8">
+          <header class="mb-6">
+            <h1 class="text-2xl font-bold tracking-tight text-slate-900">Crie sua conta</h1>
+            <p class="mt-2 text-sm leading-relaxed text-slate-500">
+              Preencha os dados abaixo para iniciar sua configuração no Rappeli.
+            </p>
+          </header>
 
-        <form id="register-form" class="space-y-5" novalidate @submit.prevent="onSubmit">
-          <p
-            v-if="formError"
-            class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
-            role="alert"
-          >
-            {{ formError }}
-          </p>
+          <form id="register-form" class="space-y-5" novalidate @submit.prevent="onSubmit">
+            <p
+              v-if="formError"
+              class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+              role="alert"
+            >
+              {{ formError }}
+            </p>
 
-          <div class="space-y-1.5">
-            <label for="name" class="text-sm font-medium text-slate-700"> Nome completo </label>
-            <UiInput
-              id="name"
-              v-model="name"
-              type="text"
-              autocomplete="name"
-              placeholder="Ex: Marina Silva"
-              :invalid="Boolean(fieldErrors.name)"
-              @update:model-value="clearFieldError('name')"
-            />
-            <p v-if="fieldErrors.name" class="text-xs text-red-600">{{ fieldErrors.name }}</p>
-          </div>
-
-          <div class="space-y-1.5">
-            <label for="email" class="text-sm font-medium text-slate-700">
-              E-mail de trabalho *
-            </label>
-            <UiInput
-              id="email"
-              v-model="email"
-              type="email"
-              autocomplete="email"
-              placeholder="nome@suaempresa.com.br"
-              :invalid="Boolean(fieldErrors.email)"
-              @update:model-value="clearFieldError('email')"
-            />
-            <p v-if="fieldErrors.email" class="text-xs text-red-600">{{ fieldErrors.email }}</p>
-          </div>
-
-          <div class="space-y-1.5">
-            <label for="password" class="text-sm font-medium text-slate-700"> Senha * </label>
-            <div class="relative">
+            <div class="space-y-1.5">
+              <label for="name" class="text-sm font-medium text-slate-700"> Nome completo </label>
               <UiInput
-                id="password"
-                v-model="password"
-                :type="showPassword ? 'text' : 'password'"
-                autocomplete="new-password"
-                :minlength="8"
-                placeholder="Crie uma senha segura"
-                input-class="pr-10"
-                :invalid="Boolean(fieldErrors.password)"
-                @update:model-value="clearFieldError('password')"
+                id="name"
+                v-model="name"
+                type="text"
+                autocomplete="name"
+                placeholder="Ex: Marina Silva"
+                :invalid="Boolean(fieldErrors.name)"
+                @update:model-value="clearFieldError('name')"
               />
-              <button
-                type="button"
-                class="absolute inset-y-0 right-0 flex items-center px-3 text-slate-400 hover:text-slate-600"
-                :aria-label="showPassword ? 'Ocultar senha' : 'Mostrar senha'"
-                @click="showPassword = !showPassword"
-              >
-                <EyeOff v-if="showPassword" class="h-4 w-4" aria-hidden="true" />
-                <Eye v-else class="h-4 w-4" aria-hidden="true" />
-              </button>
+              <p v-if="fieldErrors.name" class="text-xs text-red-600">{{ fieldErrors.name }}</p>
             </div>
-            <p class="text-xs text-slate-400">Mínimo de 8 caracteres</p>
-            <p v-if="fieldErrors.password" class="text-xs text-red-600">
-              {{ fieldErrors.password }}
-            </p>
-          </div>
 
-          <div class="space-y-1.5">
-            <label for="company" class="text-sm font-medium text-slate-700">
-              Nome da empresa / clínica *
-            </label>
-            <UiInput
-              id="company"
-              v-model="companyName"
-              type="text"
-              placeholder="Ex: Clínica São Lucas"
-              :invalid="Boolean(fieldErrors.company_name)"
-              @update:model-value="clearFieldError('company_name')"
-            />
-            <p v-if="fieldErrors.company_name" class="text-xs text-red-600">
-              {{ fieldErrors.company_name }}
-            </p>
-          </div>
+            <div class="space-y-1.5">
+              <label for="email" class="text-sm font-medium text-slate-700">
+                E-mail de trabalho *
+              </label>
+              <UiInput
+                id="email"
+                v-model="email"
+                type="email"
+                autocomplete="email"
+                placeholder="nome@suaempresa.com.br"
+                :invalid="Boolean(fieldErrors.email)"
+                @update:model-value="clearFieldError('email')"
+              />
+              <p v-if="fieldErrors.email" class="text-xs text-red-600">{{ fieldErrors.email }}</p>
+            </div>
 
-          <div class="space-y-1.5">
-            <label for="whatsapp" class="text-sm font-medium text-slate-700"> WhatsApp * </label>
-            <div class="flex overflow-hidden rounded-lg border border-slate-200 focus-within:border-[#4338CA] focus-within:ring-2 focus-within:ring-[#4338CA]/20">
-              <span
-                class="inline-flex shrink-0 items-center border-r border-slate-200 bg-slate-50 px-3 text-sm font-medium text-slate-600"
-                aria-hidden="true"
+            <div class="space-y-1.5">
+              <label for="password" class="text-sm font-medium text-slate-700"> Senha * </label>
+              <div class="relative">
+                <UiInput
+                  id="password"
+                  v-model="password"
+                  :type="showPassword ? 'text' : 'password'"
+                  autocomplete="new-password"
+                  :minlength="8"
+                  placeholder="Crie uma senha segura"
+                  input-class="pr-10"
+                  :invalid="Boolean(fieldErrors.password)"
+                  @update:model-value="clearFieldError('password')"
+                />
+                <button
+                  type="button"
+                  class="absolute inset-y-0 right-0 flex items-center px-3 text-slate-400 hover:text-slate-600"
+                  :aria-label="showPassword ? 'Ocultar senha' : 'Mostrar senha'"
+                  @click="showPassword = !showPassword"
+                >
+                  <EyeOff v-if="showPassword" class="h-4 w-4" aria-hidden="true" />
+                  <Eye v-else class="h-4 w-4" aria-hidden="true" />
+                </button>
+              </div>
+              <p class="text-xs text-slate-400">Mínimo de 8 caracteres</p>
+              <p v-if="fieldErrors.password" class="text-xs text-red-600">
+                {{ fieldErrors.password }}
+              </p>
+            </div>
+
+            <div class="space-y-1.5">
+              <label for="company" class="text-sm font-medium text-slate-700">
+                Nome da empresa *
+              </label>
+              <UiInput
+                id="company"
+                v-model="companyName"
+                type="text"
+                placeholder="Ex: Clínica São Lucas"
+                :invalid="Boolean(fieldErrors.company_name)"
+                @update:model-value="clearFieldError('company_name')"
+              />
+              <p v-if="fieldErrors.company_name" class="text-xs text-red-600">
+                {{ fieldErrors.company_name }}
+              </p>
+            </div>
+
+            <div class="space-y-1.5">
+              <label for="whatsapp" class="text-sm font-medium text-slate-700"> WhatsApp * </label>
+              <div
+                class="flex overflow-hidden rounded-lg border border-slate-200 focus-within:border-[#4338CA] focus-within:ring-2 focus-within:ring-[#4338CA]/20"
               >
-                +55
-              </span>
+                <span
+                  class="inline-flex shrink-0 items-center border-r border-slate-200 bg-slate-50 px-3 text-sm font-medium text-slate-600"
+                  aria-hidden="true"
+                >
+                  +55
+                </span>
+                <input
+                  id="whatsapp"
+                  :value="whatsapp"
+                  type="tel"
+                  autocomplete="tel"
+                  placeholder="(11) 99999-9999"
+                  class="min-w-0 flex-1 border-0 bg-white px-3 py-2 text-sm text-brand-ink placeholder:text-brand-gray/80 focus:outline-none focus:ring-0"
+                  :class="fieldErrors.business_whatsapp ? 'bg-red-50/30' : ''"
+                  @input="onWhatsappInput(($event.target as HTMLInputElement).value)"
+                />
+              </div>
+              <p v-if="fieldErrors.business_whatsapp" class="text-xs text-red-600">
+                {{ fieldErrors.business_whatsapp }}
+              </p>
+            </div>
+
+            <label
+              class="flex cursor-pointer items-start gap-2.5 text-sm leading-snug text-slate-600"
+            >
               <input
-                id="whatsapp"
-                :value="whatsapp"
-                type="tel"
-                autocomplete="tel"
-                placeholder="(11) 99999-9999"
-                class="min-w-0 flex-1 border-0 bg-white px-3 py-2 text-sm text-brand-ink placeholder:text-brand-gray/80 focus:outline-none focus:ring-0"
-                :class="fieldErrors.business_whatsapp ? 'bg-red-50/30' : ''"
-                @input="onWhatsappInput(($event.target as HTMLInputElement).value)"
+                v-model="acceptedTerms"
+                type="checkbox"
+                class="mt-0.5 h-4 w-4 shrink-0 rounded border-slate-300 text-[#4338CA] focus:ring-[#4338CA]"
+                @change="clearFieldError('terms_accepted')"
               />
-            </div>
-            <p v-if="fieldErrors.business_whatsapp" class="text-xs text-red-600">
-              {{ fieldErrors.business_whatsapp }}
+              <span>
+                Li e concordo com os
+                <a
+                  :href="termsUrl"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="font-semibold text-[#4338CA] hover:underline"
+                >
+                  Termos de Uso
+                </a>
+                e a
+                <a
+                  :href="privacyUrl"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="font-semibold text-[#4338CA] hover:underline"
+                >
+                  Política de Privacidade
+                </a>
+                .
+              </span>
+            </label>
+            <p v-if="fieldErrors.terms_accepted" class="text-xs text-red-600">
+              {{ fieldErrors.terms_accepted }}
             </p>
-          </div>
+          </form>
+        </div>
 
-          <label class="flex cursor-pointer items-start gap-2.5 text-sm leading-snug text-slate-600">
-            <input
-              v-model="acceptedTerms"
-              type="checkbox"
-              class="mt-0.5 h-4 w-4 shrink-0 rounded border-slate-300 text-[#4338CA] focus:ring-[#4338CA]"
-              @change="clearFieldError('terms_accepted')"
-            />
-            <span>
-              Li e concordo com os
-              <a
-                :href="termsUrl"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="font-semibold text-[#4338CA] hover:underline"
-              >
-                Termos de Uso
-              </a>
-              e a
-              <a
-                :href="privacyUrl"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="font-semibold text-[#4338CA] hover:underline"
-              >
-                Política de Privacidade
-              </a>
-              .
-            </span>
-          </label>
-          <p v-if="fieldErrors.terms_accepted" class="text-xs text-red-600">
-            {{ fieldErrors.terms_accepted }}
-          </p>
-        </form>
-      </div>
-
-      <footer
-        class="flex flex-col-reverse items-stretch justify-between gap-4 border-t border-slate-200 bg-slate-50/50 px-6 py-4 sm:flex-row sm:items-center sm:px-8"
-      >
-        <p class="text-sm text-slate-600">
-          Já tem conta?
-          <RouterLink
-            :to="{ name: 'login' }"
-            class="font-semibold text-[#4338CA] hover:underline"
-          >
-            Entrar
-          </RouterLink>
-        </p>
-        <UiButton
-          type="button"
-          variant="primary"
-          size="lg"
-          class="!bg-[#4338CA] hover:!bg-brand-indigo-hover"
-          :disabled="auth.loading"
-          @click="onSubmit"
+        <footer
+          class="flex flex-col-reverse items-stretch justify-between gap-4 border-t border-slate-200 bg-slate-50/50 px-6 py-4 sm:flex-row sm:items-center sm:px-8"
         >
-          {{ auth.loading ? 'Aguarde…' : 'Continuar' }}
-          <ArrowRight v-if="!auth.loading" class="h-4 w-4" aria-hidden="true" />
-        </UiButton>
-      </footer>
+          <p class="text-sm text-slate-600">
+            Já tem conta?
+            <RouterLink
+              :to="{ name: 'login' }"
+              class="font-semibold text-[#4338CA] hover:underline"
+            >
+              Entrar
+            </RouterLink>
+          </p>
+          <UiButton
+            type="button"
+            variant="primary"
+            size="lg"
+            class="!bg-[#4338CA] hover:!bg-brand-indigo-hover"
+            :disabled="auth.loading"
+            @click="onSubmit"
+          >
+            {{ auth.loading ? 'Aguarde…' : 'Continuar' }}
+            <ArrowRight v-if="!auth.loading" class="h-4 w-4" aria-hidden="true" />
+          </UiButton>
+        </footer>
       </UiCard>
 
       <UiCard

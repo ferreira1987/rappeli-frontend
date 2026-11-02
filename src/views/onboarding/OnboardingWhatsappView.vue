@@ -54,13 +54,18 @@ const steps = [
       </ol>
 
       <div class="mt-10 text-center">
-        <span class="inline-flex items-center gap-2 rounded-full bg-brand-mist px-3 py-1 text-xs font-semibold text-brand-indigo">
+        <span
+          class="inline-flex items-center gap-2 rounded-full bg-brand-mist px-3 py-1 text-xs font-semibold text-brand-indigo"
+        >
           <span class="h-2 w-2 rounded-full bg-brand-coral" />
           Etapa 2 de 3 · Configuração de canal
         </span>
-        <h1 class="mt-4 font-display text-3xl font-bold text-brand-ink">Conecte seu WhatsApp ao Rappeli</h1>
+        <h1 class="mt-4 font-display text-3xl font-bold text-brand-ink">
+          Conecte seu WhatsApp ao Rappeli
+        </h1>
         <p class="mx-auto mt-3 max-w-2xl text-sm text-brand-gray">
-          Escolha o método de conexão. Nenhum canal será ativado até você concluir a integração na API.
+          Escolha o método de conexão. Nenhum canal será ativado até você concluir a integração na
+          API.
         </p>
       </div>
 
@@ -71,7 +76,9 @@ const steps = [
             QR Code
           </div>
           <h2 class="mt-2 font-display text-lg font-semibold text-brand-ink">Escanear QR Code</h2>
-          <p class="mt-2 text-sm text-brand-gray">Ideal para testes rápidos com o app WhatsApp no celular.</p>
+          <p class="mt-2 text-sm text-brand-gray">
+            Ideal para testes rápidos com o app WhatsApp no celular.
+          </p>
           <div
             class="mt-6 flex aspect-square max-h-48 items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50 text-sm text-brand-gray"
           >
@@ -82,12 +89,18 @@ const steps = [
             Aguardando conexão
           </p>
           <ol class="mt-6 space-y-2 rounded-xl bg-slate-50 p-4 text-xs text-brand-gray">
-            <li class="flex gap-2"><Smartphone class="h-4 w-4 shrink-0" /> Abra o WhatsApp no smartphone</li>
+            <li class="flex gap-2">
+              <Smartphone class="h-4 w-4 shrink-0" /> Abra o WhatsApp no smartphone
+            </li>
             <li>1. Menu → Aparelhos conectados</li>
             <li>2. Conectar um aparelho</li>
             <li>3. Escaneie o código quando disponível</li>
           </ol>
-          <button type="button" disabled class="mt-4 inline-flex items-center gap-2 text-sm font-medium text-brand-indigo">
+          <button
+            type="button"
+            disabled
+            class="mt-4 inline-flex items-center gap-2 text-sm font-medium text-brand-indigo"
+          >
             <RefreshCw class="h-4 w-4" />
             Recarregar código QR
           </button>
@@ -98,8 +111,12 @@ const steps = [
             <GitBranch class="h-4 w-4" />
             Conexão direta API
           </div>
-          <h2 class="mt-2 font-display text-lg font-semibold text-brand-ink">WhatsApp Business API</h2>
-          <p class="mt-2 text-sm text-brand-gray">Recomendado para produção — sem depender de celular ligado.</p>
+          <h2 class="mt-2 font-display text-lg font-semibold text-brand-ink">
+            WhatsApp Business API
+          </h2>
+          <p class="mt-2 text-sm text-brand-gray">
+            Recomendado para produção — sem depender de celular ligado.
+          </p>
           <ul class="mt-6 space-y-3">
             <li class="flex gap-3 rounded-xl bg-slate-50 p-3 text-sm">
               <Cloud class="h-5 w-5 shrink-0 text-brand-indigo" />
@@ -114,7 +131,11 @@ const steps = [
               <span class="text-brand-gray">Envios automatizados</span>
             </li>
           </ul>
-          <button type="button" disabled class="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-brand-indigo py-3 text-sm font-semibold text-white opacity-60">
+          <button
+            type="button"
+            disabled
+            class="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-brand-indigo py-3 text-sm font-semibold text-white opacity-60"
+          >
             Conectar WhatsApp Business API
           </button>
         </article>
@@ -124,13 +145,18 @@ const steps = [
         <Lightbulb class="h-5 w-5 shrink-0 text-brand-indigo" />
         <p>
           Você pode iniciar com QR Code e migrar para a API depois em
-          <RouterLink :to="{ name: 'configuracoes' }" class="font-medium text-brand-indigo hover:underline">
-            Configurações → WhatsApp
-          </RouterLink>.
+          <RouterLink
+            :to="{ name: 'configuracoes' }"
+            class="font-medium text-brand-indigo hover:underline"
+          >
+            Configurações → WhatsApp </RouterLink
+          >.
         </p>
       </div>
 
-      <footer class="mt-10 flex flex-wrap items-center justify-between gap-4 border-t border-slate-200 pt-6">
+      <footer
+        class="mt-10 flex flex-wrap items-center justify-between gap-4 border-t border-slate-200 pt-6"
+      >
         <RouterLink
           :to="{ name: 'painel' }"
           class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-brand-gray"
@@ -138,7 +164,9 @@ const steps = [
           <ArrowLeft class="h-4 w-4" />
           Voltar
         </RouterLink>
-        <button type="button" class="text-sm text-brand-gray" disabled>Pular e configurar mais tarde</button>
+        <button type="button" class="text-sm text-brand-gray" disabled>
+          Pular e configurar mais tarde
+        </button>
         <span class="text-xs text-brand-gray">Nenhum canal conectado</span>
         <RouterLink
           :to="{ name: 'painel' }"

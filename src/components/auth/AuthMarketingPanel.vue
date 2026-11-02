@@ -6,25 +6,22 @@ import RappeliLogo from '@/components/brand/RappeliLogo.vue'
 const featureItems = [
   {
     title: 'Lembretes automáticos',
-    detail:
-      'Programe avisos de compromissos, prazos e retornos sem depender de planilhas.',
+    detail: 'Programe avisos de compromissos, prazos e retornos sem depender de planilhas.',
   },
   {
     title: 'Confirmações e notificações',
-    detail:
-      'Notifique clientes sobre status, horários e novidades relevantes.',
+    detail: 'Notifique clientes sobre status, horários e novidades relevantes.',
   },
   {
     title: 'Menos respostas repetitivas',
-    detail:
-      'Atendimento inicial e triagem automática para sua equipe focar no essencial.',
+    detail: 'Atendimento inicial e triagem automática para sua equipe focar no essencial.',
   },
 ] as const
 </script>
 
 <template>
   <aside
-    class="relative hidden min-h-screen w-full shrink-0 flex-col justify-between overflow-y-auto bg-[#4338CA] p-8 text-white sm:p-12 lg:flex lg:w-[min(42%,520px)] lg:max-w-[520px] lg:p-14 xl:p-16"
+    class="relative hidden min-h-screen w-full shrink-0 flex-col justify-between overflow-y-auto bg-[#4338CA] p-8 text-white sm:p-12 lg:flex lg:w-[min(42%,600px)] lg:max-w-[600px] lg:p-14 xl:p-16"
   >
     <header class="flex items-center gap-3">
       <RappeliLogo mode="symbol" class="h-10 w-10 shrink-0" />
