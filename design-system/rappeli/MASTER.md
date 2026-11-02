@@ -54,7 +54,7 @@ Use **classes Tailwind** `brand-*` e `slate-*` semânticos. Evite hex cru (`#433
 | Papel           | Classe / token                      | Notas                                                                          |
 | --------------- | ----------------------------------- | ------------------------------------------------------------------------------ |
 | Corpo           | `font-sans` → Inter (`--font-sans`) | Base **16px** em telas de produto; evitar corpo &lt; 12px                      |
-| Títulos / marca | `font-display`                      | Usado em headings e wordmark; hoje alinhado a Inter até fonte display dedicada |
+| Títulos / marca | `font-display` (`--font-display` no `@theme`) | Mesma família que sans (Inter) até fonte display dedicada; `tracking-tight` em `h1–h4` |
 | Peso            | `font-semibold` / `font-bold`       | CTAs e links de ação; `tracking-tight` em títulos grandes                      |
 
 Line-height confortável em copy de marketing: `leading-relaxed` em parágrafos.
@@ -103,7 +103,7 @@ Implementação preferida — **não** duplicar estilos ad hoc.
 
 - Variantes: `primary` | `secondary` | `outline` | `ghost` | `danger`
 - Tamanhos: `sm` | `md` | `lg`
-- Primary: `bg-brand-indigo`, hover `brand-indigo-hover`, foco visível
+- Primary: `bg-brand-indigo`, hover `brand-indigo-hover`, `:active` scale sutil, foco visível, `cursor-pointer`
 - Submit async: `:disabled="loading"` + rótulo de progresso (“Entrando…”, etc.)
 
 ### `UiInput`
@@ -116,11 +116,16 @@ Implementação preferida — **não** duplicar estilos ad hoc.
 
 - Auth: `border border-slate-200/90`, `shadow-sm`, padding explícito na `class` quando `padding="none"`.
 
-### Botões só ícone
+### `UiIconButton`
 
-- `aria-label` em português claro (ex.: “Mostrar senha” / “Ocultar senha”).
-- Ícone com `aria-hidden="true"`.
-- Área clicável **≥ 44×44 px**.
+- Uso: fechar modais, menu mobile, ações compactas.
+- Prop **`ariaLabel`** obrigatória; ícone com `aria-hidden="true"`.
+- Tamanho padrão **`md`**: `min-h-11 min-w-11` (44 px); `sm` para densidade extra.
+- Mesmo feedback `:active` e foco do `UiButton`. Atributos extras (`id`, `aria-expanded`) via props do componente.
+
+### Select / textarea nativos
+
+- Estilo alinhado ao `UiInput`: `uiSelectClass` e `uiTextareaClass` em `src/components/ui/uiSelectClass.ts`.
 
 ---
 
@@ -135,8 +140,9 @@ Implementação preferida — **não** duplicar estilos ad hoc.
 
 ## Motion e interação
 
-- Transições de cor/hover: **150–300 ms** (`transition-colors` nos componentes UI).
-- Respeitar **`prefers-reduced-motion`**: sem parallax hero, sem animações decorativas longas.
+- Transições de cor/hover: **150 ms** em botões; feedback no **`:active`** (`scale(0.98)` leve no `UiButton`).
+- **`prefers-reduced-motion`**: implementado em `src/assets/main.css` (animações/transições encurtadas globalmente).
+- Sem parallax hero, sem animações decorativas longas.
 - Evitar animar `width`/`height` de layout; preferir opacity/transform quando necessário.
 
 ---

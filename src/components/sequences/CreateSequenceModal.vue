@@ -2,6 +2,7 @@
 import { ListPlus, X } from '@lucide/vue'
 import { ref, watch } from 'vue'
 
+import { UiIconButton } from '@/components/ui'
 import { useEscapeKey } from '@/composables/useEscapeKey'
 
 const props = defineProps<{
@@ -67,14 +68,9 @@ function onSubmit(): void {
             </h2>
             <p class="mt-0.5 text-xs text-brand-gray">Dê um nome para identificar esta sequência de mensagens.</p>
           </div>
-          <button
-            type="button"
-            class="rounded-lg p-1.5 text-brand-gray hover:bg-slate-100 hover:text-brand-ink"
-            aria-label="Fechar"
-            @click="onClose"
-          >
-            <X class="h-5 w-5" />
-          </button>
+          <UiIconButton type="button" ariaLabel="Fechar" @click="onClose">
+            <X class="h-5 w-5" aria-hidden="true" />
+          </UiIconButton>
         </div>
 
         <div>

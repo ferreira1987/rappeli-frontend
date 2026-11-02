@@ -2,6 +2,8 @@
 import { Pencil, X } from '@lucide/vue'
 import { computed, reactive, ref, watch } from 'vue'
 
+import { UiButton, UiIconButton, UiInput } from '@/components/ui'
+import { uiSelectClass } from '@/components/ui/uiSelectClass'
 import { useEscapeKey } from '@/composables/useEscapeKey'
 import type { Sector, TeamAgent, TeamAgentRole } from '@/types/team'
 import { roleLabels } from '@/utils/teamLabels'
@@ -81,6 +83,7 @@ useEscapeKey(
     >
       <form
         class="w-full max-w-md rounded-xl border border-slate-200 bg-white p-6 shadow-2xl"
+        :aria-busy="submitting || undefined"
         @submit.prevent="onSubmit"
       >
         <div class="flex items-start justify-between gap-3">
@@ -90,78 +93,62 @@ useEscapeKey(
               Editar colaborador
             </h2>
           </div>
-          <button
-            type="button"
-            class="rounded-lg p-1.5 text-brand-gray hover:bg-slate-100"
-            aria-label="Fechar"
-            @click="onClose"
-          >
-            <X class="h-5 w-5" />
-          </button>
+          <UiIconButton type="button" ariaLabel="Fechar" @click="onClose">
+            <X class="h-5 w-5" aria-hidden="true" />
+          </UiIconButton>
         </div>
 
         <p class="mt-2 text-sm text-brand-gray">{{ agent.name }} · {{ agent.email }}</p>
 
         <div class="mt-4 space-y-3">
-          <div>
+          <div class="space-y-1">
             <label class="text-xs font-semibold text-brand-ink" for="edit-role">Papel</label>
-            <select
-              id="edit-role"
-              v-model="form.role"
-              class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
-            >
+            <select id="edit-role" v-model="form.role" :class="uiSelectClass">
               <option v-for="[value, label] in roleOptions" :key="value" :value="value">
                 {{ label }}
               </option>
             </select>
           </div>
-          <div>
+          <div class="space-y-1">
             <label class="text-xs font-semibold text-brand-ink" for="edit-sector">Setor</label>
-            <select
-              id="edit-sector"
-              v-model="form.sectorId"
-              class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
-            >
+            <select id="edit-sector" v-model="form.sectorId" :class="uiSelectClass">
               <option :value="null">Sem setor</option>
               <option v-for="sector in sectorOptions" :key="sector.id" :value="sector.id">
                 {{ sector.label }}
               </option>
             </select>
           </div>
-          <div>
+          <div class="space-y-1">
             <label class="text-xs font-semibold text-brand-ink" for="edit-phone">Telefone</label>
-            <input
+            <UiInput
               id="edit-phone"
               v-model="form.phone"
               type="tel"
               autocomplete="tel"
               placeholder="Opcional"
-              class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+              :invalid="Boolean(fieldErrors.phone)"
             />
-            <p v-if="fieldErrors.phone" class="mt-1 text-xs text-red-600">{{ fieldErrors.phone }}</p>
+            <p v-if="fieldErrors.phone" class="text-xs text-red-600">{{ fieldErrors.phone }}</p>
           </div>
-          <label class="flex items-center justify-between gap-4 rounded-lg border border-slate-100 px-3 py-2.5">
+          <label
+            class="flex min-h-11 cursor-pointer items-center justify-between gap-4 rounded-lg border border-slate-100 px-3 py-2.5"
+          >
             <span class="text-sm text-brand-ink">Recebe conversas</span>
-            <input v-model="form.receivesChats" type="checkbox" class="h-4 w-4 rounded text-brand-indigo" />
+            <input
+              v-model="form.receivesChats"
+              type="checkbox"
+              class="h-4 w-4 shrink-0 rounded text-brand-indigo focus:ring-brand-indigo"
+            />
           </label>
         </div>
 
         <div class="mt-6 flex justify-end gap-2">
-          <button
-            type="button"
-            class="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium hover:bg-slate-50"
-            :disabled="submitting"
-            @click="onClose"
-          >
+          <UiButton type="button" variant="secondary" :disabled="submitting" @click="onClose">
             Cancelar
-          </button>
-          <button
-            type="submit"
-            class="rounded-lg bg-brand-indigo px-4 py-2 text-sm font-semibold text-white hover:bg-brand-indigo-hover disabled:opacity-60"
-            :disabled="submitting"
-          >
+          </UiButton>
+          <UiButton type="submit" variant="primary" :disabled="submitting">
             {{ submitting ? 'Salvando…' : 'Salvar alterações' }}
-          </button>
+          </UiButton>
         </div>
       </form>
     </div>

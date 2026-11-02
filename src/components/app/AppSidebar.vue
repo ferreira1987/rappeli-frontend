@@ -115,7 +115,7 @@ function closeAndFocusMenu(): void {
       >
         <button
           type="button"
-          class="hidden h-9 w-9 shrink-0 items-center justify-center rounded-lg text-[#4338CA] transition hover:bg-slate-50 lg:inline-flex"
+          class="hidden h-9 w-9 shrink-0 items-center justify-center rounded-lg text-brand-indigo transition hover:bg-slate-50 lg:inline-flex"
           :aria-expanded="!isCollapsed"
           aria-controls="app-sidebar"
           :aria-label="collapseToggleLabel"

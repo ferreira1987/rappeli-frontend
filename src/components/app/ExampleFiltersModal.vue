@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { X } from '@lucide/vue'
 
+import { UiIconButton } from '@/components/ui'
 import { useEscapeKey } from '@/composables/useEscapeKey'
 
 const props = defineProps<{
@@ -34,14 +35,9 @@ useEscapeKey(
           <h2 :id="`filters-${title}`" class="font-display text-lg font-bold text-brand-ink">
             {{ title }}
           </h2>
-          <button
-            type="button"
-            class="rounded-lg p-1.5 text-brand-gray hover:bg-slate-100"
-            aria-label="Fechar"
-            @click="emit('close')"
-          >
-            <X class="h-5 w-5" />
-          </button>
+          <UiIconButton type="button" ariaLabel="Fechar" @click="emit('close')">
+            <X class="h-5 w-5" aria-hidden="true" />
+          </UiIconButton>
         </div>
         <p class="mt-2 text-sm text-brand-gray">
           Filtros de exemplo — ajuste os campos e aplique para simular a ação no painel.

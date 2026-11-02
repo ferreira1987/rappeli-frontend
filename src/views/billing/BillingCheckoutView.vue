@@ -7,7 +7,7 @@ import { checkoutSubscription, fetchCurrentSubscription } from '@/api/billing'
 import BillingCheckoutForms from '@/components/billing/BillingCheckoutForms.vue'
 import OnboardingActionBar from '@/components/onboarding/OnboardingActionBar.vue'
 import OnboardingShell from '@/components/onboarding/OnboardingShell.vue'
-import { UiBadge, UiCard, UiInput } from '@/components/ui'
+import { UiBadge, UiButton, UiCard, UiInput } from '@/components/ui'
 import { brandPrivacyUrl, brandTermsUrl } from '@/constants/brandUrls'
 import { PLAN_TIER_FEATURES, WHATSAPP_HELP_URL, type PlanTierId } from '@/constants/onboardingPlans'
 import { useAuthStore } from '@/stores/auth'
@@ -196,7 +196,7 @@ function onPhoneInput(value: string): void {
               <div class="flex flex-wrap items-center justify-between gap-3">
                 <div class="flex items-center gap-2">
                   <div
-                    class="flex h-6 w-6 items-center justify-center rounded-md bg-indigo-50 text-[#4338CA]"
+                    class="flex h-6 w-6 items-center justify-center rounded-md bg-indigo-50 text-brand-indigo"
                   >
                     <Building2 class="h-3.5 w-3.5" aria-hidden="true" />
                   </div>
@@ -331,7 +331,7 @@ function onPhoneInput(value: string): void {
               <div class="flex flex-wrap items-center justify-between gap-3">
                 <div class="flex items-center gap-2">
                   <div
-                    class="flex h-6 w-6 items-center justify-center rounded-md bg-indigo-50 text-[#4338CA]"
+                    class="flex h-6 w-6 items-center justify-center rounded-md bg-indigo-50 text-brand-indigo"
                   >
                     <CreditCard class="h-3.5 w-3.5" aria-hidden="true" />
                   </div>
@@ -378,7 +378,7 @@ function onPhoneInput(value: string): void {
               <div
                 class="mt-4 flex items-start gap-2 rounded-lg border border-slate-200 bg-slate-50 p-2.5 text-xs text-slate-600"
               >
-                <ShieldCheck class="mt-0.5 h-4 w-4 shrink-0 text-[#4338CA]" aria-hidden="true" />
+                <ShieldCheck class="mt-0.5 h-4 w-4 shrink-0 text-brand-indigo" aria-hidden="true" />
                 <span>
                   Pagamento processado pelo Asaas; não armazenamos os dados do seu cartão.
                 </span>
@@ -388,21 +388,23 @@ function onPhoneInput(value: string): void {
                 <input
                   v-model="authorizeRecurring"
                   type="checkbox"
-                  class="mt-0.5 h-4 w-4 rounded border-slate-300 text-[#4338CA] focus:ring-[#4338CA]/20"
+                  class="mt-0.5 h-4 w-4 rounded border-slate-300 text-brand-indigo focus:ring-brand-indigo/20"
                 />
                 Autorizo a cobrança recorrente no cartão a cada renovação do plano.
               </label>
 
               <div v-if="paymentRefusedActive" class="mt-4 space-y-2.5">
-                <button
+                <UiButton
                   type="button"
-                  class="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-[#4338CA] text-sm font-medium text-white shadow-sm transition hover:bg-[#3730A3] disabled:opacity-60"
+                  variant="primary"
+                  size="lg"
+                  class="!w-full shadow-sm"
                   :disabled="submitting"
                   @click="onSubmit"
                 >
                   <span>{{ submitting ? 'Aguarde…' : 'Tentar outro cartão' }}</span>
                   <RefreshCw class="h-4 w-4" aria-hidden="true" />
-                </button>
+                </UiButton>
                 <a
                   :href="WHATSAPP_HELP_URL"
                   target="_blank"
@@ -418,7 +420,7 @@ function onPhoneInput(value: string): void {
                     :href="brandTermsUrl"
                     target="_blank"
                     rel="noopener noreferrer"
-                    class="font-semibold text-[#4338CA] hover:underline"
+                    class="font-semibold text-brand-indigo hover:underline"
                     >Termos de Uso</a
                   >
                   e
@@ -426,7 +428,7 @@ function onPhoneInput(value: string): void {
                     :href="brandPrivacyUrl"
                     target="_blank"
                     rel="noopener noreferrer"
-                    class="font-semibold text-[#4338CA] hover:underline"
+                    class="font-semibold text-brand-indigo hover:underline"
                     >Política de Privacidade</a
                   >.
                 </p>
@@ -502,7 +504,7 @@ function onPhoneInput(value: string): void {
               <div class="flex items-end justify-between gap-4">
                 <span class="text-sm font-semibold text-slate-900">Total hoje</span>
                 <div class="text-right">
-                  <span v-if="planSummary.amount != null" class="text-2xl font-bold text-[#4338CA]">
+                  <span v-if="planSummary.amount != null" class="text-2xl font-bold text-brand-indigo">
                     {{ formatBillingCurrency(planSummary.amount) }}
                   </span>
                   <span v-if="totalCycleHint" class="mt-0.5 block text-[11px] text-slate-500">
@@ -532,7 +534,7 @@ function onPhoneInput(value: string): void {
               <div class="mt-3 text-center">
                 <RouterLink
                   :to="{ name: 'assinatura-planos' }"
-                  class="text-xs font-semibold text-[#4338CA] hover:underline"
+                  class="text-xs font-semibold text-brand-indigo hover:underline"
                 >
                   Alterar plano
                 </RouterLink>

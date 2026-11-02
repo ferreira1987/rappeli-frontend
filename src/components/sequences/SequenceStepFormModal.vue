@@ -2,6 +2,7 @@
 import { ListOrdered, X } from '@lucide/vue'
 import { computed, ref, watch } from 'vue'
 
+import { UiIconButton } from '@/components/ui'
 import { useEscapeKey } from '@/composables/useEscapeKey'
 import type { SequenceStep } from '@/types/campaigns'
 
@@ -100,9 +101,9 @@ function onSubmit(): void {
               {{ step ? 'Editar passo' : 'Novo passo' }}
             </h2>
           </div>
-          <button type="button" class="rounded-lg p-1.5 text-brand-gray hover:bg-slate-100" aria-label="Fechar" @click="onClose">
-            <X class="h-5 w-5" />
-          </button>
+          <UiIconButton type="button" ariaLabel="Fechar" @click="onClose">
+            <X class="h-5 w-5" aria-hidden="true" />
+          </UiIconButton>
         </div>
 
         <p v-if="formError" class="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">

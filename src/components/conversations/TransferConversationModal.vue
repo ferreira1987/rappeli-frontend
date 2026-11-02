@@ -4,6 +4,7 @@ import { computed, ref, watch } from 'vue'
 
 import type { TransferConversationPayload } from '@/api/inbox'
 import { fetchSectors, fetchTeamAgents } from '@/api/team'
+import { UiIconButton } from '@/components/ui'
 import { useEscapeKey } from '@/composables/useEscapeKey'
 import type { Sector, TeamAgent } from '@/types/team'
 import { formatAgentDisplayName } from '@/utils/teamLabels'
@@ -143,14 +144,9 @@ function onSubmit(): void {
               Transfira esta conversa com {{ contactName }} para outro atendente ou setor.
             </p>
           </div>
-          <button
-            type="button"
-            class="rounded-lg p-1.5 text-brand-gray hover:bg-slate-100 hover:text-brand-ink"
-            aria-label="Fechar"
-            @click="onClose"
-          >
-            <X class="h-5 w-5" />
-          </button>
+          <UiIconButton type="button" ariaLabel="Fechar" @click="onClose">
+            <X class="h-5 w-5" aria-hidden="true" />
+          </UiIconButton>
         </div>
 
         <label

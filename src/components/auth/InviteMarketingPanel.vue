@@ -15,12 +15,12 @@ const props = withDefaults(
 const wrapperClass = computed(() => {
   if (props.placement === 'below') {
     return [
-      'w-full max-w-[460px] rounded-2xl border border-[#4338CA]/20 bg-[#4338CA] p-6 text-white shadow-sm sm:p-8',
+      'w-full max-w-[460px] rounded-2xl border border-brand-indigo/20 bg-brand-indigo p-6 text-white shadow-sm sm:p-8',
       'lg:hidden',
     ]
   }
   return [
-    'relative hidden min-h-screen w-full shrink-0 flex-col justify-between overflow-y-auto bg-[#4338CA] p-8 text-white sm:p-12 lg:flex',
+    'relative hidden min-h-screen w-full shrink-0 flex-col justify-between overflow-y-auto bg-brand-indigo p-8 text-white sm:p-12 lg:flex',
     'lg:w-[min(42%,520px)] lg:max-w-[520px] lg:p-14 xl:p-16',
   ]
 })

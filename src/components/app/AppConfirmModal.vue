@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { AlertTriangle, X } from '@lucide/vue'
 
+import { UiButton, UiIconButton } from '@/components/ui'
 import { useEscapeKey } from '@/composables/useEscapeKey'
 
 const props = withDefaults(
@@ -65,34 +66,23 @@ useEscapeKey(
               <p id="confirm-modal-message" class="mt-2 text-sm text-brand-gray">{{ message }}</p>
             </div>
           </div>
-          <button
-            type="button"
-            class="rounded-lg p-1.5 text-brand-gray hover:bg-slate-100"
-            aria-label="Fechar"
-            @click="onClose"
-          >
-            <X class="h-5 w-5" />
-          </button>
+          <UiIconButton type="button" ariaLabel="Fechar" @click="onClose">
+            <X class="h-5 w-5" aria-hidden="true" />
+          </UiIconButton>
         </div>
 
         <div class="mt-6 flex justify-end gap-2">
-          <button
-            type="button"
-            class="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-brand-ink hover:bg-slate-50"
-            :disabled="loading"
-            @click="onClose"
-          >
+          <UiButton type="button" variant="secondary" :disabled="loading" @click="onClose">
             {{ cancelLabel }}
-          </button>
-          <button
+          </UiButton>
+          <UiButton
             type="button"
-            class="rounded-lg px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
-            :class="variant === 'danger' ? 'bg-red-600 hover:bg-red-700' : 'bg-brand-indigo hover:bg-brand-indigo-hover'"
+            :variant="variant === 'danger' ? 'danger' : 'primary'"
             :disabled="loading"
             @click="onConfirm"
           >
             {{ loading ? 'Aguarde…' : confirmLabel }}
-          </button>
+          </UiButton>
         </div>
       </div>
     </div>

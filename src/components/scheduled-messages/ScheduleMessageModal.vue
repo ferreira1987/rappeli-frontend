@@ -4,6 +4,7 @@ import { computed, ref, watch } from 'vue'
 
 import { fetchContacts } from '@/api/contacts'
 import { createScheduledMessage } from '@/api/scheduledMessages'
+import { UiIconButton } from '@/components/ui'
 import { useEscapeKey } from '@/composables/useEscapeKey'
 import type { Contact } from '@/types/contacts'
 import { formatRelativeScheduleDay } from '@/utils/scheduleRelative'
@@ -162,14 +163,9 @@ async function onSubmit(): Promise<void> {
               Agendar mensagem
             </h2>
           </div>
-          <button
-            type="button"
-            class="rounded-lg p-1.5 text-brand-gray hover:bg-slate-100"
-            aria-label="Fechar"
-            @click="onClose"
-          >
-            <X class="h-5 w-5" />
-          </button>
+          <UiIconButton type="button" ariaLabel="Fechar" @click="onClose">
+            <X class="h-5 w-5" aria-hidden="true" />
+          </UiIconButton>
         </div>
 
         <p v-if="formError" class="text-sm text-red-600" role="alert">{{ formError }}</p>

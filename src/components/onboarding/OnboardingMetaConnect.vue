@@ -71,13 +71,13 @@ async function onPinSubmit(pin: string): Promise<void> {
 <template>
   <section
     v-if="layout === 'activation-v5'"
-    class="relative rounded-xl border-2 border-[#4338CA] bg-white p-6"
+    class="relative rounded-xl border-2 border-brand-indigo bg-white p-6"
   >
     <div class="mb-3 flex items-center justify-between gap-3">
       <span
-        class="inline-flex items-center gap-1.5 rounded-full border border-[#C7C4D7] bg-[#EEF0FF] px-2.5 py-0.5 text-xs font-semibold text-[#4338CA]"
+        class="inline-flex items-center gap-1.5 rounded-full border border-slate-300 bg-brand-mist px-2.5 py-0.5 text-xs font-semibold text-brand-indigo"
       >
-        <span class="h-1.5 w-1.5 rounded-full bg-[#4338CA]" aria-hidden="true" />
+        <span class="h-1.5 w-1.5 rounded-full bg-brand-indigo" aria-hidden="true" />
         Passo 1 • Obrigatório
       </span>
       <span class="inline-flex items-center gap-1 text-xs font-medium text-slate-500">
@@ -88,7 +88,7 @@ async function onPinSubmit(pin: string): Promise<void> {
 
     <div class="flex items-center gap-2">
       <div
-        class="flex h-8 w-8 items-center justify-center rounded-lg bg-[#EEF0FF] text-[#4338CA]"
+        class="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-mist text-brand-indigo"
       >
         <Share2 class="h-4 w-4" aria-hidden="true" />
       </div>
@@ -101,7 +101,7 @@ async function onPinSubmit(pin: string): Promise<void> {
 
     <UiButton
       type="button"
-      class="mt-4 w-full bg-[#4338CA] hover:bg-brand-indigo-hover sm:w-auto"
+      class="mt-4 w-full sm:w-auto"
       size="lg"
       :disabled="launching || connecting || connected"
       @click="onConnectClick"
@@ -128,13 +128,13 @@ async function onPinSubmit(pin: string): Promise<void> {
       <p class="text-xs font-semibold text-slate-500">Como funciona o cadastro oficial</p>
       <ol class="mt-3 grid gap-2 text-sm text-slate-600 sm:grid-cols-3">
         <li class="rounded-lg bg-white px-3 py-2">
-          <strong class="text-[#4338CA]">1.</strong> Login na Meta
+          <strong class="text-brand-indigo">1.</strong> Login na Meta
         </li>
         <li class="rounded-lg bg-white px-3 py-2">
-          <strong class="text-[#4338CA]">2.</strong> Conta empresarial
+          <strong class="text-brand-indigo">2.</strong> Conta empresarial
         </li>
         <li class="rounded-lg bg-white px-3 py-2">
-          <strong class="text-[#4338CA]">3.</strong> Verificação do número
+          <strong class="text-brand-indigo">3.</strong> Verificação do número
         </li>
       </ol>
     </div>
@@ -162,7 +162,7 @@ async function onPinSubmit(pin: string): Promise<void> {
 
     <button
       type="button"
-      class="mt-4 inline-flex h-11 items-center gap-2 rounded-lg bg-brand-indigo px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-indigo-hover disabled:opacity-60"
+      class="mt-4 inline-flex h-11 cursor-pointer items-center gap-2 rounded-lg bg-brand-indigo px-5 text-sm font-semibold text-white shadow-sm transition-[color,transform,opacity] duration-150 hover:bg-brand-indigo-hover active:scale-[0.98] active:opacity-95 disabled:opacity-60"
       :disabled="launching || connecting || connected"
       @click="onConnectClick"
     >
