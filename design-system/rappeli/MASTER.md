@@ -51,11 +51,11 @@ Use **classes Tailwind** `brand-*` e `slate-*` semânticos. Evite hex cru (`#433
 
 ## Tipografia
 
-| Papel           | Classe / token                      | Notas                                                                          |
-| --------------- | ----------------------------------- | ------------------------------------------------------------------------------ |
-| Corpo           | `font-sans` → Inter (`--font-sans`) | Base **16px** em telas de produto; evitar corpo &lt; 12px                      |
+| Papel           | Classe / token                                | Notas                                                                                  |
+| --------------- | --------------------------------------------- | -------------------------------------------------------------------------------------- |
+| Corpo           | `font-sans` → Inter (`--font-sans`)           | Base **16px** em telas de produto; evitar corpo &lt; 12px                              |
 | Títulos / marca | `font-display` (`--font-display` no `@theme`) | Mesma família que sans (Inter) até fonte display dedicada; `tracking-tight` em `h1–h4` |
-| Peso            | `font-semibold` / `font-bold`       | CTAs e links de ação; `tracking-tight` em títulos grandes                      |
+| Peso            | `font-semibold` / `font-bold`                 | CTAs e links de ação; `tracking-tight` em títulos grandes                              |
 
 Line-height confortável em copy de marketing: `leading-relaxed` em parágrafos.
 
@@ -131,7 +131,7 @@ Implementação preferida — **não** duplicar estilos ad hoc.
 
 - Wrapper com `Teleport`, scrim, a11y (`role`, `aria-labelledby`) e **`<Transition name="ui-modal">`**.
 - Painel filho usa classe `ui-modal-panel` (scale/fade leve; só opacidade com `prefers-reduced-motion`).
-- Props: `open`, `labelledBy`, `describedBy`, `role`, `zClass`, `scrollable`.
+- Props: `open`, `labelledBy`, `describedBy`, `role`, `zClass`, `scrollable`, `align` (`center` | `sheet`), `panelClass`.
 - Emit `@close` no clique do backdrop.
 
 ---
@@ -196,10 +196,10 @@ Implementação preferida — **não** duplicar estilos ad hoc.
 
 Arquivos em `design-system/rappeli/pages/` (prevalecem sobre este Master):
 
-| Slug | Rota | Arquivo |
-|------|------|---------|
-| login | `/login` | `pages/login.md` |
-| cadastro | `/cadastro` | `pages/cadastro.md` |
+| Slug            | Rota               | Arquivo                    |
+| --------------- | ------------------ | -------------------------- |
+| login           | `/login`           | `pages/login.md`           |
+| cadastro        | `/cadastro`        | `pages/cadastro.md`        |
 | aceitar-convite | `/aceitar-convite` | `pages/aceitar-convite.md` |
 
 Novas telas: adicione `<slug>.md` sem alterar o Master, salvo mudança global de marca.
