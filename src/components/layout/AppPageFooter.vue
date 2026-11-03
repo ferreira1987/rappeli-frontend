@@ -1,7 +1,5 @@
 <script setup lang="ts">
-const termsUrl = 'https://rappeli.com.br/termos'
-const privacyUrl = 'https://rappeli.com.br/privacidade'
-const supportEmail = 'mailto:contato@rappeli.com.br'
+import { brandPrivacyUrl, brandSupportMailto, brandTermsUrl } from '@/constants/brandUrls'
 
 withDefaults(
   defineProps<{
@@ -21,7 +19,7 @@ withDefaults(
     <div class="flex flex-wrap items-center gap-4">
       <a
         v-if="showTerms"
-        :href="termsUrl"
+        :href="brandTermsUrl"
         target="_blank"
         rel="noopener noreferrer"
         class="hover:text-brand-indigo"
@@ -30,14 +28,14 @@ withDefaults(
       </a>
       <a
         v-if="showPrivacy"
-        :href="privacyUrl"
+        :href="brandPrivacyUrl"
         target="_blank"
         rel="noopener noreferrer"
         class="hover:text-brand-indigo"
       >
         Política de Privacidade
       </a>
-      <a v-if="showSupport" :href="supportEmail" class="hover:text-brand-indigo">Suporte</a>
+      <a v-if="showSupport" :href="brandSupportMailto" class="hover:text-brand-indigo">Suporte</a>
     </div>
   </footer>
 </template>

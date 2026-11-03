@@ -12,6 +12,7 @@ import AppPageFooter from '@/components/layout/AppPageFooter.vue'
 import AppPageShell from '@/components/layout/AppPageShell.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiInput from '@/components/ui/UiInput.vue'
+import UiModalLayer from '@/components/ui/UiModalLayer.vue'
 import { useEscapeKey } from '@/composables/useEscapeKey'
 import { panelBreadcrumbs } from '@/constants/panelBreadcrumbs'
 import type { FunnelCard, FunnelStage } from '@/types/funnel'
@@ -292,20 +293,13 @@ useEscapeKey(
       </template>
     </div>
 
-    <Teleport to="body">
-      <div
-        v-if="addStageOpen"
-        class="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/50 p-4"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="funnel-add-stage-title"
-        @click.self="addStageOpen = false"
+    <UiModalLayer :open="addStageOpen" labelled-by="funnel-add-stage-title" @close="addStageOpen = false">
+      <form
+        class="mx-auto w-full max-w-sm rounded-xl border border-slate-200 bg-white p-6 shadow-xl"
+        :aria-busy="addStageSubmitting || undefined"
+        @submit.prevent="submitAddStage"
       >
-        <form
-          class="w-full max-w-sm rounded-lg border border-slate-200 bg-white p-6 shadow-xl"
-          @submit.prevent="submitAddStage"
-        >
-          <h3 id="funnel-add-stage-title" class="text-lg font-bold text-brand-ink">Nova etapa</h3>
+        <h3 id="funnel-add-stage-title" class="font-display text-lg font-bold text-brand-ink">Nova etapa</h3>
           <label for="new-stage-title" class="sr-only">Nome da etapa</label>
           <UiInput
             id="new-stage-title"
@@ -320,21 +314,16 @@ useEscapeKey(
             <UiButton variant="secondary" type="button" @click="addStageOpen = false">Cancelar</UiButton>
             <UiButton type="submit" :disabled="addStageSubmitting">Criar</UiButton>
           </div>
-        </form>
-      </div>
-      <div
-        v-if="addCardOpen"
-        class="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/50 p-4"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="funnel-add-card-title"
-        @click.self="addCardOpen = false"
+      </form>
+    </UiModalLayer>
+
+    <UiModalLayer :open="addCardOpen" labelled-by="funnel-add-card-title" @close="addCardOpen = false">
+      <form
+        class="mx-auto w-full max-w-sm rounded-xl border border-slate-200 bg-white p-6 shadow-xl"
+        :aria-busy="addCardSubmitting || undefined"
+        @submit.prevent="submitAddCard"
       >
-        <form
-          class="w-full max-w-sm rounded-lg border border-slate-200 bg-white p-6 shadow-xl"
-          @submit.prevent="submitAddCard"
-        >
-          <h3 id="funnel-add-card-title" class="text-lg font-bold text-brand-ink">Novo card</h3>
+        <h3 id="funnel-add-card-title" class="font-display text-lg font-bold text-brand-ink">Novo card</h3>
           <div class="mt-3 space-y-2">
             <label for="add-card-name" class="sr-only">Nome do contato</label>
             <UiInput id="add-card-name" v-model="addCardName" type="text" placeholder="Nome do contato" />
@@ -353,9 +342,8 @@ useEscapeKey(
             <UiButton variant="secondary" type="button" @click="addCardOpen = false">Cancelar</UiButton>
             <UiButton type="submit" :disabled="addCardSubmitting">Adicionar</UiButton>
           </div>
-        </form>
-      </div>
-    </Teleport>
+      </form>
+    </UiModalLayer>
 
     <AppConfirmModal
       :open="deleteCardConfirmOpen"

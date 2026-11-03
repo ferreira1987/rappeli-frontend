@@ -2,6 +2,8 @@
 import { Building2, X } from '@lucide/vue'
 import { ref, watch } from 'vue'
 
+import { UiButton, UiIconButton, UiInput, UiModalLayer } from '@/components/ui'
+import { uiTextareaClass } from '@/components/ui/uiSelectClass'
 import { useEscapeKey } from '@/composables/useEscapeKey'
 import type { Sector } from '@/types/team'
 
@@ -51,72 +53,58 @@ function onSubmit(): void {
 </script>
 
 <template>
-  <Teleport to="body">
-    <div
-      v-if="open"
-      class="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-[2px]"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="sector-form-title"
-      @click.self="onClose"
+  <UiModalLayer :open="open" labelled-by="sector-form-title" @close="onClose">
+    <form
+      class="mx-auto flex w-full max-w-md flex-col gap-5 rounded-xl border border-slate-200 bg-white p-6 shadow-2xl"
+      :aria-busy="submitting || undefined"
+      @submit.prevent="onSubmit"
     >
-      <form
-        class="flex w-full max-w-md flex-col gap-5 rounded-xl border border-slate-200 bg-white p-6 shadow-2xl"
-        @submit.prevent="onSubmit"
-      >
-        <div class="flex items-start justify-between gap-3">
-          <div class="flex items-center gap-2">
-            <Building2 class="h-5 w-5 text-brand-indigo" aria-hidden="true" />
-            <h2 id="sector-form-title" class="font-display text-lg font-bold text-brand-ink">
-              {{ sector ? 'Editar setor' : 'Novo setor' }}
-            </h2>
-          </div>
-          <button type="button" class="rounded-lg p-1.5 text-brand-gray hover:bg-slate-100" aria-label="Fechar" @click="onClose">
-            <X class="h-5 w-5" />
-          </button>
+      <div class="flex items-start justify-between gap-3">
+        <div class="flex items-center gap-2">
+          <Building2 class="h-5 w-5 text-brand-indigo" aria-hidden="true" />
+          <h2 id="sector-form-title" class="font-display text-lg font-bold text-brand-ink">
+            {{ sector ? 'Editar setor' : 'Novo setor' }}
+          </h2>
         </div>
+        <UiIconButton type="button" ariaLabel="Fechar" @click="onClose">
+          <X class="h-5 w-5" aria-hidden="true" />
+        </UiIconButton>
+      </div>
 
-        <div>
-          <label class="mb-1 block text-sm font-medium text-brand-ink" for="sector-name">Nome *</label>
-          <input
-            id="sector-name"
-            v-model="name"
-            type="text"
-            class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
-            :disabled="sector?.is_default"
-          />
-          <p v-if="sector?.is_default" class="mt-1 text-xs text-brand-gray">O setor padrão não pode ser renomeado aqui.</p>
-          <p v-if="fieldErrors.name" class="mt-1 text-xs text-red-600">{{ fieldErrors.name }}</p>
-        </div>
+      <div class="space-y-1">
+        <label class="block text-sm font-medium text-brand-ink" for="sector-name">Nome *</label>
+        <UiInput
+          id="sector-name"
+          v-model="name"
+          type="text"
+          :disabled="sector?.is_default"
+          :invalid="Boolean(fieldErrors.name)"
+        />
+        <p v-if="sector?.is_default" class="text-xs text-brand-gray">
+          O setor padrão não pode ser renomeado aqui.
+        </p>
+        <p v-if="fieldErrors.name" class="text-xs text-red-600">{{ fieldErrors.name }}</p>
+      </div>
 
-        <div>
-          <label class="mb-1 block text-sm font-medium text-brand-ink" for="sector-description">Descrição</label>
-          <textarea
-            id="sector-description"
-            v-model="description"
-            rows="3"
-            class="w-full resize-none rounded-lg border border-slate-200 px-3 py-2 text-sm"
-            placeholder="Opcional"
-          />
-        </div>
+      <div class="space-y-1">
+        <label class="block text-sm font-medium text-brand-ink" for="sector-description"
+          >Descrição</label
+        >
+        <textarea
+          id="sector-description"
+          v-model="description"
+          rows="3"
+          :class="`${uiTextareaClass} resize-none`"
+          placeholder="Opcional"
+        />
+      </div>
 
-        <div class="flex justify-end gap-2 border-t border-slate-100 pt-2">
-          <button
-            type="button"
-            class="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium hover:bg-slate-50"
-            @click="onClose"
-          >
-            Cancelar
-          </button>
-          <button
-            type="submit"
-            class="rounded-lg bg-brand-indigo px-4 py-2 text-sm font-semibold text-white hover:bg-brand-indigo-hover disabled:opacity-60"
-            :disabled="submitting"
-          >
-            {{ submitting ? 'Salvando…' : 'Salvar' }}
-          </button>
-        </div>
-      </form>
-    </div>
-  </Teleport>
+      <div class="flex justify-end gap-2 border-t border-slate-100 pt-2">
+        <UiButton type="button" variant="secondary" @click="onClose"> Cancelar </UiButton>
+        <UiButton type="submit" variant="primary" :disabled="submitting">
+          {{ submitting ? 'Salvando…' : 'Salvar' }}
+        </UiButton>
+      </div>
+    </form>
+  </UiModalLayer>
 </template>

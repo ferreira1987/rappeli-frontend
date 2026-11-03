@@ -2,6 +2,7 @@
 import { ListPlus, X } from '@lucide/vue'
 import { ref, watch } from 'vue'
 
+import { UiIconButton, UiInput, UiModalLayer } from '@/components/ui'
 import { useEscapeKey } from '@/composables/useEscapeKey'
 
 const props = defineProps<{
@@ -47,19 +48,11 @@ function onSubmit(): void {
 </script>
 
 <template>
-  <Teleport to="body">
-    <div
-      v-if="open"
-      class="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-[2px]"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="create-sequence-title"
-      @click.self="onClose"
+  <UiModalLayer :open="open" labelled-by="create-sequence-title" @close="onClose">
+    <form
+      class="mx-auto flex w-full max-w-md flex-col gap-5 rounded-xl border border-slate-200 bg-white p-6 shadow-2xl"
+      @submit.prevent="onSubmit"
     >
-      <form
-        class="flex w-full max-w-md flex-col gap-5 rounded-xl border border-slate-200 bg-white p-6 shadow-2xl"
-        @submit.prevent="onSubmit"
-      >
         <div class="flex items-start justify-between gap-3">
           <div>
             <h2 id="create-sequence-title" class="font-display text-lg font-bold text-brand-ink">
@@ -67,25 +60,20 @@ function onSubmit(): void {
             </h2>
             <p class="mt-0.5 text-xs text-brand-gray">Dê um nome para identificar esta sequência de mensagens.</p>
           </div>
-          <button
-            type="button"
-            class="rounded-lg p-1.5 text-brand-gray hover:bg-slate-100 hover:text-brand-ink"
-            aria-label="Fechar"
-            @click="onClose"
-          >
-            <X class="h-5 w-5" />
-          </button>
+          <UiIconButton type="button" ariaLabel="Fechar" @click="onClose">
+            <X class="h-5 w-5" aria-hidden="true" />
+          </UiIconButton>
         </div>
 
         <div>
           <label class="mb-1 block text-sm font-medium text-brand-ink" for="sequence-name">Nome *</label>
-          <input
+          <UiInput
             id="sequence-name"
             v-model="name"
             type="text"
             autocomplete="off"
             placeholder="Ex.: Boas-vindas novos leads"
-            class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+            :invalid="Boolean(fieldError)"
           />
           <p v-if="fieldError" class="mt-1 text-xs text-red-600">{{ fieldError }}</p>
         </div>
@@ -107,7 +95,6 @@ function onSubmit(): void {
             {{ submitting ? 'Criando…' : 'Criar sequência' }}
           </button>
         </div>
-      </form>
-    </div>
-  </Teleport>
+    </form>
+  </UiModalLayer>
 </template>

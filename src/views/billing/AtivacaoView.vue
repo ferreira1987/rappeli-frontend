@@ -75,7 +75,7 @@ function goBack(): void {
             </div>
             <div class="flex items-center gap-2">
               <div
-                class="flex h-8 w-8 items-center justify-center rounded-lg bg-[#EEF0FF] text-[#4338CA]"
+                class="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-mist text-brand-indigo"
               >
                 <Users class="h-4 w-4" aria-hidden="true" />
               </div>
@@ -100,7 +100,7 @@ function goBack(): void {
                 <select
                   id="invite-role"
                   v-model="inviteRole"
-                  class="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-xs text-slate-800 focus:border-[#4338CA] focus:outline-none focus:ring-1 focus:ring-[#4338CA] sm:text-sm"
+                  class="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-xs text-slate-800 focus:border-brand-indigo focus:outline-none focus:ring-1 focus:ring-brand-indigo sm:text-sm"
                 >
                   <option>Atendente</option>
                   <option>Gestor</option>
@@ -135,7 +135,7 @@ function goBack(): void {
             </div>
             <div class="flex flex-wrap items-center gap-2">
               <div
-                class="flex h-8 w-8 items-center justify-center rounded-lg bg-[#EEF0FF] text-[#4338CA]"
+                class="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-mist text-brand-indigo"
               >
                 <Filter class="h-4 w-4" aria-hidden="true" />
               </div>
@@ -158,7 +158,7 @@ function goBack(): void {
                 class="relative rounded-lg border p-3 text-left transition"
                 :class="
                   selectedFlow === flow.id
-                    ? 'border-2 border-[#4338CA] bg-[#EEF0FF]/40'
+                    ? 'border-2 border-brand-indigo bg-brand-mist/40'
                     : 'border-slate-200 bg-white hover:border-slate-300'
                 "
                 @click="selectedFlow = flow.id"
@@ -167,12 +167,12 @@ function goBack(): void {
                   <component
                     :is="flow.icon"
                     class="h-5 w-5 shrink-0"
-                    :class="selectedFlow === flow.id ? 'text-[#4338CA]' : 'text-slate-500'"
+                    :class="selectedFlow === flow.id ? 'text-brand-indigo' : 'text-slate-500'"
                     aria-hidden="true"
                   />
                   <Check
                     v-if="selectedFlow === flow.id"
-                    class="h-4 w-4 shrink-0 text-[#4338CA]"
+                    class="h-4 w-4 shrink-0 text-brand-indigo"
                     aria-hidden="true"
                   />
                 </div>

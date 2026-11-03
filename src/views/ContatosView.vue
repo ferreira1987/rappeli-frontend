@@ -11,6 +11,7 @@ import UiBadge from '@/components/ui/UiBadge.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiInput from '@/components/ui/UiInput.vue'
+import UiModalLayer from '@/components/ui/UiModalLayer.vue'
 import UiTable from '@/components/ui/UiTable.vue'
 import { useEscapeKey } from '@/composables/useEscapeKey'
 import { panelBreadcrumbs } from '@/constants/panelBreadcrumbs'
@@ -382,20 +383,13 @@ async function onImportFile(event: Event): Promise<void> {
       <AppPageFooter class="mt-auto" />
     </div>
 
-    <Teleport to="body">
-      <div
-        v-if="createOpen"
-        class="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/50 p-4"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="create-contact-title"
-        @click.self="createOpen = false"
+    <UiModalLayer :open="createOpen" labelled-by="create-contact-title" @close="createOpen = false">
+      <form
+        class="mx-auto w-full max-w-md rounded-xl border border-slate-200 bg-white p-6 shadow-xl"
+        :aria-busy="createSubmitting || undefined"
+        @submit.prevent="submitCreate"
       >
-        <form
-          class="w-full max-w-md rounded-lg border border-slate-200 bg-white p-6 shadow-xl"
-          @submit.prevent="submitCreate"
-        >
-          <h2 id="create-contact-title" class="text-lg font-bold text-brand-ink">Novo contato</h2>
+        <h2 id="create-contact-title" class="font-display text-lg font-bold text-brand-ink">Novo contato</h2>
           <p v-if="createError" class="mt-2 text-sm text-red-600" role="alert">{{ createError }}</p>
           <div class="mt-4 space-y-3">
             <div>
@@ -436,24 +430,16 @@ async function onImportFile(event: Event): Promise<void> {
             <UiButton variant="secondary" type="button" @click="createOpen = false">Cancelar</UiButton>
             <UiButton type="submit" :disabled="createSubmitting">Salvar</UiButton>
           </div>
-        </form>
-      </div>
-    </Teleport>
+      </form>
+    </UiModalLayer>
 
-    <Teleport to="body">
-      <div
-        v-if="editOpen"
-        class="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/50 p-4"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="edit-contact-title"
-        @click.self="editOpen = false"
+    <UiModalLayer :open="editOpen" labelled-by="edit-contact-title" @close="editOpen = false">
+      <form
+        class="mx-auto w-full max-w-md rounded-xl border border-slate-200 bg-white p-6 shadow-xl"
+        :aria-busy="editSubmitting || undefined"
+        @submit.prevent="submitEdit"
       >
-        <form
-          class="w-full max-w-md rounded-lg border border-slate-200 bg-white p-6 shadow-xl"
-          @submit.prevent="submitEdit"
-        >
-          <h2 id="edit-contact-title" class="text-lg font-bold text-brand-ink">Editar contato</h2>
+        <h2 id="edit-contact-title" class="font-display text-lg font-bold text-brand-ink">Editar contato</h2>
           <p v-if="editError" class="mt-2 text-sm text-red-600" role="alert">{{ editError }}</p>
           <div class="mt-4 space-y-3">
             <div>
@@ -494,9 +480,8 @@ async function onImportFile(event: Event): Promise<void> {
             <UiButton variant="secondary" type="button" @click="editOpen = false">Cancelar</UiButton>
             <UiButton type="submit" :disabled="editSubmitting">Salvar</UiButton>
           </div>
-        </form>
-      </div>
-    </Teleport>
+      </form>
+    </UiModalLayer>
 
     <AppConfirmModal
       :open="deleteConfirmOpen"

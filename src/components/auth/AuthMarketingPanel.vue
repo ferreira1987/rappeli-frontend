@@ -21,7 +21,7 @@ const featureItems = [
 
 <template>
   <aside
-    class="relative hidden min-h-screen w-full shrink-0 flex-col justify-between overflow-y-auto bg-[#4338CA] p-8 text-white sm:p-12 lg:flex lg:w-[min(42%,600px)] lg:max-w-[600px] lg:p-14 xl:p-16"
+    class="relative hidden min-h-screen w-full shrink-0 flex-col justify-between overflow-y-auto bg-brand-indigo p-8 text-white sm:p-12 lg:flex lg:w-[min(42%,600px)] lg:max-w-[600px] lg:p-14 xl:p-16"
   >
     <header class="flex items-center gap-3">
       <RappeliLogo mode="symbol" class="h-10 w-10 shrink-0" />

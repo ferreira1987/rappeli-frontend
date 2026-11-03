@@ -70,7 +70,7 @@ onUnmounted(() => {
       <button
         v-if="showBack !== false && summaryLayout !== 'v5'"
         type="button"
-        class="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-5 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
+        class="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-slate-300 px-5 py-2.5 text-sm font-semibold text-slate-600 transition-[color,transform] duration-150 hover:bg-slate-50 active:scale-[0.98] motion-reduce:transform-none"
         @click="emit('back')"
       >
         <ArrowLeft class="h-4 w-4" aria-hidden="true" />
@@ -92,12 +92,7 @@ onUnmounted(() => {
         <slot v-if="summaryLayout !== 'v5'" name="summary" />
         <button
           type="button"
-          class="inline-flex items-center gap-2 rounded-lg px-6 py-3 text-sm font-semibold text-white shadow-md transition disabled:opacity-60"
-          :class="
-            summaryLayout === 'v5'
-              ? 'bg-[#4338CA] hover:bg-brand-indigo-hover'
-              : 'bg-brand-indigo hover:bg-brand-indigo-hover'
-          "
+          class="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-brand-indigo px-6 py-3 text-sm font-semibold text-white shadow-md transition-[color,transform,opacity] duration-150 ease-out hover:bg-brand-indigo-hover active:scale-[0.98] active:opacity-95 motion-reduce:transform-none disabled:opacity-60"
           :disabled="primaryDisabled || primaryLoading"
           @click="emit('primary')"
         >

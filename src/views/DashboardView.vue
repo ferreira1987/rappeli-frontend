@@ -24,6 +24,7 @@ import AppPageFooter from '@/components/layout/AppPageFooter.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
+import { brandSupportMailto } from '@/constants/brandUrls'
 import { panelBreadcrumbs } from '@/constants/panelBreadcrumbs'
 import { useAuthStore } from '@/stores/auth'
 import { useWhatsAppStore } from '@/stores/whatsapp'
@@ -69,8 +70,6 @@ const onboardingProgressPercent = computed(() =>
 const showOnboardingCard = computed(
   () => onboardingChecksLoading.value || onboardingCompletedCount.value < 3,
 )
-
-const supportMailto = 'mailto:contato@rappeli.com.br'
 
 const whatsappHeaderLabel = computed(() => {
   if (!whatsappStore.hydrated) {
@@ -285,7 +284,7 @@ onMounted(() => {
 <template>
   <AppPageShell title="Painel" :breadcrumbs="panelBreadcrumbs({ label: 'Painel' })">
     <template #actions>
-      <a :href="supportMailto" class="inline-flex">
+      <a :href="brandSupportMailto" class="inline-flex">
         <UiButton variant="secondary" size="sm" class="gap-2 font-medium">
           <CircleHelp class="h-4 w-4 text-brand-gray" aria-hidden="true" />
           <span class="hidden sm:inline">Ajuda &amp; Tutoriais</span>
