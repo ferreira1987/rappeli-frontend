@@ -35,7 +35,7 @@ const auth = useAuthStore()
           <button
             v-if="planStepLayout"
             type="button"
-            class="inline-flex items-center gap-1.5 text-sm font-medium text-slate-600 transition hover:text-[#4338CA]"
+            class="inline-flex items-center gap-1.5 text-sm font-medium text-slate-600 transition hover:text-brand-indigo"
             @click="emit('back')"
           >
             <ArrowLeft class="h-4 w-4 shrink-0" aria-hidden="true" />
@@ -44,7 +44,7 @@ const auth = useAuthStore()
           <RouterLink
             v-else-if="auth.isAuthenticated"
             :to="{ name: 'painel' }"
-            class="hidden text-xs font-semibold text-[#4338CA] hover:underline sm:inline"
+            class="hidden text-xs font-semibold text-brand-indigo hover:underline sm:inline"
           >
             Voltar ao painel
           </RouterLink>
@@ -63,7 +63,7 @@ const auth = useAuthStore()
         <RouterLink
           v-else
           :to="{ name: 'login' }"
-          class="shrink-0 text-sm font-medium text-slate-600 hover:text-[#4338CA] sm:justify-self-end"
+          class="shrink-0 text-sm font-medium text-slate-600 hover:text-brand-indigo sm:justify-self-end"
         >
           Já tenho conta
         </RouterLink>

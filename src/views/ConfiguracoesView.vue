@@ -23,8 +23,7 @@ import {
   settingsTabQueryValue,
   type SettingsTabKey,
 } from '@/utils/settingsTab'
-
-const docsUrl = 'https://rappeli.com.br'
+import { brandDocsUrl } from '@/constants/brandUrls'
 
 const route = useRoute()
 const router = useRouter()
@@ -132,7 +131,7 @@ onMounted(() => {
         <span class="h-2 w-2 shrink-0 rounded-full bg-emerald-500" aria-hidden="true" />
         {{ whatsappHeaderLabel }}
       </span>
-      <a :href="docsUrl" target="_blank" rel="noopener noreferrer" class="inline-flex">
+      <a :href="brandDocsUrl" target="_blank" rel="noopener noreferrer" class="inline-flex">
         <UiButton variant="secondary" size="sm" class="gap-2 font-medium">
           <CircleHelp class="h-4 w-4 text-brand-gray" aria-hidden="true" />
           <span class="hidden sm:inline">Ver documentação</span>

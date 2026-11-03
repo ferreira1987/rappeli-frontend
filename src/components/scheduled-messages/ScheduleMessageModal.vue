@@ -4,6 +4,8 @@ import { computed, ref, watch } from 'vue'
 
 import { fetchContacts } from '@/api/contacts'
 import { createScheduledMessage } from '@/api/scheduledMessages'
+import { UiButton, UiIconButton, UiInput, UiModalLayer } from '@/components/ui'
+import { uiSelectClass, uiTextareaClass } from '@/components/ui/uiSelectClass'
 import { useEscapeKey } from '@/composables/useEscapeKey'
 import type { Contact } from '@/types/contacts'
 import { formatRelativeScheduleDay } from '@/utils/scheduleRelative'
@@ -145,16 +147,10 @@ async function onSubmit(): Promise<void> {
 </script>
 
 <template>
-  <Teleport to="body">
+  <UiModalLayer :open="open" labelled-by="schedule-message-title" scrollable @close="onClose">
     <div
-      v-if="open"
-      class="fixed inset-0 z-[60] flex items-center justify-center overflow-y-auto bg-slate-900/50 p-4 backdrop-blur-[2px]"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="schedule-message-title"
-      @click.self="onClose"
+      class="mx-auto my-8 flex w-full max-w-xl flex-col gap-5 rounded-xl border border-slate-200 bg-white p-6 shadow-2xl"
     >
-      <div class="my-8 flex w-full max-w-xl flex-col gap-5 rounded-xl border border-slate-200 bg-white p-6 shadow-2xl">
         <div class="flex items-start justify-between gap-3">
           <div class="flex items-center gap-2">
             <Calendar class="h-5 w-5 text-brand-indigo" />
@@ -162,29 +158,27 @@ async function onSubmit(): Promise<void> {
               Agendar mensagem
             </h2>
           </div>
-          <button
-            type="button"
-            class="rounded-lg p-1.5 text-brand-gray hover:bg-slate-100"
-            aria-label="Fechar"
-            @click="onClose"
-          >
-            <X class="h-5 w-5" />
-          </button>
+          <UiIconButton type="button" ariaLabel="Fechar" @click="onClose">
+            <X class="h-5 w-5" aria-hidden="true" />
+          </UiIconButton>
         </div>
 
         <p v-if="formError" class="text-sm text-red-600" role="alert">{{ formError }}</p>
 
-        <div>
-          <label for="schedule-contact-search" class="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-brand-gray"
-            >Contato</label
+        <div class="space-y-1">
+          <label
+            for="schedule-contact-search"
+            class="block text-[11px] font-semibold uppercase tracking-wide text-brand-gray"
           >
-          <input
+            Contato
+          </label>
+          <UiInput
             id="schedule-contact-search"
             v-model="contactSearch"
             type="search"
             placeholder="Buscar contato por nome ou telefone…"
             aria-label="Buscar contato por nome ou telefone"
-            class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm placeholder:text-slate-400"
+            :invalid="Boolean(fieldErrors.contact_id)"
           />
           <p v-if="fieldErrors.contact_id" class="mt-1 text-xs text-red-600">{{ fieldErrors.contact_id }}</p>
           <ul v-if="contactResults.length" class="mt-1 max-h-32 overflow-y-auto rounded-lg border border-slate-200 text-sm">
@@ -221,7 +215,7 @@ async function onSubmit(): Promise<void> {
             v-model="messageBody"
             rows="4"
             aria-label="Mensagem"
-            class="w-full resize-none rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-brand-indigo focus:outline-none focus:ring-2 focus:ring-brand-indigo/20"
+            :class="`${uiTextareaClass} resize-none ${fieldErrors.body ? 'border-red-300' : ''}`"
             @input="delete fieldErrors.body"
           />
           <div class="mt-2 flex flex-wrap gap-1.5">
@@ -253,33 +247,25 @@ async function onSubmit(): Promise<void> {
         </div>
 
         <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label for="schedule-date" class="mb-1 block text-[11px] font-semibold uppercase text-brand-gray"
-              >Data</label
-            >
-            <div class="relative">
-              <Calendar class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-gray" />
-              <input
-                id="schedule-date"
-                v-model="scheduleDate"
-                type="date"
-                class="w-full rounded-lg border border-slate-200 py-2 pl-9 pr-3 text-sm"
-              />
-            </div>
+          <div class="space-y-1">
+            <label for="schedule-date" class="block text-[11px] font-semibold uppercase text-brand-gray">
+              Data
+            </label>
+            <UiInput id="schedule-date" v-model="scheduleDate" type="date">
+              <template #leading>
+                <Calendar class="h-4 w-4" aria-hidden="true" />
+              </template>
+            </UiInput>
           </div>
-          <div>
-            <label for="schedule-time" class="mb-1 block text-[11px] font-semibold uppercase text-brand-gray"
-              >Hora</label
-            >
-            <div class="relative">
-              <Clock class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-gray" />
-              <input
-                id="schedule-time"
-                v-model="scheduleTime"
-                type="time"
-                class="w-full rounded-lg border border-slate-200 py-2 pl-9 pr-3 text-sm"
-              />
-            </div>
+          <div class="space-y-1">
+            <label for="schedule-time" class="block text-[11px] font-semibold uppercase text-brand-gray">
+              Hora
+            </label>
+            <UiInput id="schedule-time" v-model="scheduleTime" type="time">
+              <template #leading>
+                <Clock class="h-4 w-4" aria-hidden="true" />
+              </template>
+            </UiInput>
           </div>
         </div>
 
@@ -287,7 +273,7 @@ async function onSubmit(): Promise<void> {
           <label for="schedule-repeat" class="mb-1 block text-[11px] font-semibold uppercase text-brand-gray"
             >Repetir</label
           >
-          <select id="schedule-repeat" v-model="repeat" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm">
+          <select id="schedule-repeat" v-model="repeat" :class="uiSelectClass">
             <option value="none">Não repetir</option>
             <option value="daily">Diariamente</option>
             <option value="weekly">Semanalmente</option>
@@ -308,24 +294,12 @@ async function onSubmit(): Promise<void> {
         </div>
 
         <div class="flex justify-end gap-2 border-t border-slate-100 pt-2">
-          <button
-            type="button"
-            class="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium hover:bg-slate-50"
-            @click="onClose"
-          >
-            Cancelar
-          </button>
-          <button
-            type="button"
-            class="inline-flex items-center gap-2 rounded-lg bg-brand-indigo px-4 py-2 text-sm font-semibold text-white hover:bg-brand-indigo-hover"
-            :disabled="submitting"
-            @click="onSubmit"
-          >
-            <Send class="h-4 w-4" />
+          <UiButton type="button" variant="secondary" @click="onClose"> Cancelar </UiButton>
+          <UiButton type="button" variant="primary" :disabled="submitting" @click="onSubmit">
+            <Send class="h-4 w-4" aria-hidden="true" />
             {{ submitting ? 'Agendando…' : 'Agendar' }}
-          </button>
+          </UiButton>
         </div>
-      </div>
     </div>
-  </Teleport>
+  </UiModalLayer>
 </template>

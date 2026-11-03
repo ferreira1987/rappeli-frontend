@@ -18,7 +18,7 @@ const props = withDefaults(
 
 const classes = computed(() => {
   const base =
-    'inline-flex shrink-0 items-center justify-center gap-2 rounded-lg font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-indigo disabled:pointer-events-none disabled:opacity-50'
+    'inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 rounded-lg font-semibold transition-[color,background-color,transform,opacity] duration-150 ease-out active:scale-[0.98] active:opacity-95 motion-reduce:transform-none motion-reduce:active:scale-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-indigo disabled:pointer-events-none disabled:opacity-50'
 
   const sizes = {
     sm: 'px-3 py-1.5 text-xs',

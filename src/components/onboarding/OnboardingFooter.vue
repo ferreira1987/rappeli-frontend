@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { brandPrivacyUrl, brandTermsUrl } from '@/constants/brandUrls'
+
 withDefaults(
   defineProps<{
     muted?: boolean
@@ -7,9 +9,6 @@ withDefaults(
     muted: false,
   },
 )
-
-const termsUrl = 'https://rappeli.com.br/termos'
-const privacyUrl = 'https://rappeli.com.br/privacidade'
 </script>
 
 <template>
@@ -22,10 +21,10 @@ const privacyUrl = 'https://rappeli.com.br/privacidade'
     >
       <p>© 2026 Rappeli — ADS System</p>
       <div class="flex items-center gap-6">
-        <a :href="termsUrl" target="_blank" rel="noopener noreferrer" class="hover:text-brand-indigo">
+        <a :href="brandTermsUrl" target="_blank" rel="noopener noreferrer" class="hover:text-brand-indigo">
           Termos de Uso
         </a>
-        <a :href="privacyUrl" target="_blank" rel="noopener noreferrer" class="hover:text-brand-indigo">
+        <a :href="brandPrivacyUrl" target="_blank" rel="noopener noreferrer" class="hover:text-brand-indigo">
           Política de Privacidade
         </a>
       </div>

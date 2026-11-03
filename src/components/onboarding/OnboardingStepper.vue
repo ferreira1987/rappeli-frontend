@@ -38,11 +38,11 @@ const completedTrackRatio = computed(() => {
       <template v-for="(step, index) in steps" :key="step.n">
         <li
           class="flex flex-col items-center px-1 sm:px-2"
-          :class="step.n === currentStep ? 'text-[#4338CA]' : 'text-slate-400'"
+          :class="step.n === currentStep ? 'text-brand-indigo' : 'text-slate-400'"
         >
           <span
             class="flex items-center gap-1.5 text-xs font-medium sm:text-sm"
-            :class="step.n === currentStep ? 'font-semibold text-[#4338CA]' : 'text-slate-500'"
+            :class="step.n === currentStep ? 'font-semibold text-brand-indigo' : 'text-slate-500'"
           >
             <span
               class="tabular-nums"
@@ -54,7 +54,7 @@ const completedTrackRatio = computed(() => {
           </span>
           <span
             class="mt-1.5 block h-0.5 w-full min-w-[3.5rem] rounded-full sm:min-w-[4.5rem]"
-            :class="step.n === currentStep ? 'bg-[#4338CA]' : 'bg-transparent'"
+            :class="step.n === currentStep ? 'bg-brand-indigo' : 'bg-transparent'"
             aria-hidden="true"
           />
         </li>

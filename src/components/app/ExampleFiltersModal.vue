@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { X } from '@lucide/vue'
 
+import { UiIconButton, UiModalLayer } from '@/components/ui'
 import { useEscapeKey } from '@/composables/useEscapeKey'
 
 const props = defineProps<{
@@ -20,28 +21,15 @@ useEscapeKey(
 </script>
 
 <template>
-  <Teleport to="body">
-    <div
-      v-if="open"
-      class="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-[2px]"
-      role="dialog"
-      aria-modal="true"
-      :aria-labelledby="`filters-${title}`"
-      @click.self="emit('close')"
-    >
-      <div class="w-full max-w-md rounded-xl border border-slate-200 bg-white p-6 shadow-2xl">
+  <UiModalLayer :open="open" :labelled-by="`filters-${title}`" @close="emit('close')">
+    <div class="mx-auto w-full max-w-md rounded-xl border border-slate-200 bg-white p-6 shadow-2xl">
         <div class="flex items-start justify-between gap-3">
           <h2 :id="`filters-${title}`" class="font-display text-lg font-bold text-brand-ink">
             {{ title }}
           </h2>
-          <button
-            type="button"
-            class="rounded-lg p-1.5 text-brand-gray hover:bg-slate-100"
-            aria-label="Fechar"
-            @click="emit('close')"
-          >
-            <X class="h-5 w-5" />
-          </button>
+          <UiIconButton type="button" ariaLabel="Fechar" @click="emit('close')">
+            <X class="h-5 w-5" aria-hidden="true" />
+          </UiIconButton>
         </div>
         <p class="mt-2 text-sm text-brand-gray">
           Filtros de exemplo — ajuste os campos e aplique para simular a ação no painel.
@@ -72,7 +60,6 @@ useEscapeKey(
             Aplicar filtros
           </button>
         </div>
-      </div>
     </div>
-  </Teleport>
+  </UiModalLayer>
 </template>

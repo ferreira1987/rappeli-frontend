@@ -2,8 +2,10 @@
 import { Loader2, X } from '@lucide/vue'
 import { computed, ref, watch } from 'vue'
 
-import type { CreateMessageTemplatePayload, MessageTemplateCategory } from '@/types/messageTemplates'
+import { UiButton, UiIconButton, UiInput, UiModalLayer } from '@/components/ui'
+import { uiSelectClass, uiTextareaClass } from '@/components/ui/uiSelectClass'
 import { useEscapeKey } from '@/composables/useEscapeKey'
+import type { CreateMessageTemplatePayload, MessageTemplateCategory } from '@/types/messageTemplates'
 import { META_TEMPLATE_VARIABLE_EXAMPLES } from '@/utils/messageTemplatePreview'
 
 const props = defineProps<{
@@ -87,68 +89,64 @@ function onSubmit(): void {
 </script>
 
 <template>
-  <div
-    v-if="open"
-    class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-    role="dialog"
-    aria-modal="true"
-    aria-labelledby="message-template-create-title"
-    @click.self="onClose"
+  <UiModalLayer
+    :open="open"
+    z-class="z-50"
+    labelled-by="message-template-create-title"
+    scrollable
+    @close="onClose"
   >
-    <div class="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-xl">
+    <div
+      class="mx-auto max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-xl"
+    >
       <div class="flex items-center justify-between border-b border-slate-100 px-5 py-4">
         <h2 id="message-template-create-title" class="font-display text-lg font-semibold text-brand-ink">
           Novo modelo de mensagem
         </h2>
-        <button
-          type="button"
-          class="rounded-lg p-1 text-brand-gray hover:bg-slate-100"
-          aria-label="Fechar"
-          @click="onClose"
-        >
-          <X class="h-5 w-5" />
-        </button>
+        <UiIconButton type="button" ariaLabel="Fechar" @click="onClose">
+          <X class="h-5 w-5" aria-hidden="true" />
+        </UiIconButton>
       </div>
 
-      <form class="space-y-4 p-5" @submit.prevent="onSubmit">
-        <p v-if="formError" class="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">
+      <form
+        class="space-y-4 p-5"
+        :aria-busy="submitting || undefined"
+        @submit.prevent="onSubmit"
+      >
+        <p
+          v-if="formError"
+          class="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800"
+          role="alert"
+        >
           {{ formError }}
         </p>
 
-        <div>
+        <div class="space-y-1">
           <label class="block text-sm font-medium text-brand-ink" for="template-name">Nome do modelo *</label>
-          <input
+          <UiInput
             id="template-name"
             v-model="name"
             type="text"
             autocomplete="off"
             placeholder="lembrete_retorno"
-            class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+            :invalid="Boolean(displayFieldErrors.name)"
           />
-          <p class="mt-1 text-xs text-brand-gray">Identificador enviado à Meta (snake_case).</p>
-          <p v-if="displayFieldErrors.name" class="mt-1 text-xs text-red-600">{{ displayFieldErrors.name }}</p>
+          <p class="text-xs text-brand-gray">Identificador enviado à Meta (snake_case).</p>
+          <p v-if="displayFieldErrors.name" class="text-xs text-red-600">{{ displayFieldErrors.name }}</p>
         </div>
 
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div>
+          <div class="space-y-1">
             <label class="block text-sm font-medium text-brand-ink" for="template-language">Idioma</label>
-            <select
-              id="template-language"
-              v-model="language"
-              class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
-            >
+            <select id="template-language" v-model="language" :class="uiSelectClass">
               <option v-for="option in languageOptions" :key="option.value" :value="option.value">
                 {{ option.label }}
               </option>
             </select>
           </div>
-          <div>
+          <div class="space-y-1">
             <label class="block text-sm font-medium text-brand-ink" for="template-category">Categoria</label>
-            <select
-              id="template-category"
-              v-model="category"
-              class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
-            >
+            <select id="template-category" v-model="category" :class="uiSelectClass">
               <option v-for="option in categoryOptions" :key="option.value" :value="option.value">
                 {{ option.label }}
               </option>
@@ -156,42 +154,33 @@ function onSubmit(): void {
           </div>
         </div>
 
-        <div>
+        <div class="space-y-1">
           <label class="block text-sm font-medium text-brand-ink" for="template-body">Corpo da mensagem *</label>
           <textarea
             id="template-body"
             v-model="bodyText"
             rows="5"
             placeholder="Olá {{1}}, está na hora do seu retorno."
-            class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+            :class="`${uiTextareaClass} ${displayFieldErrors.body ? 'border-red-300' : ''}`"
           />
-          <p class="mt-1 text-xs text-brand-gray">
+          <p class="text-xs text-brand-gray">
             Variáveis dinâmicas no formato
             <code class="text-brand-ink">{{ META_TEMPLATE_VARIABLE_EXAMPLES[0] }}</code>,
             <code class="text-brand-ink">{{ META_TEMPLATE_VARIABLE_EXAMPLES[1] }}</code>…
           </p>
-          <p v-if="displayFieldErrors.body" class="mt-1 text-xs text-red-600">{{ displayFieldErrors.body }}</p>
+          <p v-if="displayFieldErrors.body" class="text-xs text-red-600">{{ displayFieldErrors.body }}</p>
         </div>
 
         <div class="flex justify-end gap-2 border-t border-slate-100 pt-4">
-          <button
-            type="button"
-            class="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-brand-ink"
-            :disabled="submitting"
-            @click="onClose"
-          >
+          <UiButton type="button" variant="secondary" :disabled="submitting" @click="onClose">
             Cancelar
-          </button>
-          <button
-            type="submit"
-            class="inline-flex items-center gap-2 rounded-lg bg-brand-indigo px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
-            :disabled="submitting"
-          >
-            <Loader2 v-if="submitting" class="h-4 w-4 animate-spin" />
+          </UiButton>
+          <UiButton type="submit" variant="primary" :disabled="submitting">
+            <Loader2 v-if="submitting" class="h-4 w-4 animate-spin" aria-hidden="true" />
             Enviar para aprovação
-          </button>
+          </UiButton>
         </div>
       </form>
     </div>
-  </div>
+  </UiModalLayer>
 </template>

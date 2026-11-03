@@ -2,6 +2,7 @@
 import { ListOrdered, X } from '@lucide/vue'
 import { computed, ref, watch } from 'vue'
 
+import { UiIconButton, UiModalLayer } from '@/components/ui'
 import { useEscapeKey } from '@/composables/useEscapeKey'
 import type { SequenceStep } from '@/types/campaigns'
 
@@ -80,19 +81,11 @@ function onSubmit(): void {
 </script>
 
 <template>
-  <Teleport to="body">
-    <div
-      v-if="open"
-      class="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-[2px]"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="sequence-step-title"
-      @click.self="onClose"
+  <UiModalLayer :open="open" labelled-by="sequence-step-title" @close="onClose">
+    <form
+      class="mx-auto flex w-full max-w-lg flex-col gap-4 rounded-xl border border-slate-200 bg-white p-6 shadow-2xl"
+      @submit.prevent="onSubmit"
     >
-      <form
-        class="flex w-full max-w-lg flex-col gap-4 rounded-xl border border-slate-200 bg-white p-6 shadow-2xl"
-        @submit.prevent="onSubmit"
-      >
         <div class="flex items-start justify-between gap-3">
           <div class="flex items-center gap-2">
             <ListOrdered class="h-5 w-5 text-brand-indigo" aria-hidden="true" />
@@ -100,9 +93,9 @@ function onSubmit(): void {
               {{ step ? 'Editar passo' : 'Novo passo' }}
             </h2>
           </div>
-          <button type="button" class="rounded-lg p-1.5 text-brand-gray hover:bg-slate-100" aria-label="Fechar" @click="onClose">
-            <X class="h-5 w-5" />
-          </button>
+          <UiIconButton type="button" ariaLabel="Fechar" @click="onClose">
+            <X class="h-5 w-5" aria-hidden="true" />
+          </UiIconButton>
         </div>
 
         <p v-if="formError" class="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">
@@ -170,7 +163,6 @@ function onSubmit(): void {
             {{ submitting ? 'Salvando…' : 'Salvar passo' }}
           </button>
         </div>
-      </form>
-    </div>
-  </Teleport>
+    </form>
+  </UiModalLayer>
 </template>

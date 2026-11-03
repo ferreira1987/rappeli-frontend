@@ -7,6 +7,11 @@ import AuthMarketingPanel from '@/components/auth/AuthMarketingPanel.vue'
 import AuthPageChrome from '@/components/auth/AuthPageChrome.vue'
 import RappeliLogo from '@/components/brand/RappeliLogo.vue'
 import { UiButton, UiCard, UiInput } from '@/components/ui'
+import {
+  brandPasswordRecoveryMailto,
+  brandSiteUrl,
+  brandSupportMailto,
+} from '@/constants/brandUrls'
 import { useAuthStore } from '@/stores/auth'
 
 const auth = useAuthStore()
@@ -41,13 +46,22 @@ async function onSubmit(): Promise<void> {
   <div class="flex min-h-screen flex-col overflow-hidden lg:flex-row">
     <AuthMarketingPanel />
 
-    <main class="flex min-h-screen flex-1 flex-col bg-[#F8FAFC]">
+    <main class="flex min-h-screen flex-1 flex-col bg-brand-surface">
       <header
         class="flex shrink-0 items-center justify-end gap-4 px-6 py-5 text-sm text-slate-600 sm:px-10 lg:px-12"
       >
-        <a href="#" class="hover:text-[#4338CA]" @click.prevent>Central de Ajuda</a>
+        <a
+          :href="brandSiteUrl"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="transition-colors hover:text-brand-indigo"
+        >
+          Central de Ajuda
+        </a>
         <span class="h-4 w-px bg-slate-300" aria-hidden="true" />
-        <a href="#" class="font-medium hover:text-[#4338CA]" @click.prevent>Suporte</a>
+        <a :href="brandSupportMailto" class="font-medium transition-colors hover:text-brand-indigo">
+          Suporte
+        </a>
       </header>
 
       <div class="flex flex-1 flex-col justify-center px-6 pb-6 sm:px-10 lg:px-12">
@@ -61,7 +75,7 @@ async function onSubmit(): Promise<void> {
         <UiCard
           :bordered="false"
           padding="none"
-          class="mx-auto w-full max-w-[420px] !rounded-2xl border border-slate-200/90 p-8 shadow-sm sm:p-10"
+          class="mx-auto w-full max-w-[500px] !rounded-2xl border border-slate-200/90 p-8 shadow-sm sm:p-10"
         >
           <header class="mb-8 text-left">
             <h1 class="text-2xl font-bold tracking-tight text-slate-900">Entrar</h1>
@@ -70,8 +84,12 @@ async function onSubmit(): Promise<void> {
             </p>
           </header>
 
-          <form class="space-y-5" @submit.prevent="onSubmit">
-            <div v-if="formError" class="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
+          <form class="space-y-5" :aria-busy="auth.loading || undefined" @submit.prevent="onSubmit">
+            <div
+              v-if="formError"
+              role="alert"
+              class="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700"
+            >
               {{ formError }}
             </div>
 
@@ -95,9 +113,8 @@ async function onSubmit(): Promise<void> {
                   Senha
                 </label>
                 <a
-                  href="#"
-                  class="text-sm font-semibold text-[#4338CA] hover:underline"
-                  @click.prevent
+                  :href="brandPasswordRecoveryMailto"
+                  class="text-sm font-semibold text-brand-indigo hover:underline"
                 >
                   Esqueceu a senha?
                 </a>
@@ -110,11 +127,11 @@ async function onSubmit(): Promise<void> {
                   autocomplete="current-password"
                   required
                   placeholder="••••••••"
-                  input-class="pr-10"
+                  input-class="pr-12"
                 />
                 <button
                   type="button"
-                  class="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-slate-600"
+                  class="absolute inset-y-0 right-0 flex min-h-11 min-w-11 items-center justify-center text-slate-400 transition-colors hover:text-slate-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-indigo"
                   :aria-label="showPassword ? 'Ocultar senha' : 'Mostrar senha'"
                   @click="showPassword = !showPassword"
                 >
@@ -124,11 +141,11 @@ async function onSubmit(): Promise<void> {
               </div>
             </div>
 
-            <label class="flex cursor-pointer items-center gap-2.5 pt-0.5 text-sm text-slate-600">
+            <label class="flex min-h-11 cursor-pointer items-center gap-2.5 text-sm text-slate-600">
               <input
                 v-model="remember"
                 type="checkbox"
-                class="h-4 w-4 rounded border-slate-300 text-[#4338CA] focus:ring-[#4338CA]"
+                class="h-4 w-4 shrink-0 rounded border-slate-300 text-brand-indigo focus:ring-brand-indigo"
               />
               Lembrar de mim por 30 dias
             </label>
@@ -148,7 +165,7 @@ async function onSubmit(): Promise<void> {
             Ainda não tem conta?
             <RouterLink
               :to="{ name: 'cadastro' }"
-              class="ml-1 font-semibold text-[#4338CA] hover:underline"
+              class="ml-1 font-semibold text-brand-indigo hover:underline"
             >
               Criar conta
             </RouterLink>

@@ -423,7 +423,7 @@ function goBack(): void {
             class="relative flex h-full flex-col overflow-visible transition-shadow"
             :class="
               selectedTier === tier
-                ? 'border-2 border-[#4338CA] shadow-md ring-1 ring-[#4338CA]/10'
+                ? 'border-2 border-brand-indigo shadow-md ring-1 ring-brand-indigo/10'
                 : 'border-slate-200 shadow-sm hover:border-slate-300'
             "
           >
@@ -434,7 +434,7 @@ function goBack(): void {
               <UiBadge
                 variant="primary"
                 size="md"
-                class="inline-flex items-center gap-1 !rounded-full border border-[#4338CA]/20 bg-[#4338CA] px-3 py-1 text-[11px] uppercase tracking-wide !text-white shadow-sm"
+                class="inline-flex items-center gap-1 !rounded-full border border-brand-indigo/20 bg-brand-indigo px-3 py-1 text-[11px] uppercase tracking-wide !text-white shadow-sm"
               >
                 <Star class="h-3.5 w-3.5 fill-current" aria-hidden="true" />
                 Mais escolhido
@@ -491,7 +491,7 @@ function goBack(): void {
                   class="flex items-start gap-2.5"
                 >
                   <CheckCircle2
-                    class="mt-0.5 h-[18px] w-[18px] shrink-0 text-[#4338CA]"
+                    class="mt-0.5 h-[18px] w-[18px] shrink-0 text-brand-indigo"
                     aria-hidden="true"
                   />
                   <span v-html="feature.html" />
@@ -520,7 +520,7 @@ function goBack(): void {
           <div
             class="flex items-start gap-3 rounded-xl border border-slate-200 bg-white p-4 text-xs leading-relaxed text-slate-600"
           >
-            <Info class="mt-0.5 h-5 w-5 shrink-0 text-[#4338CA]" aria-hidden="true" />
+            <Info class="mt-0.5 h-5 w-5 shrink-0 text-brand-indigo" aria-hidden="true" />
             <p>
               <strong class="text-slate-900">Excedente:</strong> {{ overagePriceLabel }} por
               mensagem além da franquia do plano.
@@ -539,17 +539,17 @@ function goBack(): void {
             class="flex flex-col items-center justify-around gap-4 rounded-xl border border-slate-200 bg-white px-6 py-4 text-center text-sm text-slate-700 md:flex-row"
           >
             <span class="inline-flex items-center gap-2">
-              <Check class="h-4 w-4 text-[#4338CA]" aria-hidden="true" />
+              <Check class="h-4 w-4 text-brand-indigo" aria-hidden="true" />
               Implantação inclusa, sem taxa
             </span>
             <span class="hidden h-5 w-px bg-slate-200 md:block" aria-hidden="true" />
             <span class="inline-flex items-center gap-2">
-              <LockOpen class="h-4 w-4 text-[#4338CA]" aria-hidden="true" />
+              <LockOpen class="h-4 w-4 text-brand-indigo" aria-hidden="true" />
               Sem fidelidade
             </span>
             <span class="hidden h-5 w-px bg-slate-200 md:block" aria-hidden="true" />
             <span class="inline-flex items-center gap-2">
-              <UserRound class="h-4 w-4 text-[#4338CA]" aria-hidden="true" />
+              <UserRound class="h-4 w-4 text-brand-indigo" aria-hidden="true" />
               Suporte humano em português
             </span>
           </div>

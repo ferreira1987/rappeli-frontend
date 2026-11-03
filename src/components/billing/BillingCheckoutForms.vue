@@ -68,7 +68,7 @@ const cardFieldKeys = new Set([
 function inputClass(field: string): string {
   const focus =
     uiVariant.value === 'v5'
-      ? 'focus:border-[#4338CA] focus:ring-[#4338CA]/20'
+      ? 'focus:border-brand-indigo focus:ring-brand-indigo/20'
       : 'focus:border-brand-indigo focus:ring-brand-indigo'
   const refusedHighlight =
     props.cardPaymentRefusedHighlight && cardFieldKeys.has(field)

@@ -48,8 +48,7 @@ import {
   type SettingsTabKey,
 } from '@/utils/settingsTab'
 import { formatBrazilPhone } from '@/utils/phone'
-
-const docsUrl = 'https://rappeli.com.br'
+import { brandDocsUrl } from '@/constants/brandUrls'
 
 const router = useRouter()
 const auth = useAuthStore()
@@ -312,7 +311,7 @@ const showRegisteredCard = computed(() => {
         <RefreshCw class="h-4 w-4 text-brand-gray" :class="isRefreshing ? 'animate-spin' : ''" aria-hidden="true" />
         <span class="hidden sm:inline">Atualizar</span>
       </UiButton>
-      <a :href="docsUrl" target="_blank" rel="noopener noreferrer" class="inline-flex">
+      <a :href="brandDocsUrl" target="_blank" rel="noopener noreferrer" class="inline-flex">
         <UiButton variant="secondary" size="sm" class="gap-2 font-medium">
           <CircleHelp class="h-4 w-4 text-brand-gray" aria-hidden="true" />
           <span class="hidden sm:inline">Ver documentação</span>
