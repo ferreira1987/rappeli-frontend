@@ -14,10 +14,7 @@ defineProps<{
 </script>
 
 <template>
-  <div
-    class="flex flex-col bg-brand-surface"
-    :class="flush ? 'h-full min-h-0' : 'min-h-full'"
-  >
+  <div class="flex flex-col bg-brand-surface" :class="flush ? 'h-full min-h-0' : 'min-h-full'">
     <AppPageHeader
       v-if="!flush"
       :title="title"
